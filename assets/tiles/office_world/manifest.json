@@ -1,0 +1,448 @@
+{
+  "a": {
+    "kind": "floor",
+    "name": "Warm Floor",
+    "passable": true,
+    "door": false,
+    "atlasPath": "/agent-world-static/assets/tiles/office_tileset/Office%20Tileset/Office%20VX%20Ace/A2%20Office%20Floors.png",
+    "atlasTileSize": 32,
+    "grid": [
+      0,
+      4
+    ]
+  },
+  "b": {
+    "kind": "floor",
+    "name": "Light Floor",
+    "passable": true,
+    "door": false,
+    "atlasPath": "/agent-world-static/assets/tiles/office_tileset/Office%20Tileset/Office%20VX%20Ace/A2%20Office%20Floors.png",
+    "atlasTileSize": 32,
+    "grid": [
+      1,
+      4
+    ]
+  },
+  "c": {
+    "kind": "floor",
+    "name": "Steel Floor",
+    "passable": true,
+    "door": false,
+    "atlasPath": "/agent-world-static/assets/tiles/office_tileset/Office%20Tileset/Office%20VX%20Ace/A2%20Office%20Floors.png",
+    "atlasTileSize": 32,
+    "grid": [
+      2,
+      4
+    ]
+  },
+  "d": {
+    "kind": "floor",
+    "name": "Gold Floor",
+    "passable": true,
+    "door": false,
+    "atlasPath": "/agent-world-static/assets/tiles/office_tileset/Office%20Tileset/Office%20VX%20Ace/A2%20Office%20Floors.png",
+    "atlasTileSize": 32,
+    "grid": [
+      3,
+      4
+    ]
+  },
+  "e": {
+    "kind": "floor",
+    "name": "Cream Floor",
+    "passable": true,
+    "door": false,
+    "atlasPath": "/agent-world-static/assets/tiles/office_tileset/Office%20Tileset/Office%20VX%20Ace/A2%20Office%20Floors.png",
+    "atlasTileSize": 32,
+    "grid": [
+      0,
+      5
+    ]
+  },
+  "f": {
+    "kind": "floor",
+    "name": "Blue Floor",
+    "passable": true,
+    "door": false,
+    "atlasPath": "/agent-world-static/assets/tiles/office_tileset/Office%20Tileset/Office%20VX%20Ace/A2%20Office%20Floors.png",
+    "atlasTileSize": 32,
+    "grid": [
+      1,
+      5
+    ]
+  },
+  "g": {
+    "kind": "floor",
+    "name": "Green Floor",
+    "passable": true,
+    "door": false,
+    "atlasPath": "/agent-world-static/assets/tiles/office_tileset/Office%20Tileset/Office%20VX%20Ace/A2%20Office%20Floors.png",
+    "atlasTileSize": 32,
+    "grid": [
+      2,
+      5
+    ]
+  },
+  "h": {
+    "kind": "floor",
+    "name": "Pale Floor",
+    "passable": true,
+    "door": false,
+    "atlasPath": "/agent-world-static/assets/tiles/office_tileset/Office%20Tileset/Office%20VX%20Ace/A2%20Office%20Floors.png",
+    "atlasTileSize": 32,
+    "grid": [
+      3,
+      5
+    ]
+  },
+  "A": {
+    "kind": "object",
+    "name": "Wall",
+    "passable": false,
+    "door": false,
+    "primitive": "wall"
+  },
+  "B": {
+    "kind": "object",
+    "name": "Door",
+    "passable": true,
+    "door": true,
+    "primitive": "door"
+  },
+  "C": {
+    "kind": "object",
+    "name": "Window",
+    "passable": false,
+    "door": false,
+    "atlasPath": "/agent-world-static/assets/tiles/office_tileset/Office%20Tileset/Office%20Tileset%20All%2032x32.png",
+    "atlasTileSize": 32,
+    "grid": [
+      5,
+      22
+    ]
+  },
+  "D": {
+    "kind": "object",
+    "name": "Wood Desk Left",
+    "passable": false,
+    "door": false,
+    "atlasPath": "/agent-world-static/assets/tiles/office_tileset/Office%20Tileset/Office%20Tileset%20All%2032x32.png",
+    "atlasTileSize": 32,
+    "grid": [
+      0,
+      0
+    ]
+  },
+  "E": {
+    "kind": "object",
+    "name": "Wood Desk Right",
+    "passable": false,
+    "door": false,
+    "atlasPath": "/agent-world-static/assets/tiles/office_tileset/Office%20Tileset/Office%20Tileset%20All%2032x32.png",
+    "atlasTileSize": 32,
+    "grid": [
+      1,
+      0
+    ]
+  },
+  "F": {
+    "kind": "object",
+    "name": "Grey Desk Left",
+    "passable": false,
+    "door": false,
+    "atlasPath": "/agent-world-static/assets/tiles/office_tileset/Office%20Tileset/Office%20Tileset%20All%2032x32.png",
+    "atlasTileSize": 32,
+    "grid": [
+      0,
+      2
+    ]
+  },
+  "G": {
+    "kind": "object",
+    "name": "Grey Desk Right",
+    "passable": false,
+    "door": false,
+    "atlasPath": "/agent-world-static/assets/tiles/office_tileset/Office%20Tileset/Office%20Tileset%20All%2032x32.png",
+    "atlasTileSize": 32,
+    "grid": [
+      1,
+      2
+    ]
+  },
+  "H": {
+    "kind": "object",
+    "name": "Mauve Chair",
+    "passable": false,
+    "door": false,
+    "atlasPath": "/agent-world-static/assets/tiles/office_tileset/Office%20Tileset/Office%20Tileset%20All%2032x32.png",
+    "atlasTileSize": 32,
+    "grid": [
+      0,
+      16
+    ]
+  },
+  "I": {
+    "kind": "object",
+    "name": "White Chair",
+    "passable": false,
+    "door": false,
+    "atlasPath": "/agent-world-static/assets/tiles/office_tileset/Office%20Tileset/Office%20Tileset%20All%2032x32.png",
+    "atlasTileSize": 32,
+    "grid": [
+      4,
+      16
+    ]
+  },
+  "J": {
+    "kind": "object",
+    "name": "Water Cooler",
+    "passable": false,
+    "door": false,
+    "atlasPath": "/agent-world-static/assets/tiles/office_tileset/Office%20Tileset/Office%20Tileset%20All%2032x32.png",
+    "atlasTileSize": 32,
+    "grid": [
+      8,
+      16
+    ]
+  },
+  "K": {
+    "kind": "object",
+    "name": "Storage Cabinet Left",
+    "passable": false,
+    "door": false,
+    "atlasPath": "/agent-world-static/assets/tiles/office_tileset/Office%20Tileset/Office%20Tileset%20All%2032x32.png",
+    "atlasTileSize": 32,
+    "grid": [
+      11,
+      16
+    ]
+  },
+  "L": {
+    "kind": "object",
+    "name": "Storage Cabinet Right",
+    "passable": false,
+    "door": false,
+    "atlasPath": "/agent-world-static/assets/tiles/office_tileset/Office%20Tileset/Office%20Tileset%20All%2032x32.png",
+    "atlasTileSize": 32,
+    "grid": [
+      12,
+      16
+    ]
+  },
+  "M": {
+    "kind": "object",
+    "name": "Bookshelf Brown",
+    "passable": false,
+    "door": false,
+    "atlasPath": "/agent-world-static/assets/tiles/office_tileset/Office%20Tileset/Office%20Tileset%20All%2032x32.png",
+    "atlasTileSize": 32,
+    "grid": [
+      8,
+      10
+    ]
+  },
+  "N": {
+    "kind": "object",
+    "name": "Bookshelf Grey",
+    "passable": false,
+    "door": false,
+    "atlasPath": "/agent-world-static/assets/tiles/office_tileset/Office%20Tileset/Office%20Tileset%20All%2032x32.png",
+    "atlasTileSize": 32,
+    "grid": [
+      12,
+      10
+    ]
+  },
+  "O": {
+    "kind": "object",
+    "name": "CRT Terminal",
+    "passable": false,
+    "door": false,
+    "atlasPath": "/agent-world-static/assets/tiles/office_tileset/Office%20Tileset/Office%20Tileset%20All%2032x32.png",
+    "atlasTileSize": 32,
+    "grid": [
+      8,
+      22
+    ]
+  },
+  "P": {
+    "kind": "object",
+    "name": "Blue Terminal",
+    "passable": false,
+    "door": false,
+    "atlasPath": "/agent-world-static/assets/tiles/office_tileset/Office%20Tileset/Office%20Tileset%20All%2032x32.png",
+    "atlasTileSize": 32,
+    "grid": [
+      10,
+      22
+    ]
+  },
+  "Q": {
+    "kind": "object",
+    "name": "Flat Monitor",
+    "passable": false,
+    "door": false,
+    "atlasPath": "/agent-world-static/assets/tiles/office_tileset/Office%20Tileset/Office%20Tileset%20All%2032x32.png",
+    "atlasTileSize": 32,
+    "grid": [
+      12,
+      22
+    ]
+  },
+  "R": {
+    "kind": "object",
+    "name": "Laptop Desk",
+    "passable": false,
+    "door": false,
+    "atlasPath": "/agent-world-static/assets/tiles/office_tileset/Office%20Tileset/Office%20Tileset%20All%2032x32.png",
+    "atlasTileSize": 32,
+    "grid": [
+      8,
+      24
+    ]
+  },
+  "S": {
+    "kind": "object",
+    "name": "Chart Board",
+    "passable": false,
+    "door": false,
+    "atlasPath": "/agent-world-static/assets/tiles/office_tileset/Office%20Tileset/Office%20Tileset%20All%2032x32.png",
+    "atlasTileSize": 32,
+    "grid": [
+      1,
+      26
+    ]
+  },
+  "T": {
+    "kind": "object",
+    "name": "Small Plant",
+    "passable": false,
+    "door": false,
+    "atlasPath": "/agent-world-static/assets/tiles/office_tileset/Office%20Tileset/Office%20Tileset%20All%2032x32.png",
+    "atlasTileSize": 32,
+    "grid": [
+      2,
+      27
+    ]
+  },
+  "U": {
+    "kind": "object",
+    "name": "Tall Plant",
+    "passable": false,
+    "door": false,
+    "atlasPath": "/agent-world-static/assets/tiles/office_tileset/Office%20Tileset/Office%20Tileset%20All%2032x32.png",
+    "atlasTileSize": 32,
+    "grid": [
+      4,
+      27
+    ]
+  },
+  "V": {
+    "kind": "object",
+    "name": "Bench",
+    "passable": false,
+    "door": false,
+    "atlasPath": "/agent-world-static/assets/tiles/office_tileset/Office%20Tileset/Office%20Tileset%20All%2032x32.png",
+    "atlasTileSize": 32,
+    "grid": [
+      0,
+      18
+    ]
+  },
+  "W": {
+    "kind": "object",
+    "name": "Gold Rug",
+    "passable": true,
+    "door": false,
+    "atlasPath": "/agent-world-static/assets/tiles/office_tileset/Office%20Tileset/Office%20Tileset%20All%2032x32.png",
+    "atlasTileSize": 32,
+    "grid": [
+      0,
+      30
+    ]
+  },
+  "X": {
+    "kind": "object",
+    "name": "Blue Rug",
+    "passable": true,
+    "door": false,
+    "atlasPath": "/agent-world-static/assets/tiles/office_tileset/Office%20Tileset/Office%20Tileset%20All%2032x32.png",
+    "atlasTileSize": 32,
+    "grid": [
+      2,
+      30
+    ]
+  },
+  "Y": {
+    "kind": "object",
+    "name": "Phone",
+    "passable": false,
+    "door": false,
+    "atlasPath": "/agent-world-static/assets/tiles/office_tileset/Office%20Tileset/Office%20Tileset%20All%2032x32.png",
+    "atlasTileSize": 32,
+    "grid": [
+      12,
+      19
+    ]
+  },
+  "Z": {
+    "kind": "object",
+    "name": "Clock",
+    "passable": false,
+    "door": false,
+    "atlasPath": "/agent-world-static/assets/tiles/office_tileset/Office%20Tileset/Office%20Tileset%20All%2032x32.png",
+    "atlasTileSize": 32,
+    "grid": [
+      0,
+      22
+    ]
+  },
+  "0": {
+    "kind": "object",
+    "name": "Crate",
+    "passable": false,
+    "door": false,
+    "atlasPath": "/agent-world-static/assets/tiles/office_tileset/Office%20Tileset/Office%20Tileset%20All%2032x32.png",
+    "atlasTileSize": 32,
+    "grid": [
+      8,
+      27
+    ]
+  },
+  "1": {
+    "kind": "object",
+    "name": "Cabinet Brown",
+    "passable": false,
+    "door": false,
+    "atlasPath": "/agent-world-static/assets/tiles/office_tileset/Office%20Tileset/Office%20Tileset%20All%2032x32.png",
+    "atlasTileSize": 32,
+    "grid": [
+      8,
+      14
+    ]
+  },
+  "2": {
+    "kind": "object",
+    "name": "Cabinet Grey",
+    "passable": false,
+    "door": false,
+    "atlasPath": "/agent-world-static/assets/tiles/office_tileset/Office%20Tileset/Office%20Tileset%20All%2032x32.png",
+    "atlasTileSize": 32,
+    "grid": [
+      10,
+      14
+    ]
+  },
+  "3": {
+    "kind": "object",
+    "name": "Picture",
+    "passable": false,
+    "door": false,
+    "atlasPath": "/agent-world-static/assets/tiles/office_tileset/Office%20Tileset/Office%20Tileset%20All%2032x32.png",
+    "atlasTileSize": 32,
+    "grid": [
+      3,
+      24
+    ]
+  }
+}

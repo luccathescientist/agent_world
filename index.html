@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Agent World</title>
+  <link rel="stylesheet" href="/agent-world-static/styles.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar card pixel-panel">
+      <div>
+        <h1>Agent World</h1>
+        <p>16-bit research office for core named agents</p>
+      </div>
+      <div class="topbar-actions">
+        <div class="mode-switch" aria-label="Workspace Tabs">
+          <button id="tab-world" class="tab-btn active" type="button" data-tab="world">World</button>
+          <button id="tab-editor" class="tab-btn" type="button" data-tab="editor">Editor</button>
+        </div>
+        <div class="pill-row">
+          <span class="pill" id="server-time">--</span>
+          <span class="pill accent">build v0.4</span>
+        </div>
+      </div>
+    </header>
+
+    <main class="layout tab-panel active" id="world-tab-panel" data-panel="world">
+      <section class="main-column">
+        <section class="world-panel card pixel-panel">
+          <div class="panel-header">
+            <h2 id="room-name">Lucca Research Office</h2>
+            <div class="pill-row">
+              <label class="editor-field compact-field header-agent-select">
+                <span>Agent</span>
+                <select id="agent-select">
+                  <option value="">Select agent</option>
+                </select>
+              </label>
+              <span id="agent-status-badge" class="status-badge">--</span>
+            </div>
+          </div>
+          <div id="world" class="world snes-room">
+            <div id="world-canvas" class="world-canvas" aria-label="Agent World Canvas"></div>
+          </div>
+          <div class="world-footer">
+            <div class="pill">Click a character or stash box</div>
+            <div class="pill" id="agent-count">0 agents</div>
+          </div>
+          <section class="world-inspector">
+            <div class="panel-header">
+              <h2>Inspector</h2>
+              <span class="pill" id="selected-agent-id">--</span>
+            </div>
+            <dl class="inspector-grid">
+              <div><dt>Name</dt><dd id="agent-name">--</dd></div>
+              <div><dt>Model</dt><dd id="agent-model">--</dd></div>
+              <div><dt>Status</dt><dd id="agent-runtime-status">--</dd></div>
+              <div><dt>Location</dt><dd id="agent-location">--</dd></div>
+              <div><dt>Action</dt><dd id="agent-action">--</dd></div>
+              <div><dt>Visual</dt><dd id="agent-visual-state">--</dd></div>
+              <div><dt>Last Tool</dt><dd id="agent-tool">--</dd></div>
+              <div><dt>Queue Depth</dt><dd id="agent-queue-depth">--</dd></div>
+              <div><dt>Session</dt><dd id="agent-session-label">--</dd></div>
+              <div><dt>Channel</dt><dd id="agent-last-channel">--</dd></div>
+              <div><dt>Waiting</dt><dd id="agent-waiting-reason">--</dd></div>
+              <div><dt>Updated</dt><dd id="agent-updated">--</dd></div>
+            </dl>
+          </section>
+        </section>
+      </section>
+
+      <aside class="sidebar">
+        <section class="card pixel-panel chat-panel">
+          <div class="panel-header">
+            <h2>Chat Log</h2>
+            <div class="pill-row">
+              <span class="pill" id="chat-summary">--</span>
+              <button id="close-world-details" class="secondary-btn" type="button">Close</button>
+            </div>
+          </div>
+          <div class="button-row">
+            <label class="editor-field">
+              <span>Test Move</span>
+              <select id="move-anchor-select">
+                <option value="library">Library</option>
+                <option value="comms">Comms</option>
+                <option value="terminal">Terminal</option>
+                <option value="desk">Desk</option>
+                <option value="lounge">Lounge</option>
+              </select>
+            </label>
+            <button id="move-agent-button" class="secondary-btn" type="button">Move Selected Agent</button>
+          </div>
+          <div id="chat-list" class="chat-list"></div>
+          <form id="command-form" class="chat-compose">
+            <textarea id="command-input" placeholder="Tell the selected agent what to do next..."></textarea>
+            <div class="voice-toolbar">
+              <div class="button-row voice-buttons">
+                <button id="voice-toggle" class="secondary-btn" type="button">Start Mic</button>
+                <button id="voice-stop" class="secondary-btn" type="button">Stop</button>
+                <button id="voice-speak-current" class="secondary-btn" type="button">Speak Message</button>
+              </div>
+              <label class="voice-option">
+                <input id="voice-auto-send" type="checkbox" />
+                <span>Auto-send transcript</span>
+              </label>
+              <label class="voice-option">
+                <input id="voice-speak-replies" type="checkbox" />
+                <span>Speak agent replies</span>
+              </label>
+              <label class="editor-field voice-device-field">
+                <span>Mic Input</span>
+                <select id="voice-input-select">
+                  <option value="">System Default</option>
+                </select>
+              </label>
+            </div>
+            <div class="button-row">
+              <button type="submit">Send Command</button>
+            </div>
+          </form>
+          <p id="voice-status" class="voice-status">Voice idle.</p>
+          <div class="voice-debug-panel">
+            <div class="voice-debug-row">
+              <span class="voice-debug-label">Voice Support</span>
+              <span id="voice-support" class="voice-debug-value">Checking...</span>
+            </div>
+            <div class="voice-debug-row">
+              <span class="voice-debug-label">Recognition State</span>
+              <span id="voice-recognition-state" class="voice-debug-value">Idle</span>
+            </div>
+            <div class="voice-debug-row">
+              <span class="voice-debug-label">Mic Level</span>
+              <div class="voice-level-meter" aria-hidden="true">
+                <div id="voice-level-fill" class="voice-level-fill"></div>
+              </div>
+              <span id="voice-level-text" class="voice-debug-value">No mic capture yet.</span>
+            </div>
+            <div class="voice-debug-row">
+              <span class="voice-debug-label">Last Error</span>
+              <span id="voice-error" class="voice-debug-value">None</span>
+            </div>
+            <div class="voice-debug-row">
+              <span class="voice-debug-label">Transcript</span>
+              <pre id="voice-transcript" class="voice-debug-box">No transcript yet.</pre>
+            </div>
+            <div class="voice-debug-row">
+              <span class="voice-debug-label">Speech Output</span>
+              <pre id="voice-spoken-text" class="voice-debug-box">Nothing queued for speech.</pre>
+            </div>
+            <div class="voice-debug-row">
+              <span class="voice-debug-label">Recent Events</span>
+              <pre id="voice-events" class="voice-debug-box">No voice events yet.</pre>
+            </div>
+          </div>
+          <p id="command-result" class="command-result"></p>
+        </section>
+
+        <details class="debug-view">
+          <summary class="card pixel-panel debug-summary">
+            <span>Debug View</span>
+            <span class="pill">Inspector, stash, schedule, activity</span>
+          </summary>
+
+          <section class="card pixel-panel message-panel hidden-panel">
+            <div class="panel-header">
+              <h2>Message View</h2>
+              <span class="pill" id="message-kind">current</span>
+            </div>
+            <div class="message-view">
+              <h3 id="message-title">--</h3>
+              <div id="message-body" class="message-body">Select an event or agent to inspect full text.</div>
+            </div>
+          </section>
+
+          <section class="card pixel-panel stash-panel">
+            <div class="panel-header">
+              <h2>Stash Box</h2>
+              <span class="pill" id="stash-summary">--</span>
+            </div>
+            <ul id="stash-list" class="event-list"></ul>
+          </section>
+
+          <section class="card pixel-panel schedule-panel">
+            <div class="panel-header">
+              <h2>Schedule</h2>
+              <span class="pill" id="schedule-summary">--</span>
+            </div>
+            <ul id="schedule-list" class="event-list"></ul>
+          </section>
+
+          <section class="card pixel-panel event-panel">
+            <div class="panel-header">
+              <h2>Activity Feed</h2>
+              <button id="refresh-button" class="secondary-btn" type="button">Refresh</button>
+            </div>
+            <ul id="event-list" class="event-list"></ul>
+          </section>
+        </details>
+      </aside>
+    </main>
+
+    <main class="editor-layout tab-panel" id="editor-tab-panel" data-panel="editor">
+      <section class="editor-workspace">
+        <div class="main-column">
+          <section class="world-panel card pixel-panel">
+            <div class="panel-header">
+              <h2>Tilemap Preview</h2>
+              <div class="pill-row">
+                <span class="pill" id="tilemap-summary">--</span>
+                <button id="toggle-edit-mode" class="secondary-btn" type="button">Code Overlay Off</button>
+              </div>
+            </div>
+            <div class="world snes-room">
+              <div id="editor-world-canvas" class="world-canvas" aria-label="Tilemap Editor Canvas"></div>
+            </div>
+            <div class="world-footer">
+              <div class="pill" id="tilemap-walkability">--</div>
+              <div class="pill" id="tilemap-status">Loading tilemap...</div>
+            </div>
+          </section>
+
+          <section class="card pixel-panel chat-bubble-editor-panel">
+            <div class="panel-header">
+              <h2>Chat Bubble</h2>
+              <span class="pill">Wall atlas</span>
+            </div>
+            <div class="room-mapper-grid">
+              <label class="editor-field">
+                <span>Role</span>
+                <select id="chat-bubble-role-select">
+                  <option value="assistant">Agent</option>
+                  <option value="tool">Tool</option>
+                  <option value="user">User</option>
+                </select>
+              </label>
+              <label class="editor-field">
+                <span>Text Color</span>
+                <input id="chat-bubble-text-color" type="color" value="#fff4d7" />
+              </label>
+            </div>
+            <div id="chat-bubble-slot-grid" class="chat-bubble-slot-grid" aria-label="Chat bubble frame slots"></div>
+            <div id="chat-bubble-preview-list" class="chat-bubble-preview-list" aria-label="Chat bubble previews"></div>
+            <div class="special-token-row">
+              <button id="assign-chat-bubble-tile" class="secondary-btn" type="button">Assign Selected Tile</button>
+              <button id="reset-chat-bubble-frame" class="secondary-btn" type="button">Reset Selected Role</button>
+            </div>
+            <p class="editor-copy">Pick a role, then choose frame cells and a text color for that role. You can use wall or floor atlas tiles for each piece. The preview below shows short, medium, and long messages with the repeatable middle tiles stretched dynamically.</p>
+          </section>
+        </div>
+
+        <section class="card pixel-panel tilemap-panel tilemap-page">
+          <div class="panel-header">
+            <h2>Tilemap Editor</h2>
+            <div class="pill-row">
+              <button id="apply-tilemap" type="button">Apply Map</button>
+              <button id="save-game-state" class="secondary-btn" type="button">Save Game State</button>
+              <button id="reset-tilemap" class="secondary-btn" type="button">Reset</button>
+            </div>
+          </div>
+          <div class="pill-row">
+            <span class="pill" id="tilemap-source-status">Game state JSON is live</span>
+            <button id="apply-game-state-json" class="secondary-btn" type="button">Apply JSON</button>
+          </div>
+          <label class="tile-editor-block">
+            <span>State Transfer JSON</span>
+            <textarea id="tilemap-state-json" class="tilemap-input" spellcheck="false" placeholder='{"agent-world-floor-map":"..."}'></textarea>
+          </label>
+          <p class="editor-copy">Edit the floor and object character grids, apply them live, and use the legend to understand which codes are passable, solid, or doors.</p>
+          <section class="visual-tile-editor">
+            <div class="visual-toolbar">
+              <div class="visual-meta">
+                <div class="pill" id="selected-map-cell">Cell --</div>
+                <div class="pill" id="selected-layer-cell">Layer --</div>
+                <div class="pill" id="hovered-atlas-cell">Atlas --</div>
+              </div>
+              <div class="editor-utility-row">
+                <label class="editor-field">
+                  <span>Cols</span>
+                  <input id="grid-cols-input" type="number" min="4" max="80" value="30" />
+                </label>
+                <label class="editor-field">
+                  <span>Rows</span>
+                  <input id="grid-rows-input" type="number" min="4" max="80" value="18" />
+                </label>
+                <button id="resize-grid" class="secondary-btn" type="button">Resize Grid</button>
+                <label class="editor-field">
+                  <span>Zoom</span>
+                  <select id="editor-zoom-select">
+                    <option value="1" selected>1x</option>
+                    <option value="1.5">1.5x</option>
+                    <option value="2">2x</option>
+                    <option value="3">3x</option>
+                  </select>
+                </label>
+                <label class="passable-toggle">
+                  <input id="toggle-editor-agents" type="checkbox" checked />
+                  <span>Show Lucca</span>
+                </label>
+              </div>
+              <div class="layer-toggle-group" id="visual-layer-toggle">
+                <button class="secondary-btn active" type="button" data-layer="floor">Floor</button>
+                <button class="secondary-btn" type="button" data-layer="wall">Wall</button>
+                <button class="secondary-btn" type="button" data-layer="furniture">Furniture</button>
+                <button class="secondary-btn" type="button" data-layer="prop">Prop</button>
+              </div>
+            </div>
+            <section class="picker-card room-mapper-card">
+              <div class="picker-header">
+                <h3>Room Mapper</h3>
+                <span class="pill" id="room-region-summary">0 regions</span>
+              </div>
+              <div class="room-mapper-grid">
+                <label class="editor-field">
+                  <span>Kind</span>
+                  <select id="region-kind-input">
+                    <option value="room">Room</option>
+                    <option value="door">Door</option>
+                  </select>
+                </label>
+                <label class="editor-field">
+                  <span>Id</span>
+                  <select id="region-id-input">
+                    <option value="">Select room</option>
+                  </select>
+                </label>
+                <label class="editor-field room-label-field">
+                  <span>Label</span>
+                  <input id="region-label-input" type="text" placeholder="Library" />
+                </label>
+              </div>
+              <div class="special-token-row">
+                <button id="assign-region" class="secondary-btn" type="button">Assign Selection</button>
+                <button id="clear-region" class="secondary-btn" type="button">Clear Selection Region</button>
+                <button id="set-region-label-position" class="secondary-btn" type="button">Set Label Position</button>
+              </div>
+              <div class="special-token-row">
+                <span class="pill" id="stash-cell-summary">Stash --</span>
+                <button id="assign-stash" class="secondary-btn" type="button">Set Stash Here</button>
+                <button id="clear-stash" class="secondary-btn" type="button">Reset Stash</button>
+              </div>
+              <div id="room-region-list" class="room-region-list"></div>
+            </section>
+            <div class="visual-picker-grid">
+              <section class="picker-card">
+                <div class="picker-header">
+                  <h3>Special Token</h3>
+                </div>
+                <div class="special-token-row">
+                  <button id="visual-token-empty" class="secondary-btn" type="button">Set `.`</button>
+                </div>
+                <div class="selection-preview">
+                  <div class="selection-copy">
+                    <strong id="visual-selection-title">No atlas tile selected</strong>
+                    <span id="visual-selection-detail">Click a map cell, then hover or click a tile in the atlas.</span>
+                  </div>
+                  <canvas id="visual-selection-preview" width="128" height="128" aria-label="Selected tile preview"></canvas>
+                </div>
+              </section>
+              <section class="picker-card atlas-card">
+                <div class="picker-header">
+                  <h3 id="atlas-picker-title">Floor Atlas</h3>
+                  <span class="pill" id="atlas-picker-mode">Office atlas</span>
+                </div>
+                <div id="atlas-picker-board" class="atlas-picker-board" aria-label="Atlas tile picker">
+                  <img id="atlas-picker-image" alt="Tile atlas picker" />
+                  <div id="atlas-picker-hover" class="atlas-picker-hover"></div>
+                </div>
+              </section>
+            </div>
+          </section>
+          <div class="tilemap-editors wide">
+            <label class="tile-editor-block">
+              <span>Wall Map</span>
+              <textarea id="wall-map-input" class="tilemap-input large" spellcheck="false"></textarea>
+            </label>
+            <label class="tile-editor-block">
+              <span>Floor Map</span>
+              <textarea id="floor-map-input" class="tilemap-input large" spellcheck="false"></textarea>
+            </label>
+            <label class="tile-editor-block">
+              <span>Furniture Map</span>
+              <textarea id="furniture-map-input" class="tilemap-input large" spellcheck="false"></textarea>
+            </label>
+            <label class="tile-editor-block">
+              <span>Prop Map</span>
+              <textarea id="prop-map-input" class="tilemap-input large" spellcheck="false"></textarea>
+            </label>
+          </div>
+        </section>
+      </section>
+    </main>
+  </div>
+
+  <script src="/agent-world-static/vendor/pixi.min.js"></script>
+  <script src="/agent-world-static/app.js"></script>
+</body>
+</html>
