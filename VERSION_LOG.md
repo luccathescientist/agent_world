@@ -14,6 +14,7 @@ Conventions:
 - each release section tracks the commits that belong to that milestone
 - each commit entry should use a single sentence only
 - commit summaries should stay high-signal and approximate rather than exhaustive
+- version-log-only maintenance commits may be folded into the next substantive entry
 - if work exists in the working tree but is not yet committed, record it under
   `In Progress` for the active release
 
@@ -34,25 +35,17 @@ Goal:
 
 #### `8384242` - `Extract standalone Agent World app`
 
-Approximate scope:
+Extracted Agent World into its own repo, added the standalone server, and documented the initial product direction.
 
-- copied Agent World out of the dashboard subtree into its own repository
-- added the standalone FastAPI server in `server.py`
-- preserved the current frontend/API contract for compatibility
-- made the voice bridge more portable by removing hardcoded machine paths
-- added initial standalone run instructions and requirements
-- documented the product roadmap and locked product decisions
-- published the first standalone `main` branch
+#### `8b53dd0` - `Remove unused bundled assets and document the 0.1.0 baseline`
+
+Removed unused bundled tile/archive assets, made the checked-in office world the explicit clean-install default, and added milestone/version tracking docs.
 
 ### In Progress
 
 Uncommitted working tree changes currently include:
 
-- removed unused asset archives and preview/generated tile artifacts
-- kept `assets/tiles/office_world/game_state.json` as the clean-install default world
-- documented that `manifest.json` remains a live runtime dependency
-- added versioned release milestones to the implementation plan
-- added this version log so future commits can be grouped by release milestone
+- none
 
 ### Exit criteria for 0.1.0
 
