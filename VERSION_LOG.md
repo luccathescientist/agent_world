@@ -22,7 +22,7 @@ Conventions:
 
 ## Release 0.1.0: Standalone extraction baseline
 
-Status: `in progress`
+Status: `complete`
 
 Goal:
 
@@ -41,17 +41,24 @@ Extracted Agent World into its own repo, added the standalone server, and docume
 
 Removed unused bundled tile/archive assets, made the checked-in office world the explicit clean-install default, and added milestone/version tracking docs.
 
+#### `ebe3659` - `Add a fresh-install smoke test for the 0.1.0 baseline`
+
+Added a clean-clone smoke-test checklist to the docs as the final `0.1.0` hardening pass.
+
 ### In Progress
 
 Uncommitted working tree changes currently include:
 
 - none
 
-### Exit criteria for 0.1.0
+### Shipped state for 0.1.0
 
-- remove extraneous tracked assets from the repository
-- commit the repository cleanup and default-world documentation updates
-- leave the repo in a clean state with the standalone app still bootable
+- standalone repository extracted and published
+- standalone FastAPI server shipped
+- current office layout preserved as the default clean-install world
+- unused bundled asset clutter removed
+- roadmap, release milestones, and version log established
+- fresh-install smoke test documented for baseline verification
 
 ---
 
