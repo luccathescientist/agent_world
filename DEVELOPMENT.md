@@ -126,3 +126,15 @@ When you make a meaningful subsystem change:
 - confirm the selected-agent inspector still populates
 - confirm chat still receives history
 - if layout/editor code changed, verify save and reload behavior
+
+## Fresh Install Smoke Test
+
+Use this before closing a release baseline such as `0.1.0`.
+
+1. Start from a clean clone of the repository.
+2. Run `pip install -r requirements.txt`.
+3. Run `python server.py --port 8890`.
+4. Open `http://localhost:8890/`.
+5. Confirm the default office world from `assets/tiles/office_world/game_state.json` loads.
+6. Confirm the world renders and no critical static assets are missing.
+7. Confirm the default selected-agent behavior and inspector still work.

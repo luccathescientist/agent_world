@@ -26,6 +26,23 @@ The checked-in [game_state.json](/home/rocketegg/clawd/agent_world/assets/tiles/
 is the default world/layout for a fresh clone. A clean installation should boot
 directly into that baseline office configuration without any extra setup.
 
+## Fresh Install Smoke Test
+
+Use this checklist to verify a clean clone still boots correctly:
+
+```bash
+pip install -r requirements.txt
+python server.py --port 8890
+```
+
+Then verify:
+
+- open `http://localhost:8890/`
+- the world renders without missing static assets
+- the default office layout from `assets/tiles/office_world/game_state.json` is visible
+- the default selected-agent behavior still works
+- the inspector and chat panels populate when an agent is selected
+
 The system has three major pieces:
 
 1. `server.py` serves the UI, static assets, and `/api/agent-world/*` routes.
