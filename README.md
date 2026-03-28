@@ -22,6 +22,10 @@ python server.py --port 8890
 
 Then open `http://localhost:8890/`.
 
+The checked-in [game_state.json](/home/rocketegg/clawd/agent_world/assets/tiles/office_world/game_state.json)
+is the default world/layout for a fresh clone. A clean installation should boot
+directly into that baseline office configuration without any extra setup.
+
 The system has three major pieces:
 
 1. `server.py` serves the UI, static assets, and `/api/agent-world/*` routes.
@@ -38,6 +42,7 @@ The system has three major pieces:
 - [BACKEND.md](./BACKEND.md) for state derivation, registry, command routing, and SSE
 - [ASSETS_AND_TILEMAPS.md](./ASSETS_AND_TILEMAPS.md) for sprites, maps, manifests, and layout data
 - [DEVELOPMENT.md](./DEVELOPMENT.md) for practical change workflow and common tasks
+- [VERSION_LOG.md](./VERSION_LOG.md) for milestone-to-commit history
 
 ## Directory Map
 

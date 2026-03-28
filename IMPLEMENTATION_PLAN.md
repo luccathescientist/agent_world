@@ -2,6 +2,10 @@
 
 ## Product decisions (locked for v1)
 
+Reference:
+
+- use `VERSION_LOG.md` to track which commits landed in each release milestone
+
 - **Agent scope:** core named agents only
 - **Initial rendering target:** 1 agent is acceptable; architecture stays multi-agent ready
 - **Environment scope:** OpenClaw-first single-user desktop-local tool
@@ -146,6 +150,56 @@ Goal: make setup, configuration, and internal behavior easy to follow for both h
 ---
 
 ## Near-term milestone plan
+
+## Versioned release milestones
+
+### Release 0.1.0: Standalone extraction baseline
+
+- extract Agent World into its own repository
+- ship the standalone FastAPI server
+- keep the current office layout as the default clean-install world
+- document the OpenClaw-first product direction
+
+### Release 0.2.0: Settings and OpenClaw diagnostics
+
+- add a global settings page
+- expose OpenClaw path/config selection
+- add readable diagnostics for required OpenClaw files and voice readiness
+- document the exact OpenClaw files consumed by Agent World
+
+### Release 0.3.0: Generic room model
+
+- move from hardcoded anchors toward configurable room definitions
+- preserve seeded default room types
+- support room `name` plus prose `description`
+- store room and layout configuration in JSON
+
+### Release 0.4.0: World builder generalization
+
+- support custom tile atlases with configurable tile sizes
+- support full freeform layouts with semantic zones
+- reduce office-specific assumptions in the current editor
+
+### Release 0.5.0: Agent sprite configurator
+
+- support raw character sheet import
+- support manual directional frame mapping
+- bind discovered OpenClaw agents to sprite definitions
+- add animation preview tooling
+
+### Release 0.6.0: Voice completion
+
+- complete per-agent voice/text interaction
+- expose reply mode selection: text, voice, or both
+- surface OpenClaw-backed voice options clearly in settings
+
+### Release 0.7.0: Hardening and docs
+
+- add backend/API regression coverage for the standalone app
+- add focused world-builder and sprite-mapping tests
+- finish task-oriented setup and configuration documentation
+
+---
 
 ### Milestone 1: Standalone product baseline
 

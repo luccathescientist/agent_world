@@ -48,12 +48,13 @@ Key files:
 - `game_state.json`
   Single-file localStorage-like payload for map layers, room regions, stash,
   chat-bubble config, layout config, and movement overrides
-- `preview.png`
-  Rendered preview artifact
 
 ## Manifest Format
 
 `manifest.json` maps a one-character token to rendering behavior.
+
+The frontend currently loads this file directly at startup. It is still an
+active runtime dependency, not just a build artifact.
 
 Fields commonly used:
 
@@ -75,6 +76,10 @@ Examples:
 ## Game State Format
 
 `game_state.json` is the canonical persisted world-state file.
+
+It is also the shipped default world for a fresh installation from the
+repository. The current checked-in layout should be treated as the clean-install
+baseline unless explicitly replaced by a future settings/bootstrap flow.
 
 It stores a localStorage-like object keyed by `agent-world-*` entries. The
 important keys currently include:
@@ -126,8 +131,9 @@ This is useful when regenerating a clean office-world baseline.
 
 ### Historical note
 
-The repo also contains older experimentation notes and assets, including
-`ROOM_BLUEPRINTS.md`, `SPRITES.md`, and raw tileset archives.
+The repo still contains older experimentation notes such as
+`ROOM_BLUEPRINTS.md` and `SPRITES.md`, but no longer keeps unused preview tiles,
+legacy indoor-pack assets, or source tileset zip archives in the tracked tree.
 
 ## Browser Persistence Versus File Persistence
 
