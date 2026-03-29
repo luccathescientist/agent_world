@@ -74,7 +74,7 @@ test("settingsVoiceRuntime wires settings fetch/save flows through shell adapter
 
 test("settingsVoiceRuntime sendCommandText and voice actions keep browser/runtime bindings", async () => {
   const result = { textContent: "", style: {} };
-  const state = { selectedAgentId: "agent-1" };
+  const state = { selectedAgentId: "agent-1", detail: { history: [], session: { history: [] } } };
   const calls = [];
   const runtime = createSettingsVoiceRuntime(state, {
     documentRef: {
@@ -94,6 +94,7 @@ test("settingsVoiceRuntime sendCommandText and voice actions keep browser/runtim
     },
     formatTime: () => "12:00",
     load: async () => calls.push("load"),
+    renderHistory: (history) => calls.push(["renderHistory", history]),
     speakTextShell: async (_state, text, source, deps) => {
       calls.push(["speakText", text, source]);
       deps.setVoiceStatus("speaking");
@@ -131,6 +132,11 @@ test("settingsVoiceRuntime sendCommandText and voice actions keep browser/runtim
   assert.equal(accepted, true);
   assert.match(result.textContent, /Sent at 12:00: hello/);
   assert.ok(calls.some((entry) => Array.isArray(entry) && entry[0] === "getJson"));
+  assert.ok(calls.some((entry) => Array.isArray(entry) && entry[0] === "renderHistory"));
+  assert.ok(state.detail.history.length >= 1);
+  assert.equal(state.detail.history[0].type, "operator_command");
+  assert.ok(state.detail.history.some((event) => event.label === "hello"));
+  assert.equal(state.detail.session.history.length, state.detail.history.length);
   assert.ok(calls.includes("load"));
   assert.ok(calls.includes("startVoiceCapture"));
   assert.ok(calls.includes("ensureMicMeter"));

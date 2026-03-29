@@ -77,6 +77,7 @@ export function createSettingsVoiceRuntime(state, deps = {}) {
     requestAnimationFrameRef = globalThis.requestAnimationFrame,
     cancelAnimationFrameRef = globalThis.cancelAnimationFrame,
     load = async () => {},
+    renderHistory = () => {},
     setText = setTextDefault,
     escapeHtml = escapeHtmlDefault,
     formatTime = formatTimeDefault,
@@ -315,6 +316,26 @@ export function createSettingsVoiceRuntime(state, deps = {}) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ text: commandText, mode: "append", source: "ui" }),
     });
+    if (response.status === "accepted" && state.detail) {
+      const optimisticEvent = {
+        type: "operator_command",
+        label: commandText,
+        fullLabel: commandText,
+        detail: "Queued from UI",
+        fullDetail: "Queued from UI",
+        ts: response.acceptedAt || new Date().toISOString(),
+      };
+      const nextHistory = [...(state.detail.history || []), optimisticEvent];
+      state.detail = {
+        ...state.detail,
+        history: nextHistory,
+        session: {
+          ...(state.detail.session || {}),
+          history: nextHistory,
+        },
+      };
+      renderHistory(nextHistory);
+    }
     if (result) {
       result.textContent = `${response.status === "accepted" ? "Sent" : "Rejected"} at ${formatTime(response.acceptedAt)}: ${response.echoedCommand}${response.reason ? ` (${response.reason})` : ""}`;
     }

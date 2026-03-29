@@ -318,6 +318,7 @@ const {
   fetchRef: fetch,
   load: () => load(),
   navigatorRef: navigator,
+  renderHistory: (events) => renderHistory(events),
   requestAnimationFrameRef: requestAnimationFrame,
   windowRef: window,
 });
