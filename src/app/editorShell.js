@@ -87,7 +87,6 @@ export function renderVisualEditor(state, deps = {}) {
     populateRegionIdSelect = () => {},
     renderAgentEditorPanel = () => {},
     renderVisualEditorHelper = () => {},
-    rerenderVisualEditor = () => {},
     renderVisualSelectionPreview = () => {},
     selectedChatBubbleTheme = () => null,
     syncRendererCanvasSize = () => {},
@@ -106,13 +105,12 @@ export function renderVisualEditor(state, deps = {}) {
     getVisualLayerConfig,
     getWorldCols,
     getWorldRows,
-      normalizeStashPoint,
-      populateRegionIdSelect,
-      renderAgentEditorPanel,
-      rerenderVisualEditor,
-      renderVisualSelectionPreview,
-      selectedChatBubbleTheme,
-      syncRendererCanvasSize,
+    normalizeStashPoint,
+    populateRegionIdSelect,
+    renderAgentEditorPanel,
+    renderVisualSelectionPreview,
+    selectedChatBubbleTheme,
+    syncRendererCanvasSize,
   });
 }
 

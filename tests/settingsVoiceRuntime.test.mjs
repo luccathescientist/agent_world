@@ -74,7 +74,7 @@ test("settingsVoiceRuntime wires settings fetch/save flows through shell adapter
 
 test("settingsVoiceRuntime sendCommandText and voice actions keep browser/runtime bindings", async () => {
   const result = { textContent: "", style: {} };
-  const state = { selectedAgentId: "agent-1", detail: { history: [], session: { history: [] } }, stream: {} };
+  const state = { selectedAgentId: "agent-1" };
   const calls = [];
   const runtime = createSettingsVoiceRuntime(state, {
     documentRef: {
@@ -94,9 +94,6 @@ test("settingsVoiceRuntime sendCommandText and voice actions keep browser/runtim
     },
     formatTime: () => "12:00",
     load: async () => calls.push("load"),
-    appendOptimisticChatEvent: (event, totalCount) => calls.push(["appendOptimisticChatEvent", event, totalCount]),
-    renderChat: (history) => calls.push(["renderChat", history]),
-    renderHistory: (history) => calls.push(["renderHistory", history]),
     speakTextShell: async (_state, text, source, deps) => {
       calls.push(["speakText", text, source]);
       deps.setVoiceStatus("speaking");
@@ -134,47 +131,8 @@ test("settingsVoiceRuntime sendCommandText and voice actions keep browser/runtim
   assert.equal(accepted, true);
   assert.match(result.textContent, /Sent at 12:00: hello/);
   assert.ok(calls.some((entry) => Array.isArray(entry) && entry[0] === "getJson"));
-  assert.ok(calls.some((entry) => Array.isArray(entry) && entry[0] === "renderHistory"));
-  assert.ok(calls.some((entry) => Array.isArray(entry) && entry[0] === "renderChat"));
-  assert.ok(calls.some((entry) => Array.isArray(entry) && entry[0] === "appendOptimisticChatEvent"));
-  assert.ok(state.detail.history.length >= 1);
-  assert.equal(state.detail.history[0].type, "operator_command");
-  assert.ok(state.detail.history.some((event) => event.label === "hello"));
-  assert.equal(state.detail.session.history.length, state.detail.history.length);
-  assert.equal(calls.includes("load"), false);
+  assert.ok(calls.includes("load"));
   assert.ok(calls.includes("startVoiceCapture"));
   assert.ok(calls.includes("ensureMicMeter"));
   assert.ok(calls.some((entry) => Array.isArray(entry) && entry[0] === "transcribeRecordedAudio"));
-});
-
-test("settingsVoiceRuntime still renders optimistic history when detail is absent", async () => {
-  const calls = [];
-  const state = { selectedAgentId: "agent-1", detail: null, pendingHistoryEvents: [], stream: {} };
-  const runtime = createSettingsVoiceRuntime(state, {
-    documentRef: {
-      getElementById(id) {
-        if (id === "command-result") return { textContent: "", style: {} };
-        return null;
-      },
-    },
-    getJson: async () => ({
-      status: "accepted",
-      acceptedAt: "2026-03-29T12:00:00Z",
-      echoedCommand: "hello",
-      reason: "",
-    }),
-    formatTime: () => "12:00",
-    appendOptimisticChatEvent: (event, totalCount) => calls.push(["append", event, totalCount]),
-    renderChat: (history) => calls.push(["chat", history]),
-    renderHistory: (history) => calls.push(history),
-  });
-
-  await runtime.sendCommandText("hello");
-
-  assert.equal(state.pendingHistoryEvents.length, 1);
-  assert.equal(state.pendingHistoryEvents[0].label, "hello");
-  assert.equal(calls.length, 3);
-  assert.equal(calls[0][0], "append");
-  assert.equal(calls[1][0].type, "operator_command");
-  assert.equal(calls[2][0], "chat");
 });

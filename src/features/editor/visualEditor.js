@@ -216,7 +216,6 @@ export function renderVisualEditor(state, helpers = {}) {
     normalizeStashPoint = (value) => value,
     populateRegionIdSelect = () => {},
     renderAgentEditorPanel = () => {},
-    rerenderVisualEditor = () => {},
     renderVisualSelectionPreview = () => {},
     selectedChatBubbleTheme = () => null,
     syncRendererCanvasSize = () => {},
@@ -284,7 +283,6 @@ export function renderVisualEditor(state, helpers = {}) {
   stashSummary.textContent = `Stash ${stash.col + 1}:${stash.row + 1}`;
   const atlasPath = getAtlasPathForLayer(layer);
   if (atlasImage.getAttribute("src") !== atlasPath) {
-    atlasImage.onload = () => renderVisualSelectionPreview();
     atlasImage.setAttribute("src", atlasPath);
   }
   atlasImage.dataset.cols = String(config.cols);
@@ -356,7 +354,7 @@ export function renderVisualEditor(state, helpers = {}) {
       if (frame?.layer && ["floor", "wall"].includes(frame.layer)) {
         state.editor.selectedLayer = frame.layer;
       }
-      rerenderVisualEditor();
+      renderVisualEditor();
     });
   }
   for (const button of documentRef.querySelectorAll(".chat-bubble-role-btn")) {

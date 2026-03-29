@@ -76,10 +76,7 @@ export function createSettingsVoiceRuntime(state, deps = {}) {
     URLRef = globalThis.URL,
     requestAnimationFrameRef = globalThis.requestAnimationFrame,
     cancelAnimationFrameRef = globalThis.cancelAnimationFrame,
-    appendOptimisticChatEvent = () => {},
     load = async () => {},
-    renderChat = () => {},
-    renderHistory = () => {},
     setText = setTextDefault,
     escapeHtml = escapeHtmlDefault,
     formatTime = formatTimeDefault,
@@ -318,38 +315,10 @@ export function createSettingsVoiceRuntime(state, deps = {}) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ text: commandText, mode: "append", source: "ui" }),
     });
-    if (response.status === "accepted") {
-      const optimisticEvent = {
-        type: "operator_command",
-        label: commandText,
-        fullLabel: commandText,
-        detail: "Queued from UI",
-        fullDetail: "Queued from UI",
-        ts: response.acceptedAt || new Date().toISOString(),
-      };
-      state.pendingHistoryEvents = [...(state.pendingHistoryEvents || []), optimisticEvent];
-      const baseHistory = [...(state.detail?.history || state.detail?.session?.history || [])];
-      const nextHistory = [...baseHistory, optimisticEvent];
-      if (state.detail) {
-        state.detail = {
-          ...state.detail,
-          history: nextHistory,
-          session: {
-            ...(state.detail.session || {}),
-            history: nextHistory,
-          },
-        };
-      }
-      appendOptimisticChatEvent(optimisticEvent, nextHistory.length);
-      renderHistory(nextHistory);
-      renderChat(nextHistory);
-    }
     if (result) {
       result.textContent = `${response.status === "accepted" ? "Sent" : "Rejected"} at ${formatTime(response.acceptedAt)}: ${response.echoedCommand}${response.reason ? ` (${response.reason})` : ""}`;
     }
-    if (response.status !== "accepted" || !state.stream) {
-      await load();
-    }
+    await load();
     return response.status === "accepted";
   }
 

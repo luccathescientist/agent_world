@@ -117,25 +117,6 @@ export function createRenderWorldRuntime(state, deps = {}) {
     syncSceneOffset = () => {},
   } = deps;
 
-  function historyEventKey(event) {
-    const label = String(event?.fullLabel || event?.label || "");
-    return `${String(event?.type || "")}::${label}`;
-  }
-
-  function mergePendingHistory(events = []) {
-    const serverEvents = Array.isArray(events) ? events : [];
-    const pendingEvents = Array.isArray(state.pendingHistoryEvents) ? state.pendingHistoryEvents : [];
-    if (!pendingEvents.length) return serverEvents;
-    const seen = new Set(serverEvents.map((event) => historyEventKey(event)));
-    const unresolvedPending = [];
-    for (const pending of pendingEvents) {
-      if (seen.has(historyEventKey(pending))) continue;
-      unresolvedPending.push(pending);
-    }
-    state.pendingHistoryEvents = unresolvedPending;
-    return [...serverEvents, ...unresolvedPending];
-  }
-
   function createStashBox() {
     return createStashBoxHelper(state, {
       createText,
@@ -371,8 +352,7 @@ export function createRenderWorldRuntime(state, deps = {}) {
   }
 
   function renderHistory(events) {
-    const mergedHistory = mergePendingHistory(events);
-    return renderHistoryShell(mergedHistory, {
+    return renderHistoryShell(events, {
       createElement: (tag) => documentRef.createElement(tag),
       documentRef,
       extractPaths,

@@ -65,7 +65,6 @@ import {
 } from "./features/chat/chatBubbleThemes.js";
 import {
   classifyPath,
-  appendChatEvent as appendChatEventHelper,
   displayActionText as displayActionTextHelper,
   extractPaths,
   fileUrl,
@@ -82,7 +81,7 @@ import {
   showRichMessage as showRichMessageHelper,
   showStashItem as showStashItemHelper,
   stripControlTags,
-} from "./features/chat/messageView.js?v=0.2.0-settings-16";
+} from "./features/chat/messageView.js";
 import {
   closeWorldDetails as closeWorldDetailsHelper,
   connectStream as connectStreamHelper,
@@ -266,8 +265,8 @@ import {
   renderVisualSelectionPreview as renderVisualSelectionPreviewShell,
   setActiveEditorSubview as setActiveEditorSubviewShell,
   syncEditorInputs as syncEditorInputsShell,
-} from "./app/editorShell.js?v=0.2.0-settings-16";
-import { createSettingsVoiceRuntime } from "./app/settingsVoiceRuntime.js?v=0.2.0-settings-16";
+} from "./app/editorShell.js";
+import { createSettingsVoiceRuntime } from "./app/settingsVoiceRuntime.js";
 import {
   closeWorldDetails as closeWorldDetailsShell,
   connectStream as connectStreamShell,
@@ -282,7 +281,7 @@ import {
   showStashItem as showStashItemShell,
   syncSelectedAgentDetailFromWorld as syncSelectedAgentDetailFromWorldShell,
 } from "./app/worldShell.js";
-import { createRenderWorldRuntime } from "./app/renderWorldRuntime.js?v=0.2.0-settings-16";
+import { createRenderWorldRuntime } from "./app/renderWorldRuntime.js";
 import {
   populateAgentSelect as populateAgentSelectHelper,
   populateRegionIdSelect as populateRegionIdSelectHelper,
@@ -319,25 +318,6 @@ const {
   fetchRef: fetch,
   load: () => load(),
   navigatorRef: navigator,
-  appendOptimisticChatEvent: (event, totalCount) => appendChatEventHelper(appState, event, {
-    applyChatRoleTheme,
-    chatBubbleMarkup,
-    classifyPath,
-    createElement: (tag) => document.createElement(tag),
-    documentRef: document,
-    extractPaths,
-    fileUrl,
-    formatRichTextHtml,
-    formatTime,
-    historyRoleClass,
-    historyRoleMeta: (type) => historyRoleMetaHelper(type, { historyRoleClass }),
-    setText,
-    showRichMessage,
-    totalCount,
-    windowRef: window,
-  }),
-  renderChat: (history) => renderChat(history),
-  renderHistory: (events) => renderHistory(events),
   requestAnimationFrameRef: requestAnimationFrame,
   windowRef: window,
 });
@@ -893,7 +873,6 @@ function renderVisualEditor() {
     populateRegionIdSelect,
     renderAgentEditorPanel,
     renderVisualEditorHelper,
-    rerenderVisualEditor: renderVisualEditor,
     renderVisualSelectionPreview,
     selectedChatBubbleTheme,
     syncRendererCanvasSize,
@@ -1121,15 +1100,26 @@ function clearStashSelection() {
   });
 }
 
-let renderWorldRuntime;
-
-renderWorldRuntime = createRenderWorldRuntime(appState, {
+const {
+  closeWorldDetails,
+  connectStream,
+  drawRoom,
+  initRenderer,
+  renderChat,
+  renderHistory,
+  renderInspector,
+  renderSchedule,
+  renderStash,
+  renderWorld,
+  selectAgent,
+  showRichMessage,
+  showStashItem,
+} = createRenderWorldRuntime(appState, {
   EventSourceCtor: EventSource,
   URLSearchParamsCtor: URLSearchParams,
   PIXIRef: PIXI,
   activityCue,
   applyChatRoleTheme,
-  chatBubbleMarkup,
   applyPathingHelper,
   bubblePaletteForAgent,
   buildPrimitiveTexture,
@@ -1223,7 +1213,7 @@ renderWorldRuntime = createRenderWorldRuntime(appState, {
   showRichMessageHelper,
   showRichMessageShell,
   showStashItemHelper,
-  showStashItemForStashBox: (...args) => renderWorldRuntime.showStashItem(...args),
+  showStashItemForStashBox: showStashItem,
   showStashItemShell,
   statusClass,
   syncEditorInputs,
@@ -1241,22 +1231,6 @@ renderWorldRuntime = createRenderWorldRuntime(appState, {
   updateBubbleHelper,
   windowRef: window,
 });
-
-const {
-  closeWorldDetails,
-  connectStream,
-  drawRoom,
-  initRenderer,
-  renderChat,
-  renderHistory,
-  renderInspector,
-  renderSchedule,
-  renderStash,
-  renderWorld,
-  selectAgent,
-  showRichMessage,
-  showStashItem,
-} = renderWorldRuntime;
 
 window.addEventListener("resize", () => {
   resizeRendererViewport();

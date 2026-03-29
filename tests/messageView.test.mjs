@@ -2,7 +2,6 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import {
-  appendChatEvent,
   classifyPath,
   cleanPath,
   displayActionText,
@@ -90,56 +89,4 @@ test("historyRole helpers classify operator, assistant, and tool events", () => 
   assert.equal(historyRoleClass("tool_started"), "tool");
   assert.deepEqual(historyRoleMeta("operator_command", { historyRoleClass }), { label: "You", icon: ">>" });
   assert.deepEqual(historyRoleMeta("state_changed", { historyRoleClass }), { label: "Lucca", icon: "AI" });
-});
-
-test("appendChatEvent prepends a rendered chat item", () => {
-  const chatList = {
-    children: [],
-    prepend(node) {
-      this.children.unshift(node);
-    },
-  };
-  const texts = new Map();
-  const node = {
-    className: "",
-    innerHTML: "",
-    handlers: {},
-    querySelector() {
-      return { appendChild() {} };
-    },
-    addEventListener(type, handler) {
-      this.handlers[type] = handler;
-    },
-  };
-  appendChatEvent({}, {
-    type: "operator_command",
-    label: "hello",
-    fullLabel: "hello",
-    detail: "Queued from UI",
-    fullDetail: "Queued from UI",
-    ts: "2026-03-29T12:00:00Z",
-  }, {
-    applyChatRoleTheme: () => {},
-    chatBubbleMarkup: () => "<div class=\"chat-bubble-content\">hello</div>",
-    classifyPath,
-    createElement: () => node,
-    documentRef: {
-      getElementById(id) {
-        if (id === "chat-list") return chatList;
-        return null;
-      },
-    },
-    extractPaths,
-    fileUrl,
-    formatRichTextHtml: (value) => value,
-    formatTime: () => "12:00",
-    historyRoleClass,
-    historyRoleMeta: (type) => historyRoleMeta(type, { historyRoleClass }),
-    setText: (id, value) => texts.set(id, value),
-    showRichMessage: () => {},
-  });
-
-  assert.equal(chatList.children.length, 1);
-  assert.match(chatList.children[0].innerHTML, /chat-bubble-content/);
-  assert.equal(texts.get("chat-summary"), "1 messages");
 });

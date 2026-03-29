@@ -3,7 +3,6 @@ import { DEFAULT_WORLD_COLS, DEFAULT_WORLD_ROWS } from "../core/constants.js";
 export const appState = {
   world: null,
   detail: null,
-  pendingHistoryEvents: [],
   selectedAgentId: null,
   stream: null,
   renderer: null,
