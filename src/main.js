@@ -281,6 +281,7 @@ import {
   showStashItem as showStashItemShell,
   syncSelectedAgentDetailFromWorld as syncSelectedAgentDetailFromWorldShell,
 } from "./app/worldShell.js";
+import { createRenderWorldRuntime } from "./app/renderWorldRuntime.js";
 import {
   populateAgentSelect as populateAgentSelectHelper,
   populateRegionIdSelect as populateRegionIdSelectHelper,
@@ -1077,16 +1078,6 @@ function setHoveredMapCell(row, col) {
   });
 }
 
-function createStashBox() {
-  return createStashBoxHelper(appState, {
-    createText,
-    documentRef: document,
-    normalizeStashPoint,
-    PIXIRef: PIXI,
-    showStashItem,
-  });
-}
-
 function assignStashSelection() {
   return assignStashSelectionAction(appState, {
     assignStashSelectionHelper,
@@ -1109,322 +1100,141 @@ function clearStashSelection() {
   });
 }
 
-function drawRoom(renderer) {
-  return drawRoomHelper(appState, renderer, {
-    createAnchorLabel,
-    createRegionLabel,
-    createStashBox,
-    createText,
-    floorTokenLabel,
-    getFloorTexture,
-    getLayerTexture,
-    getRenderHeight,
-    getSceneTopPadding,
-    getSelectedCells,
-    getWorldCols,
-    getWorldHeight,
-    getWorldRows,
-    getWorldWidth,
-    parseFloorToken,
-    parseObjectToken,
-    PIXIRef: PIXI,
-    renderEditorSelectionOverlay,
-    tokenLabel,
-  });
-}
-
-function createAgentSprite(agent) {
-  return createAgentSpriteHelper(appState, agent, {
-    bubblePaletteForAgent,
-    createText,
-    currentTileForAgent,
-    displayActionText,
-    getAnimationFrames,
-    hashString,
-    onSelectAgent: async (agentId) => {
-      await selectAgent(agentId);
-      document.querySelector(".inspector")?.scrollIntoView({ behavior: "smooth", block: "start" });
-    },
-    PIXIRef: PIXI,
-    positionAgentLabel,
-    positionBubble,
-    tilePoint,
-  });
-}
-
-function createBenchmarkSprite(agent) {
-  return createBenchmarkSpriteHelper(appState, agent, {
-    bubblePaletteForAgent,
-    createText,
-    currentTileForAgent,
-    displayActionText,
-    hashString,
-    onSelectAgent: async (agentId) => {
-      await selectAgent(agentId);
-      document.querySelector(".inspector")?.scrollIntoView({ behavior: "smooth", block: "start" });
-    },
-    PIXIRef: PIXI,
-    positionAgentLabel,
-    positionBubble,
-  });
-}
-
-function updateBubble(container, text) {
-  return updateBubbleHelper(container, text, {
-    displayActionText,
-    positionBubble,
-  });
-}
-
-function updateActivityCue(container, agent, moving) {
-  return updateActivityCueHelper(container, agent, moving, {
-    activityCue,
-  });
-}
-
-function chooseDisplayFrames(renderer, agent, moving) {
-  return chooseDisplayFramesHelper(renderer, agent, moving, {
-    directionalIdleFrames,
-    directionalWalkFrames,
-    getAnimationFrames,
-  });
-}
-
-function effectiveGoalTileForAgent(sprite, agent, currentTile) {
-  return effectiveGoalTileForAgentHelper(appState, sprite, agent, currentTile, {
-    nextAmbientRandom,
-    regionForAnchor,
-    regionForCell,
-    roomGoalTile,
-    roomIdForAgent,
-    roomWaypointTiles,
-  });
-}
-
-function applyPathing(sprite, agent) {
-  return applyPathingHelper(appState, sprite, agent, {
-    effectiveGoalTileForAgent,
-    findPath,
-    goalTileForAgent,
-    isWalkable,
-    nearestWalkableTile,
-    tileFromWorldPoint,
-    tilePoint,
-  });
-}
-
-function tickAgents(delta) {
-  return tickAgentsHelper(appState, delta, {
-    applyPathing,
-    chooseDisplayFrames,
-    positionAgentLabel,
-    positionBubble,
-    shouldMirrorSpriteForFacing,
-    updateActivityCue,
-    updateAgentLabel,
-  });
-}
-
-async function initRenderer() {
-  return initRendererHelper(appState, {
-    PIXIRef: window.PIXI,
-    buildPrimitiveTexture,
-    buildTileTextures,
-    buildTilemapState,
-    documentRef: document,
-    drawRoom,
-    getCanvasCellFromEvent,
-    getRenderHeight,
-    getWorldWidth,
-    loadArtAssets,
-    mountRendererView,
-    normalizeMapText,
-    normalizeStashPoint,
-    renderVisualEditor,
-    setHoveredMapCell,
-    setTilemapStatus,
-    syncEditorInputs,
-    syncRendererCanvasSize,
-    syncSceneOffset,
-    tickAgents,
-    windowRef: window,
-  });
-}
+const {
+  closeWorldDetails,
+  connectStream,
+  drawRoom,
+  initRenderer,
+  renderChat,
+  renderHistory,
+  renderInspector,
+  renderSchedule,
+  renderStash,
+  renderWorld,
+  selectAgent,
+  showRichMessage,
+  showStashItem,
+} = createRenderWorldRuntime(appState, {
+  EventSourceCtor: EventSource,
+  URLSearchParamsCtor: URLSearchParams,
+  PIXIRef: PIXI,
+  activityCue,
+  applyChatRoleTheme,
+  applyPathingHelper,
+  bubblePaletteForAgent,
+  buildPrimitiveTexture,
+  buildTileTextures,
+  buildTilemapState,
+  chooseDisplayFramesHelper,
+  classifyPath,
+  closeWorldDetailsHelper,
+  connectStreamHelper,
+  createAgentSpriteHelper,
+  createAnchorLabel,
+  createBenchmarkSpriteHelper,
+  createRegionLabel,
+  createStashBoxHelper,
+  createText,
+  currentTileForAgent,
+  directionalIdleFrames,
+  directionalWalkFrames,
+  displayActionText,
+  displayedLocationLabel,
+  documentRef: document,
+  drawRoomHelper,
+  effectiveGoalTileForAgentHelper,
+  extractPaths,
+  fileUrl,
+  findPath,
+  floorTokenLabel,
+  formatDate,
+  formatRichTextHtml,
+  formatTime,
+  getAnimationFrames,
+  getCanvasCellFromEvent,
+  getFloorTexture,
+  getJson,
+  getLayerTexture,
+  getRenderHeight,
+  getSceneTopPadding,
+  getSelectedCells,
+  getWorldCols,
+  getWorldHeight,
+  getWorldRows,
+  getWorldWidth,
+  goalTileForAgent,
+  handleStreamSnapshotHelper,
+  handleStreamSnapshotShell,
+  hashString,
+  historyRoleClass,
+  historyRoleMetaHelper,
+  initRendererHelper,
+  isBenchmarkAgent,
+  isWalkable,
+  loadArtAssets,
+  maybeSpeakReply,
+  mountRendererView,
+  nearestWalkableTile,
+  nextAmbientRandom,
+  normalizeMapText,
+  normalizeStashPoint,
+  parseFloorToken,
+  parseObjectToken,
+  populateAgentSelect,
+  positionAgentLabel,
+  positionBubble,
+  regionForAnchor,
+  regionForCell,
+  renderChatHelper,
+  renderChatShell,
+  renderEditorSelectionOverlay,
+  renderHistoryHelper,
+  renderHistoryShell,
+  renderInspectorHelper,
+  renderInspectorShell,
+  renderRichText,
+  renderScheduleHelper,
+  renderScheduleShell,
+  renderStashHelper,
+  renderStashShell,
+  renderVisualEditor,
+  renderWorldHelper,
+  renderWorldShell,
+  roomGoalTile,
+  roomIdForAgent,
+  roomWaypointTiles,
+  selectAgentHelper,
+  setHoveredMapCell,
+  setMessageSelection,
+  setText,
+  setTilemapStatus,
+  shouldMirrorSpriteForFacing,
+  shouldShowAgentSprite,
+  showRichMessageHelper,
+  showRichMessageShell,
+  showStashItemHelper,
+  showStashItemForStashBox: showStashItem,
+  showStashItemShell,
+  statusClass,
+  syncEditorInputs,
+  syncRendererCanvasSize,
+  syncSceneOffset,
+  syncSelectedAgentDetailFromWorldHelper,
+  syncSelectedAgentDetailFromWorldShell,
+  syncWorldDetailVisibility,
+  tickAgentsHelper,
+  tileFromWorldPoint,
+  tilePoint,
+  tokenLabel,
+  updateActivityCueHelper,
+  updateAgentLabel,
+  updateBubbleHelper,
+  windowRef: window,
+});
 
 window.addEventListener("resize", () => {
   resizeRendererViewport();
 });
-
-function renderWorld(worldState) {
-  return renderWorldShell(appState, worldState, {
-    bubblePaletteForAgent,
-    createAgentSprite,
-    createBenchmarkSprite,
-    formatDate,
-    isBenchmarkAgent,
-    populateAgentSelect,
-    renderWorldHelper,
-    setText,
-    shouldShowAgentSprite,
-    syncSelectedAgentDetailFromWorld,
-    updateActivityCue,
-    updateAgentLabel,
-    updateBubble,
-  });
-}
-
-function syncSelectedAgentDetailFromWorld(worldState) {
-  return syncSelectedAgentDetailFromWorldShell(appState, worldState, {
-    renderInspector,
-    syncSelectedAgentDetailFromWorldHelper,
-  });
-}
-
-function renderInspector(detailPayload) {
-  return renderInspectorShell(appState, detailPayload, {
-    displayedLocationLabel,
-    documentRef: document,
-    formatDate,
-    renderInspectorHelper,
-    setText,
-    showRichMessage,
-    statusClass,
-  });
-}
-
-async function showRichMessage(kind, title, text, path = null) {
-  return showRichMessageShell(appState, kind, title, text, path, {
-    classifyPath,
-    createElement: (tag) => document.createElement(tag),
-    documentRef: document,
-    extractPaths,
-    fetchText: async (url) => {
-      const res = await fetch(url);
-      return res.text();
-    },
-    fileUrl,
-    renderRichText,
-    setMessageSelection,
-    setText,
-    showRichMessageHelper,
-    windowRef: window,
-  });
-}
-
-const historyRoleMeta = (type) => historyRoleMetaHelper(type, { historyRoleClass });
-
-function renderChat(history) {
-  return renderChatShell(appState, history, {
-    applyChatRoleTheme,
-    chatBubbleMarkup,
-    classifyPath,
-    createElement: (tag) => document.createElement(tag),
-    documentRef: document,
-    extractPaths,
-    fileUrl,
-    formatRichTextHtml,
-    formatTime,
-    historyRoleClass,
-    historyRoleMeta,
-    maybeSpeakReply,
-    renderChatHelper,
-    setText,
-    showRichMessage,
-    windowRef: window,
-  });
-}
-
-function renderHistory(events) {
-  return renderHistoryShell(events, {
-    createElement: (tag) => document.createElement(tag),
-    documentRef: document,
-    extractPaths,
-    formatTime,
-    renderChat,
-    renderHistoryHelper,
-    showRichMessage,
-  });
-}
-
-function renderSchedule(detailPayload) {
-  return renderScheduleShell(detailPayload, {
-    createElement: (tag) => document.createElement(tag),
-    documentRef: document,
-    formatDate,
-    renderScheduleHelper,
-    setText,
-    showRichMessage,
-  });
-}
-
-function showStashItem(item) {
-  return showStashItemShell(item, {
-    formatDate,
-    showRichMessage,
-    showStashItemHelper,
-  });
-}
-
-function renderStash(stash) {
-  return renderStashShell(appState, stash, {
-    createElement: (tag) => document.createElement(tag),
-    documentRef: document,
-    formatDate,
-    renderStashHelper,
-    setText,
-    showStashItem,
-  });
-}
-
-function handleStreamSnapshot(payload) {
-  return handleStreamSnapshotShell(payload, {
-    handleStreamSnapshotHelper,
-    renderHistory,
-    renderInspector,
-    renderSchedule,
-    renderStash,
-    renderWorld,
-  });
-}
-
-function connectStream() {
-  return connectStreamShell(appState, {
-    EventSourceCtor: EventSource,
-    URLSearchParamsCtor: URLSearchParams,
-    connectStreamHelper,
-    consoleRef: console,
-    handleStreamSnapshot,
-    setText,
-  });
-}
-
-async function selectAgent(agentId) {
-  return selectAgentHelper(appState, agentId, {
-    connectStream,
-    getJson,
-    renderHistory,
-    renderInspector,
-    renderSchedule,
-    renderStash,
-    renderWorld,
-    setMessageSelection,
-    syncWorldDetailVisibility,
-  });
-}
-
-function closeWorldDetails() {
-  return closeWorldDetailsShell(appState, {
-    closeWorldDetailsHelper,
-    connectStream,
-    documentRef: document,
-    renderHistory,
-    renderSchedule,
-    renderStash,
-    renderWorld,
-    setText,
-    syncWorldDetailVisibility,
-  });
-}
 
 async function saveGameState() {
   return saveGameStateHelper(appState, {
