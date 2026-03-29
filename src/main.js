@@ -242,6 +242,19 @@ import {
   submitCommand as submitCommandHelper,
 } from "./app/runtime.js";
 import {
+  buildPrimitiveTexture as buildPrimitiveTextureShell,
+  buildTileTextures as buildTileTexturesShell,
+  createAnchorLabel as createAnchorLabelShell,
+  createRegionLabel as createRegionLabelShell,
+  getFloorTexture as getFloorTextureShell,
+  getLayerTexture as getLayerTextureShell,
+  loadArtAssets as loadArtAssetsShell,
+  mountRendererView as mountRendererViewShell,
+  resizeRendererViewport as resizeRendererViewportShell,
+  syncRendererCanvasSize as syncRendererCanvasSizeShell,
+  syncSceneOffset as syncSceneOffsetShell,
+} from "./app/renderShell.js";
+import {
   populateAgentSelect as populateAgentSelectHelper,
   populateRegionIdSelect as populateRegionIdSelectHelper,
   setActiveTab as setActiveTabHelper,
@@ -953,7 +966,8 @@ function getAssignedPreviewToken(layerName, rawValue) {
 }
 
 function getFloorTexture(renderer, floorToken) {
-  return getFloorTextureHelper(renderer, floorToken, {
+  return getFloorTextureShell(renderer, floorToken, {
+    getFloorTextureHelper,
     PIXIRef: PIXI,
   });
 }
@@ -967,15 +981,17 @@ function buildTilemapState(floorText, wallText, furnitureText, propText, manifes
 }
 
 function createAnchorLabel(text, x, y) {
-  return createAnchorLabelHelper(text, x, y, {
+  return createAnchorLabelShell(text, x, y, {
+    createAnchorLabelHelper,
     createText,
     PIXIRef: PIXI,
   });
 }
 
 function createRegionLabel(region) {
-  return createRegionLabelHelper(region, {
+  return createRegionLabelShell(region, {
     createAnchorLabel,
+    createRegionLabelHelper,
     regionCenter,
   });
 }
@@ -1007,13 +1023,14 @@ function shouldMirrorSpriteForFacing(renderer, agent, facing) {
 }
 
 async function loadArtAssets() {
-  return loadArtAssetsHelper({
-    PIXIRef: PIXI,
+  return loadArtAssetsShell(appState, {
     applyChatBubbleFrameStyles,
     defaultLayoutConfig,
     getJson,
-    setChatBubbleThemes: (themes) => {
-      appState.chatBubbleThemes = themes;
+    loadArtAssetsHelper,
+    PIXIRef: PIXI,
+    setChatBubbleThemes: (state, themes) => {
+      state.chatBubbleThemes = themes;
     },
     structuredSnapshotFromGameState,
     writeGameStateToLocalStorage,
@@ -1029,49 +1046,56 @@ function syncWorldDetailVisibility() {
 }
 
 function mountRendererView() {
-  return mountRendererViewHelper(appState, {
+  return mountRendererViewShell(appState, {
     documentRef: document,
+    mountRendererViewHelper,
     syncRendererCanvasSize,
   });
 }
 
 function syncSceneOffset() {
-  return syncSceneOffsetHelper(appState, {
+  return syncSceneOffsetShell(appState, {
     getSceneTopPadding,
+    syncSceneOffsetHelper,
   });
 }
 
 function resizeRendererViewport() {
-  return resizeRendererViewportHelper(appState, {
+  return resizeRendererViewportShell(appState, {
     getRenderHeight,
     getWorldWidth,
+    resizeRendererViewportHelper,
     syncRendererCanvasSize,
     syncSceneOffset,
   });
 }
 
 function syncRendererCanvasSize() {
-  return syncRendererCanvasSizeHelper(appState, {
+  return syncRendererCanvasSizeShell(appState, {
     getRenderHeight,
     getWorldWidth,
+    syncRendererCanvasSizeHelper,
   });
 }
 
 function buildPrimitiveTexture(pixiApp, primitiveName) {
-  return buildPrimitiveTextureHelper(pixiApp, primitiveName, {
+  return buildPrimitiveTextureShell(pixiApp, primitiveName, {
+    buildPrimitiveTextureHelper,
     PIXIRef: PIXI,
   });
 }
 
 async function buildTileTextures(pixiApp, manifest) {
-  return buildTileTexturesHelper(pixiApp, manifest, {
-    PIXIRef: PIXI,
+  return buildTileTexturesShell(pixiApp, manifest, {
     buildPrimitiveTexture,
+    buildTileTexturesHelper,
+    PIXIRef: PIXI,
   });
 }
 
 function getLayerTexture(renderer, objectToken, layerName) {
-  return getLayerTextureHelper(renderer, objectToken, layerName, {
+  return getLayerTextureShell(renderer, objectToken, layerName, {
+    getLayerTextureHelper,
     PIXIRef: PIXI,
   });
 }
