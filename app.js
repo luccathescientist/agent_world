@@ -15,10 +15,6 @@ import {
   DEFAULT_WORLD_ROWS,
   EMPTY_OBJECT,
   GAME_STATE_STORAGE_KEYS,
-  OBJECT_TOKEN_DOOR,
-  OBJECT_TOKEN_EMPTY,
-  OBJECT_TOKEN_WALL,
-  PASSABLE_DOOR_TILES,
   PATH_RE,
   ROOM_LANDMARK_TOKENS,
   SEAT_FURNITURE_TILES,
@@ -38,6 +34,20 @@ import {
   setStoredJson,
   setStoredMap,
 } from "./src/core/storage.js";
+import {
+  floorTokenLabel,
+  normalizeMapText,
+  parseFloorRow,
+  parseFloorToken,
+  parseMapText,
+  parseObjectRow,
+  parseObjectToken,
+  resolveGridShape,
+  serializeFloorLines,
+  serializeObjectLines,
+  tokenLabel,
+  validateObjectGrid,
+} from "./src/features/tilemap/mapText.js";
 import { appState } from "./src/state/appState.js";
 let chatBubbleAtlasImagePromise = null;
 
@@ -1366,32 +1376,6 @@ function displayedLocationLabel(agent) {
   return backendRoom;
 }
 
-function normalizeMapText(text) {
-  return String(text || "").replace(/\r/g, "").trim();
-}
-
-function parseMapText(text) {
-  return normalizeMapText(text).split("\n");
-}
-
-function parseObjectRow(line) {
-  return String(line || "").trim().split(/\s+/).filter(Boolean);
-}
-
-function parseFloorRow(line) {
-  const raw = String(line || "").trim();
-  if (!raw) return [];
-  return raw.includes(" ") ? raw.split(/\s+/).filter(Boolean) : raw.split("");
-}
-
-function tokenLabel(token) {
-  return token.kind === "empty"
-    ? "."
-    : token.kind === "primitive"
-      ? token.primitive
-      : `${token.x}:${token.y}${token.passable ? "+" : ""}`;
-}
-
 function normalizePersistenceSnapshot(rawValue = {}, layout = {}) {
   return {
     floorText: normalizeMapText(rawValue.floorText || ""),
@@ -1894,82 +1878,6 @@ function findPath(startTile, goalTile) {
   return [];
 }
 
-function validateGrid(lines, cols, rows, label) {
-  if (lines.length !== rows) {
-    throw new Error(`${label} map must have ${rows} rows, got ${lines.length}`);
-  }
-  for (const [index, line] of lines.entries()) {
-    if (line.length !== cols) {
-      throw new Error(`${label} map row ${index + 1} must have ${cols} columns, got ${line.length}`);
-    }
-  }
-}
-
-function validateObjectGrid(lines, cols, rows) {
-  if (lines.length !== rows) {
-    throw new Error(`Object map must have ${rows} rows, got ${lines.length}`);
-  }
-  for (const [index, line] of lines.entries()) {
-    if (line.length !== cols) {
-      throw new Error(`Object map row ${index + 1} must have ${cols} cells, got ${line.length}`);
-    }
-  }
-}
-
-function getGridShape(lines, label) {
-  const rows = lines.length;
-  const widths = new Set(lines.map((line) => line.length));
-  if (widths.size !== 1) {
-    throw new Error(`${label} map has inconsistent row widths.`);
-  }
-  return { rows, cols: lines[0]?.length || 0 };
-}
-
-function resolveGridShape(layout, floorLines, wallLines, furnitureLines, propLines) {
-  const floorShape = getGridShape(floorLines, "Floor");
-  const wallShape = getGridShape(wallLines, "Wall");
-  const furnitureShape = getGridShape(furnitureLines, "Furniture");
-  const propShape = getGridShape(propLines, "Prop");
-  const shapes = [floorShape, wallShape, furnitureShape, propShape];
-  const first = `${shapes[0].cols}x${shapes[0].rows}`;
-  const consistent = shapes.every((shape) => `${shape.cols}x${shape.rows}` === first);
-  if (!consistent) {
-    throw new Error(
-      `Layer sizes do not match. Floor=${floorShape.cols}x${floorShape.rows}, Wall=${wallShape.cols}x${wallShape.rows}, Furniture=${furnitureShape.cols}x${furnitureShape.rows}, Prop=${propShape.cols}x${propShape.rows}.`,
-    );
-  }
-  return {
-    cols: floorShape.cols || layout.cols || DEFAULT_WORLD_COLS,
-    rows: floorShape.rows || layout.rows || DEFAULT_WORLD_ROWS,
-  };
-}
-
-function parseObjectToken(token) {
-  const raw = String(token || "").trim();
-  const lower = raw.toLowerCase();
-  if (!raw || raw === OBJECT_TOKEN_EMPTY) {
-    return { raw: OBJECT_TOKEN_EMPTY, kind: "empty", passable: true };
-  }
-  if (lower === OBJECT_TOKEN_WALL) {
-    return { raw, kind: "primitive", primitive: "wall", passable: false };
-  }
-  if (lower === OBJECT_TOKEN_DOOR) {
-    return { raw, kind: "primitive", primitive: "door", passable: true, door: true };
-  }
-  const match = raw.match(/^(\d{1,2}):(\d{1,2})(\+)?$/);
-  if (!match) {
-    throw new Error(`Invalid object token "${raw}". Use ".", "wall", "door", or x:y / x:y+`);
-  }
-  const x = Number(match[1]);
-  const y = Number(match[2]);
-  const isDoorArt = PASSABLE_DOOR_TILES.has(`${x}:${y}`);
-  const passable = Boolean(match[3]) || isDoorArt;
-  if (x < 1 || x > 16 || y < 1 || y > 32) {
-    throw new Error(`Object coordinate "${raw}" is out of range. X must be 1-16 and Y must be 1-32.`);
-  }
-  return { raw, kind: "atlas", x, y, passable, door: isDoorArt };
-}
-
 function getDraftFloorLines() {
   return parseMapText(appState.editor.draftFloorText).map(parseFloorRow);
 }
@@ -1981,14 +1889,6 @@ function getDraftObjectLines(layerName) {
       ? "draftFurnitureText"
       : "draftPropText";
   return parseMapText(appState.editor[key]).map(parseObjectRow);
-}
-
-function serializeFloorLines(lines) {
-  return lines.map((row) => row.join(" ")).join("\n");
-}
-
-function serializeObjectLines(lines) {
-  return lines.map((row) => row.join(" ")).join("\n");
 }
 
 function updateDraftCell(layerName, row, col, value) {
@@ -2076,24 +1976,6 @@ function getAssignedPreviewToken(layerName, rawValue) {
   return parseObjectToken(rawValue);
 }
 
-function parseFloorToken(token) {
-  const raw = String(token || "").trim();
-  if (!raw || raw === ".") return { raw: ".", kind: "empty", passable: false };
-  if (/^[a-zA-Z0-9]$/.test(raw)) {
-    return { raw, kind: "code", code: raw, passable: true };
-  }
-  const match = raw.match(/^(\d{1,2}):(\d{1,2})$/);
-  if (!match) {
-    throw new Error(`Invalid floor token "${raw}". Use ".", a floor code, or x:y.`);
-  }
-  const x = Number(match[1]);
-  const y = Number(match[2]);
-  if (x < 1 || x > 16 || y < 1 || y > 32) {
-    throw new Error(`Floor coordinate "${raw}" is out of range. X must be 1-16 and Y must be 1-32.`);
-  }
-  return { raw, kind: "atlas", x, y, passable: true };
-}
-
 function getFloorTexture(renderer, floorToken) {
   if (floorToken.kind === "empty") return null;
   if (floorToken.kind === "code") return renderer.assets.tileTextures[floorToken.code] || null;
@@ -2107,12 +1989,6 @@ function getFloorTexture(renderer, floorToken) {
     );
   }
   return cache[key];
-}
-
-function floorTokenLabel(token) {
-  if (token.kind === "empty") return ".";
-  if (token.kind === "code") return token.code;
-  return `${token.x}:${token.y}`;
 }
 
 function buildTilemapState(floorText, wallText, furnitureText, propText, manifest, layout, roomRegions = []) {
