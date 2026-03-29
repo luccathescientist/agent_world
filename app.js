@@ -48,6 +48,18 @@ import {
   tokenLabel,
   validateObjectGrid,
 } from "./src/features/tilemap/mapText.js";
+import {
+  applyImportedAgentWorldStorageState as applyImportedAgentWorldStorageStateHelper,
+  buildCurrentGameStatePayload as buildCurrentGameStatePayloadHelper,
+  currentLayoutConfigPayload as currentLayoutConfigPayloadHelper,
+  defaultLayoutConfig as defaultLayoutConfigHelper,
+  normalizePersistenceSnapshot as normalizePersistenceSnapshotHelper,
+  parseImportedAgentWorldStorageState as parseImportedAgentWorldStorageStateHelper,
+  peekParsedValue as peekParsedValueHelper,
+  structuredSnapshotFromGameState as structuredSnapshotFromGameStateHelper,
+  syncGameStateTextarea as syncGameStateTextareaHelper,
+  writeGameStateToLocalStorage as writeGameStateToLocalStorageHelper,
+} from "./src/features/tilemap/tilemapState.js";
 import { appState } from "./src/state/appState.js";
 let chatBubbleAtlasImagePromise = null;
 
@@ -1377,164 +1389,66 @@ function displayedLocationLabel(agent) {
 }
 
 function normalizePersistenceSnapshot(rawValue = {}, layout = {}) {
-  return {
-    floorText: normalizeMapText(rawValue.floorText || ""),
-    wallText: normalizeMapText(rawValue.wallText || ""),
-    furnitureText: normalizeMapText(rawValue.furnitureText || ""),
-    propText: normalizeMapText(rawValue.propText || ""),
-    roomRegions: normalizeRoomRegions(rawValue.roomRegions || layout.roomRegions || []),
-    stash: normalizeStashPoint(rawValue.stash || layout.stash || { col: 15, row: 14 }),
-    chatBubbleThemes: normalizeChatBubbleThemes(rawValue.chatBubbleThemes || layout.chatBubbleThemes || DEFAULT_CHAT_BUBBLE_FRAME),
-  };
+  return normalizePersistenceSnapshotHelper(rawValue, layout, {
+    normalizeRoomRegions,
+    normalizeStashPoint,
+    normalizeChatBubbleThemes,
+  });
 }
 
 function defaultLayoutConfig(layout = {}) {
-  return {
-    name: layout.name || "Lucca Research Office",
-    tileSize: layout.tileSize || TILE_SIZE,
-    cols: layout.cols || DEFAULT_WORLD_COLS,
-    rows: layout.rows || DEFAULT_WORLD_ROWS,
-    emptyObject: layout.emptyObject || ".",
-    atlasTileSize: layout.atlasTileSize || TILE_SIZE,
-    floorAtlasPath: layout.floorAtlasPath || DEFAULT_FLOOR_ATLAS_PATH,
-    officeAtlasPath: layout.officeAtlasPath || DEFAULT_OFFICE_ATLAS_PATH,
-    wallAtlasPath: layout.wallAtlasPath || DEFAULT_WALL_ATLAS_PATH,
-    anchors: layout.anchors || {},
-  };
+  return defaultLayoutConfigHelper(layout);
 }
 
 function structuredSnapshotFromGameState(rawGameState = {}, fallbackLayout = {}) {
-  const layoutConfig = peekParsedValue(rawGameState["agent-world-layout-config"], defaultLayoutConfig(fallbackLayout));
-  const normalizedLayout = {
-    ...defaultLayoutConfig(fallbackLayout),
-    ...(layoutConfig && typeof layoutConfig === "object" ? layoutConfig : {}),
-  };
-  return {
-    floorText: normalizeMapText(rawGameState[TILEMAP_STORAGE_KEYS.floor] || ""),
-    wallText: normalizeMapText(rawGameState[TILEMAP_STORAGE_KEYS.wall] || ""),
-    furnitureText: normalizeMapText(rawGameState[TILEMAP_STORAGE_KEYS.furniture] || ""),
-    propText: normalizeMapText(rawGameState[TILEMAP_STORAGE_KEYS.prop] || ""),
-    roomRegions: normalizeRoomRegions(peekParsedValue(rawGameState[TILEMAP_STORAGE_KEYS.roomRegions], [])),
-    stash: normalizeStashPoint(peekParsedValue(rawGameState[TILEMAP_STORAGE_KEYS.stash], fallbackLayout.stash || { col: 15, row: 14 })),
-    chatBubbleThemes: normalizeChatBubbleThemes(peekParsedValue(rawGameState[TILEMAP_STORAGE_KEYS.chatBubbleFrame], fallbackLayout.chatBubbleThemes || DEFAULT_CHAT_BUBBLE_FRAME)),
-    movementOverrides: peekParsedValue(rawGameState["agent-world-movement-overrides"], { agents: {} }),
-    layout: normalizedLayout,
-    raw: rawGameState,
-  };
+  return structuredSnapshotFromGameStateHelper(rawGameState, fallbackLayout, {
+    normalizeRoomRegions,
+    normalizeStashPoint,
+    normalizeChatBubbleThemes,
+  });
 }
 
 function peekParsedValue(rawValue, fallback) {
-  if (typeof rawValue !== "string" || !rawValue.trim()) return fallback;
-  try {
-    return JSON.parse(rawValue);
-  } catch {
-    return fallback;
-  }
+  return peekParsedValueHelper(rawValue, fallback);
 }
 
 function parseImportedAgentWorldStorageState(rawValue) {
-  const source = String(rawValue || "").trim();
-  if (!source) {
-    throw new Error("Paste the exported JSON first.");
-  }
-
-  const candidates = [source];
-  if (
-    (source.startsWith("'") && source.endsWith("'"))
-    || (source.startsWith('"') && source.endsWith('"'))
-  ) {
-    candidates.push(source.slice(1, -1));
-  }
-
-  let currentError = null;
-  for (const candidate of candidates) {
-    try {
-      let parsed = JSON.parse(candidate);
-      while (typeof parsed === "string") {
-        const next = parsed.trim();
-        if (!next) break;
-        parsed = JSON.parse(next);
-      }
-      if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
-        throw new Error("Imported state must be a JSON object.");
-      }
-      return parsed;
-    } catch (error) {
-      currentError = error;
-    }
-  }
-  throw new Error(`Could not parse imported state: ${currentError?.message || "invalid JSON"}`);
+  return parseImportedAgentWorldStorageStateHelper(rawValue);
 }
 
 function applyImportedAgentWorldStorageState(payload) {
-  if (!payload || typeof payload !== "object" || Array.isArray(payload)) {
-    throw new Error("Imported state must be a JSON object.");
-  }
-  for (const key of GAME_STATE_STORAGE_KEYS) {
-    try {
-      localStorage.removeItem(key);
-    } catch {
-      // ignore storage failures
-    }
-  }
-  for (const [key, value] of Object.entries(payload)) {
-    if (!GAME_STATE_STORAGE_KEYS.includes(String(key))) continue;
-    try {
-      if (value == null) continue;
-      localStorage.setItem(key, String(value));
-    } catch {
-      // ignore storage failures
-    }
-  }
+  return applyImportedAgentWorldStorageStateHelper(payload);
 }
 
 function currentLayoutConfigPayload() {
-  const layout = appState.tilemap?.layout || appState.renderer?.assets?.layout || {};
-  return defaultLayoutConfig({
-    ...layout,
-    cols: getWorldCols(),
-    rows: getWorldRows(),
-    anchors: appState.tilemap?.layout?.anchors || layout.anchors || {},
-    name: appState.world?.room?.name || layout.name || "Lucca Research Office",
+  return currentLayoutConfigPayloadHelper(appState, {
+    getWorldCols,
+    getWorldRows,
   });
 }
 
 function buildCurrentGameStatePayload() {
-  const movementOverrides = appState.gameStateRaw["agent-world-movement-overrides"] || peekStoredMap("agent-world-movement-overrides") || JSON.stringify({ agents: {} }, null, 2);
-  return {
-    [TILEMAP_STORAGE_KEYS.floor]: normalizeMapText(appState.editor.draftFloorText || appState.tilemap?.floorText || ""),
-    [TILEMAP_STORAGE_KEYS.wall]: normalizeMapText(appState.editor.draftWallText || appState.tilemap?.wallText || ""),
-    [TILEMAP_STORAGE_KEYS.furniture]: normalizeMapText(appState.editor.draftFurnitureText || appState.tilemap?.furnitureText || ""),
-    [TILEMAP_STORAGE_KEYS.prop]: normalizeMapText(appState.editor.draftPropText || appState.tilemap?.propText || ""),
-    [TILEMAP_STORAGE_KEYS.roomRegions]: JSON.stringify(appState.roomRegions || [], null, 2),
-    [TILEMAP_STORAGE_KEYS.stash]: JSON.stringify(
-      normalizeStashPoint(appState.tilemap?.layout?.stash || appState.renderer?.assets?.layout?.stash || { col: 15, row: 14 }),
-      null,
-      2,
-    ),
-    [TILEMAP_STORAGE_KEYS.chatBubbleFrame]: JSON.stringify(appState.chatBubbleThemes || DEFAULT_CHAT_BUBBLE_FRAME, null, 2),
-    "agent-world-layout-config": JSON.stringify(currentLayoutConfigPayload(), null, 2),
-    "agent-world-movement-overrides": movementOverrides,
-  };
+  return buildCurrentGameStatePayloadHelper(appState, {
+    currentLayoutConfigPayload,
+    normalizeStashPoint,
+    peekStoredMap,
+  });
 }
 
 function syncGameStateTextarea() {
-  const textarea = document.getElementById("tilemap-state-json");
-  if (appState.tilemap) appState.gameStateRaw = buildCurrentGameStatePayload();
-  if (textarea && document.activeElement !== textarea) {
-    textarea.value = JSON.stringify(appState.gameStateRaw, null, 2);
-  }
-  const status = document.getElementById("tilemap-source-status");
-  if (status) status.textContent = `Game state JSON · ${Object.keys(appState.gameStateRaw).length} keys`;
+  return syncGameStateTextareaHelper(appState, { buildCurrentGameStatePayload });
 }
 
 function writeGameStateToLocalStorage(payload, syncTextarea = true) {
-  for (const key of GAME_STATE_STORAGE_KEYS) {
-    if (!(key in payload)) continue;
-    localStorage.setItem(key, String(payload[key]));
+  if (!syncTextarea) {
+    for (const key of GAME_STATE_STORAGE_KEYS) {
+      if (!(key in payload)) continue;
+      localStorage.setItem(key, String(payload[key]));
+    }
+    appState.gameStateRaw = { ...payload };
+    return;
   }
-  appState.gameStateRaw = { ...payload };
-  if (syncTextarea) syncGameStateTextarea();
+  return writeGameStateToLocalStorageHelper(appState, payload, { syncGameStateTextarea });
 }
 
 function getAnchorTile(anchorId) {
