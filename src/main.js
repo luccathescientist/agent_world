@@ -255,6 +255,36 @@ import {
   syncSceneOffset as syncSceneOffsetShell,
 } from "./app/renderShell.js";
 import {
+  applyVisualAtlasCell as applyVisualAtlasCellAction,
+  applyVisualToken as applyVisualTokenAction,
+  assignChatBubbleTile as assignChatBubbleTileAction,
+  assignRegionSelection as assignRegionSelectionAction,
+  assignStashSelection as assignStashSelectionAction,
+  clearRegionSelection as clearRegionSelectionAction,
+  clearStashSelection as clearStashSelectionAction,
+  commitDraftTilemap as commitDraftTilemapAction,
+  deleteRoomRegion as deleteRoomRegionAction,
+  getAssignedAtlasCell as getAssignedAtlasCellAction,
+  getAssignedPreviewToken as getAssignedPreviewTokenAction,
+  getAtlasPathForLayer as getAtlasPathForLayerAction,
+  getDraftCellValue as getDraftCellValueAction,
+  getDraftFloorLines as getDraftFloorLinesAction,
+  getDraftObjectLines as getDraftObjectLinesAction,
+  getSelectedCells as getSelectedCellsAction,
+  getSelectionBounds as getSelectionBoundsAction,
+  getVisualLayerConfig as getVisualLayerConfigAction,
+  resetChatBubbleFrame as resetChatBubbleFrameAction,
+  resolveRoomRegion as resolveRoomRegionAction,
+  resizeGridText as resizeGridTextAction,
+  resizeTilemapGrid as resizeTilemapGridAction,
+  setChatBubbleTextColor as setChatBubbleTextColorAction,
+  setHoveredMapCell as setHoveredMapCellAction,
+  setRegionLabelPosition as setRegionLabelPositionAction,
+  setSelectedMapCell as setSelectedMapCellAction,
+  setVisualLayer as setVisualLayerAction,
+  updateDraftCell as updateDraftCellAction,
+} from "./app/editorActions.js";
+import {
   previewSpriteFrame as previewSpriteFrameShell,
   renderAgentEditorPanel as renderAgentEditorPanelShell,
   renderEditorSubviews as renderEditorSubviewsShell,
@@ -874,101 +904,57 @@ function findPath(startTile, goalTile) {
 }
 
 function getDraftFloorLines() {
-  return parseMapText(appState.editor.draftFloorText).map(parseFloorRow);
+  return getDraftFloorLinesAction(appState, { parseFloorRow, parseMapText });
 }
 
 function getDraftObjectLines(layerName) {
-  const key = layerName === "wall"
-    ? "draftWallText"
-    : layerName === "furniture"
-      ? "draftFurnitureText"
-      : "draftPropText";
-  return parseMapText(appState.editor[key]).map(parseObjectRow);
+  return getDraftObjectLinesAction(appState, layerName, { parseMapText, parseObjectRow });
 }
 
 function updateDraftCell(layerName, row, col, value) {
-  if (layerName === "floor") {
-    const lines = getDraftFloorLines();
-    lines[row][col] = value;
-    appState.editor.draftFloorText = serializeFloorLines(lines);
-    return;
-  }
-  const rows = getDraftObjectLines(layerName);
-  rows[row][col] = value;
-  const nextText = serializeObjectLines(rows);
-  if (layerName === "wall") appState.editor.draftWallText = nextText;
-  else if (layerName === "furniture") appState.editor.draftFurnitureText = nextText;
-  else appState.editor.draftPropText = nextText;
+  return updateDraftCellAction(appState, layerName, row, col, value, {
+    getDraftFloorLines,
+    getDraftObjectLines,
+    serializeFloorLines,
+    serializeObjectLines,
+  });
 }
 
 function getDraftCellValue(layerName, row, col) {
-  if (row == null || col == null) return "--";
-  if (layerName === "floor") {
-    const lines = getDraftFloorLines();
-    return lines[row]?.[col] ?? "--";
-  }
-  const rows = getDraftObjectLines(layerName);
-  return rows[row]?.[col] ?? "--";
+  return getDraftCellValueAction(appState, layerName, row, col, {
+    getDraftFloorLines,
+    getDraftObjectLines,
+  });
 }
 
 function getSelectionBounds() {
-  const anchor = appState.editor.selectionAnchor || appState.editor.selectedCell;
-  const focus = appState.editor.selectionFocus || appState.editor.selectedCell;
-  if (!anchor || !focus) return null;
-  return {
-    rowStart: Math.min(anchor.row, focus.row),
-    rowEnd: Math.max(anchor.row, focus.row),
-    colStart: Math.min(anchor.col, focus.col),
-    colEnd: Math.max(anchor.col, focus.col),
-  };
+  return getSelectionBoundsAction(appState);
 }
 
 function getSelectedCells() {
-  const bounds = getSelectionBounds();
-  if (!bounds) return [];
-  const cells = [];
-  for (let row = bounds.rowStart; row <= bounds.rowEnd; row += 1) {
-    for (let col = bounds.colStart; col <= bounds.colEnd; col += 1) {
-      cells.push({ row, col });
-    }
-  }
-  return cells;
+  return getSelectedCellsAction(appState, { getSelectionBounds: () => getSelectionBoundsAction(appState) });
 }
 
 function getVisualLayerConfig() {
-  return VISUAL_LAYER_CONFIG[appState.editor.selectedLayer] || VISUAL_LAYER_CONFIG.floor;
+  return getVisualLayerConfigAction(appState);
 }
 
 function getAtlasPathForLayer(layerName) {
-  const layout = appState.renderer?.assets?.layout || {};
-  if (VISUAL_LAYER_CONFIG[layerName]?.atlasKind === "floor") {
-    return layout.floorAtlasPath || DEFAULT_FLOOR_ATLAS_PATH;
-  }
-  return VISUAL_LAYER_CONFIG[layerName]?.atlasKind === "wall"
-    ? (layout.wallAtlasPath || DEFAULT_WALL_ATLAS_PATH)
-    : (layout.officeAtlasPath || DEFAULT_OFFICE_ATLAS_PATH);
+  return getAtlasPathForLayerAction(appState, layerName);
 }
 
 function getAssignedAtlasCell(layerName, rawValue) {
-  if (!rawValue || rawValue === "--" || rawValue === ".") return null;
-  if (layerName === "floor") {
-    const floorToken = parseFloorToken(rawValue);
-    if (floorToken.kind === "atlas") return { x: floorToken.x, y: floorToken.y };
-    if (floorToken.kind === "code") {
-      const entry = appState.tilemap?.manifest?.[floorToken.code];
-      if (entry?.grid) return { x: entry.grid[0] + 1, y: entry.grid[1] + 1 };
-    }
-    return null;
-  }
-  const token = parseObjectToken(rawValue);
-  if (token.kind === "atlas") return { x: token.x, y: token.y };
-  return null;
+  return getAssignedAtlasCellAction(appState, layerName, rawValue, {
+    parseFloorToken,
+    parseObjectToken,
+  });
 }
 
 function getAssignedPreviewToken(layerName, rawValue) {
-  if (!rawValue || rawValue === "--") return null;
-  if (layerName === "floor") return parseFloorToken(rawValue);
-  return parseObjectToken(rawValue);
+  return getAssignedPreviewTokenAction(layerName, rawValue, {
+    parseFloorToken,
+    parseObjectToken,
+  });
 }
 
 function getFloorTexture(renderer, floorToken) {
@@ -1226,7 +1212,8 @@ function renderEditorSelectionOverlay(renderer) {
 }
 
 function assignRegionSelection() {
-  return assignRegionSelectionHelper(appState, {
+  return assignRegionSelectionAction(appState, {
+    assignRegionSelectionHelper,
     canonicalizeAnchorId,
     cellsKeySet,
     commitDraftTilemap,
@@ -1238,16 +1225,18 @@ function assignRegionSelection() {
 }
 
 function resolveRoomRegion(rawId, selectedCell = null) {
-  return resolveRoomRegionHelper(appState, rawId, selectedCell, {
+  return resolveRoomRegionAction(appState, rawId, selectedCell, {
     canonicalizeAnchorId,
     regionForCell,
+    resolveRoomRegionHelper,
   });
 }
 
 function deleteRoomRegion(regionId) {
-  return deleteRoomRegionHelper(appState, regionId, {
+  return deleteRoomRegionAction(appState, regionId, {
     canonicalizeAnchorId,
     commitDraftTilemap,
+    deleteRoomRegionHelper,
     normalizeRoomRegions,
     setStoredJson,
     setTilemapStatus,
@@ -1255,19 +1244,21 @@ function deleteRoomRegion(regionId) {
 }
 
 function setRegionLabelPosition() {
-  return setRegionLabelPositionHelper(appState, {
+  return setRegionLabelPositionAction(appState, {
     drawRoom,
     normalizeRoomRegions,
     renderVisualEditor,
     resolveRoomRegion,
+    setRegionLabelPositionHelper,
     setStoredJson,
     setTilemapStatus,
   });
 }
 
 function clearRegionSelection() {
-  return clearRegionSelectionHelper(appState, {
+  return clearRegionSelectionAction(appState, {
     cellsKeySet,
+    clearRegionSelectionHelper,
     commitDraftTilemap,
     getSelectedCells,
     normalizeRoomRegions,
@@ -1277,8 +1268,9 @@ function clearRegionSelection() {
 }
 
 function commitDraftTilemap(successMessage = "Applied draft tilemap.") {
-  return commitDraftTilemapHelper(appState, successMessage, {
+  return commitDraftTilemapAction(appState, successMessage, {
     buildTilemapState,
+    commitDraftTilemapHelper,
     drawRoom,
     renderWorld,
     resizeRendererViewport,
@@ -1290,13 +1282,14 @@ function commitDraftTilemap(successMessage = "Applied draft tilemap.") {
 }
 
 function resizeGridText(text, cols, rows, fillToken, parser, serializer) {
-  return resizeGridTextHelper(text, cols, rows, fillToken, parser, serializer, {
+  return resizeGridTextAction(text, cols, rows, fillToken, parser, serializer, {
     parseMapText,
+    resizeGridTextHelper,
   });
 }
 
 function resizeTilemapGrid(cols, rows) {
-  return resizeTilemapGridHelper(appState, cols, rows, {
+  return resizeTilemapGridAction(appState, cols, rows, {
     buildTilemapState,
     drawRoom,
     getWorldCols,
@@ -1306,6 +1299,7 @@ function resizeTilemapGrid(cols, rows) {
     renderWorld,
     resizeGridText,
     resizeRendererViewport,
+    resizeTilemapGridHelper,
     serializeFloorLines,
     serializeObjectLines,
     setStoredJson,
@@ -1316,7 +1310,8 @@ function resizeTilemapGrid(cols, rows) {
 }
 
 function applyVisualToken(rawValue) {
-  return applyVisualTokenHelper(appState, rawValue, {
+  return applyVisualTokenAction(appState, rawValue, {
+    applyVisualTokenHelper,
     commitDraftTilemap,
     getSelectedCells,
     setTilemapStatus,
@@ -1325,14 +1320,16 @@ function applyVisualToken(rawValue) {
 }
 
 function applyVisualAtlasCell(atlasCell) {
-  return applyVisualAtlasCellHelper(appState, atlasCell, {
+  return applyVisualAtlasCellAction(appState, atlasCell, {
+    applyVisualAtlasCellHelper,
     applyVisualToken,
   });
 }
 
 function assignChatBubbleTile() {
-  return assignChatBubbleTileHelper(appState, {
+  return assignChatBubbleTileAction(appState, {
     applyChatBubbleFrameStyles,
+    assignChatBubbleTileHelper,
     renderChat,
     renderVisualEditor,
     selectedChatBubbleTheme,
@@ -1342,43 +1339,48 @@ function assignChatBubbleTile() {
 }
 
 function resetChatBubbleFrame() {
-  return resetChatBubbleFrameHelper(appState, {
+  return resetChatBubbleFrameAction(appState, {
     applyChatBubbleFrameStyles,
     normalizeChatBubbleTheme,
     renderChat,
     renderVisualEditor,
+    resetChatBubbleFrameHelper,
     setStoredJson,
     setTilemapStatus,
   });
 }
 
 function setChatBubbleTextColor(color) {
-  return setChatBubbleTextColorHelper(appState, color, {
+  return setChatBubbleTextColorAction(appState, color, {
     applyChatBubbleFrameStyles,
     renderChat,
     renderVisualEditor,
     selectedChatBubbleTheme,
+    setChatBubbleTextColorHelper,
     setStoredJson,
   });
 }
 
 function setVisualLayer(layerName) {
-  return setVisualLayerHelper(appState, layerName, {
+  return setVisualLayerAction(appState, layerName, {
     renderVisualEditor,
+    setVisualLayerHelper,
   });
 }
 
 function setSelectedMapCell(row, col) {
-  return setSelectedMapCellHelper(appState, row, col, {
+  return setSelectedMapCellAction(appState, row, col, {
     drawRoom,
     regionForCell,
     renderVisualEditor,
+    setSelectedMapCellHelper,
   });
 }
 
 function setHoveredMapCell(row, col) {
-  return setHoveredMapCellHelper(appState, row, col, {
+  return setHoveredMapCellAction(appState, row, col, {
     drawRoom,
+    setHoveredMapCellHelper,
   });
 }
 
@@ -1393,7 +1395,8 @@ function createStashBox() {
 }
 
 function assignStashSelection() {
-  return assignStashSelectionHelper(appState, {
+  return assignStashSelectionAction(appState, {
+    assignStashSelectionHelper,
     drawRoom,
     normalizeStashPoint,
     renderVisualEditor,
@@ -1403,7 +1406,8 @@ function assignStashSelection() {
 }
 
 function clearStashSelection() {
-  return clearStashSelectionHelper(appState, {
+  return clearStashSelectionAction(appState, {
+    clearStashSelectionHelper,
     drawRoom,
     normalizeStashPoint,
     renderVisualEditor,
