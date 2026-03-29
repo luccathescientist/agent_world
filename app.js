@@ -71,6 +71,26 @@ import {
   syncSettingsForm as syncSettingsFormHelper,
   syncSettingsJsonEditor as syncSettingsJsonEditorHelper,
 } from "./src/features/settings/settingsPanel.js";
+import {
+  appendVoiceTranscript as appendVoiceTranscriptHelper,
+  ensureMicMeter as ensureMicMeterHelper,
+  fetchVoiceConfig as fetchVoiceConfigHelper,
+  initVoiceControls as initVoiceControlsHelper,
+  maybeSpeakReply as maybeSpeakReplyHelper,
+  normalizeSpeechText as normalizeSpeechTextHelper,
+  pushVoiceEvent as pushVoiceEventHelper,
+  refreshVoiceInputDevices as refreshVoiceInputDevicesHelper,
+  renderVoiceDebugUi as renderVoiceDebugUiHelper,
+  renderVoiceTranscriptDebug as renderVoiceTranscriptDebugHelper,
+  speakText as speakTextHelper,
+  startMicMeterLoop as startMicMeterLoopHelper,
+  startVoiceCapture as startVoiceCaptureHelper,
+  stopMicMeter as stopMicMeterHelper,
+  stopSpeechPlayback as stopSpeechPlaybackHelper,
+  stopVoiceCapture as stopVoiceCaptureHelper,
+  transcribeRecordedAudio as transcribeRecordedAudioHelper,
+  updateVoiceUi as updateVoiceUiHelper,
+} from "./src/features/voice/voiceController.js";
 import { appState } from "./src/state/appState.js";
 let chatBubbleAtlasImagePromise = null;
 
@@ -171,226 +191,67 @@ async function saveSettingsFromJsonEditor() {
 }
 
 async function fetchVoiceConfig() {
-  try {
-    const config = await getJson("/api/agent-world/voice/config");
-    appState.voice.backendConfigured = !!config?.configured;
-    appState.voice.backendProvider = config?.provider || "openai";
-    appState.voice.transcribeModel = config?.transcribeModel || "gpt-4o-mini-transcribe";
-    appState.voice.speechModel = config?.speechModel || "gpt-4o-mini-tts";
-    appState.voice.speechVoice = config?.defaultVoice || "nova";
-    appState.voice.speechFormat = config?.speechFormat || "mp3";
-    if (appState.voice.backendConfigured) {
-      appState.voice.mode = "openai";
-      pushVoiceEvent(`Voice backend ready via ${appState.voice.backendProvider}.`);
-    } else {
-      pushVoiceEvent("Voice backend unavailable. Falling back to browser voice APIs.");
-    }
-  } catch (error) {
-    pushVoiceEvent(`Voice backend config failed: ${error?.message || String(error)}`);
-  }
-  updateVoiceUi();
+  return fetchVoiceConfigHelper(appState, {
+    getJson,
+    pushVoiceEvent,
+    updateVoiceUi,
+  });
 }
 
 function pushVoiceEvent(message) {
-  const stamp = new Date().toLocaleTimeString();
-  appState.voice.events = [`[${stamp}] ${message}`, ...appState.voice.events].slice(0, 8);
-  setVoiceDebugText("voice-events", appState.voice.events.join("\n") || "No voice events yet.");
+  return pushVoiceEventHelper(appState, message, { setVoiceDebugText });
 }
 
 function renderVoiceTranscriptDebug() {
-  const finalText = normalizeSpeechText(appState.voice.transcriptBuffer);
-  const interimText = normalizeSpeechText(appState.voice.interimTranscript);
-  if (!finalText && !interimText) {
-    setVoiceDebugText("voice-transcript", "No transcript yet.");
-    return;
-  }
-  const lines = [];
-  if (finalText) lines.push(`Final: ${finalText}`);
-  if (interimText) lines.push(`Interim: ${interimText}`);
-  setVoiceDebugText("voice-transcript", lines.join("\n"));
+  return renderVoiceTranscriptDebugHelper(appState, {
+    normalizeSpeechText,
+    setVoiceDebugText,
+  });
 }
 
 function renderVoiceDebugUi() {
-  setVoiceDebugText("voice-support", appState.voice.supportSummary || "Checking...");
-  setVoiceDebugText("voice-recognition-state", appState.voice.recognitionState || "idle");
-  setVoiceDebugText("voice-error", appState.voice.lastError || "None");
-  const levelFill = document.getElementById("voice-level-fill");
-  if (levelFill) levelFill.style.width = `${Math.max(0, Math.min(100, Math.round(appState.voice.micLevel * 100)))}%`;
-  setVoiceDebugText(
-    "voice-level-text",
-    appState.voice.micStream
-      ? `Live input level: ${Math.round(appState.voice.micLevel * 100)}%${appState.voice.currentInputLabel ? ` via ${appState.voice.currentInputLabel}` : ""}`
-      : "No mic capture yet.",
-  );
-  const spokenSummary = appState.voice.lastSpokenText
-    ? `${appState.voice.lastSpokenSource ? `[${appState.voice.lastSpokenSource}] ` : ""}${appState.voice.lastSpokenText}`
-    : "Nothing queued for speech.";
-  setVoiceDebugText("voice-spoken-text", spokenSummary);
-  renderVoiceTranscriptDebug();
-  setVoiceDebugText("voice-events", appState.voice.events.join("\n") || "No voice events yet.");
+  return renderVoiceDebugUiHelper(appState, {
+    documentRef: document,
+    renderVoiceTranscriptDebug,
+    setVoiceDebugText,
+  });
 }
 
 function updateVoiceUi() {
-  const toggle = document.getElementById("voice-toggle");
-  const stop = document.getElementById("voice-stop");
-  const speakCurrent = document.getElementById("voice-speak-current");
-  const autoSend = document.getElementById("voice-auto-send");
-  const speakReplies = document.getElementById("voice-speak-replies");
-  const inputSelect = document.getElementById("voice-input-select");
-  if (toggle) {
-    toggle.disabled = !(appState.voice.recordingSupported || appState.voice.supported);
-    if (appState.voice.isTranscribing) toggle.textContent = "Transcribing...";
-    else toggle.textContent = appState.voice.listening ? "Recording..." : "Start Mic";
-  }
-  if (stop) stop.disabled = !(appState.voice.listening || appState.voice.isSpeaking);
-  if (speakCurrent) speakCurrent.disabled = !(appState.voice.backendConfigured || appState.voice.ttsSupported);
-  if (autoSend) autoSend.checked = !!appState.voice.autoSend;
-  if (speakReplies) speakReplies.checked = !!appState.voice.speakReplies;
-  if (inputSelect) {
-    const options = ['<option value="">System Default</option>'];
-    for (const device of appState.voice.inputDevices) {
-      const selected = device.deviceId === appState.voice.selectedInputDeviceId ? " selected" : "";
-      options.push(`<option value="${device.deviceId}"${selected}>${device.label || "Unnamed input"}</option>`);
-    }
-    inputSelect.innerHTML = options.join("");
-    inputSelect.value = appState.voice.selectedInputDeviceId || "";
-    inputSelect.disabled = !appState.voice.meterSupported;
-  }
-  renderVoiceDebugUi();
+  return updateVoiceUiHelper(appState, {
+    documentRef: document,
+    renderVoiceDebugUi,
+  });
 }
 
 function appendVoiceTranscript(text) {
-  const input = document.getElementById("command-input");
-  if (!input) return;
-  const nextText = String(text || "").trim();
-  if (!nextText) return;
-  input.value = input.value.trim() ? `${input.value.trim()} ${nextText}` : nextText;
+  return appendVoiceTranscriptHelper(text, { documentRef: document });
 }
 
 function normalizeSpeechText(text) {
-  return String(text || "")
-    .replace(/`+/g, "")
-    .replace(/\s+/g, " ")
-    .trim();
+  return normalizeSpeechTextHelper(text);
 }
 
 function stopSpeechPlayback() {
-  if ("speechSynthesis" in window) window.speechSynthesis.cancel();
-  if (appState.voice.audioPlayer) {
-    appState.voice.audioPlayer.pause();
-    appState.voice.audioPlayer.src = "";
-    appState.voice.audioPlayer = null;
-  }
-  if (appState.voice.audioObjectUrl) {
-    URL.revokeObjectURL(appState.voice.audioObjectUrl);
-    appState.voice.audioObjectUrl = "";
-  }
-  appState.voice.isSpeaking = false;
+  return stopSpeechPlaybackHelper(appState, {
+    URLRef: URL,
+    windowRef: window,
+  });
 }
 
 async function speakText(text, source = "manual") {
-  const spoken = normalizeSpeechText(text);
-  if (!spoken) {
-    pushVoiceEvent("Speech synthesis skipped because no text was available.");
-    setVoiceStatus("Nothing to speak yet.", true);
-    return;
-  }
-  stopSpeechPlayback();
-  appState.voice.lastSpokenText = spoken;
-  appState.voice.lastSpokenSource = source;
-  appState.voice.lastError = "";
-  if (appState.voice.backendConfigured && appState.selectedAgentId) {
-    try {
-      pushVoiceEvent(`OpenAI speech queued from ${source}.`);
-      appState.voice.isSpeaking = true;
-      appState.voice.recognitionState = appState.voice.listening ? "recording + speaking" : "speaking";
-      updateVoiceUi();
-      setVoiceStatus("Generating speech...");
-      const response = await fetch(`/api/agent-world/agents/${encodeURIComponent(appState.selectedAgentId)}/voice/speak`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          text: spoken,
-          voice: appState.voice.speechVoice,
-          model: appState.voice.speechModel,
-          format: appState.voice.speechFormat,
-        }),
-      });
-      if (!response.ok) throw new Error(`speech request failed: ${response.status}`);
-      const audioBlob = await response.blob();
-      const audioUrl = URL.createObjectURL(audioBlob);
-      appState.voice.audioObjectUrl = audioUrl;
-      const audio = new Audio(audioUrl);
-      appState.voice.audioPlayer = audio;
-      audio.onplay = () => {
-        appState.voice.isSpeaking = true;
-        appState.voice.recognitionState = appState.voice.listening ? "recording + speaking" : "speaking";
-        pushVoiceEvent(`OpenAI speech started from ${source}.`);
-        updateVoiceUi();
-        setVoiceStatus("Speaking selected message.");
-      };
-      audio.onended = () => {
-        stopSpeechPlayback();
-        appState.voice.recognitionState = appState.voice.listening ? "recording" : "idle";
-        pushVoiceEvent(`OpenAI speech finished from ${source}.`);
-        updateVoiceUi();
-        setVoiceStatus(appState.voice.listening ? "Recording..." : "Voice idle.");
-      };
-      audio.onerror = () => {
-        stopSpeechPlayback();
-        appState.voice.lastError = "OpenAI speech playback failed.";
-        appState.voice.recognitionState = appState.voice.listening ? "recording" : "idle";
-        pushVoiceEvent(`OpenAI speech failed from ${source}.`);
-        updateVoiceUi();
-        setVoiceStatus("Speech playback failed.", true);
-      };
-      await audio.play();
-      renderVoiceDebugUi();
-      return;
-    } catch (error) {
-      appState.voice.lastError = error?.message || String(error);
-      pushVoiceEvent(`OpenAI speech failed, falling back to browser TTS: ${appState.voice.lastError}`);
-      stopSpeechPlayback();
-      updateVoiceUi();
-    }
-  }
-
-  if (!appState.voice.ttsSupported) {
-    appState.voice.lastError = "Speech synthesis is not supported in this browser.";
-    pushVoiceEvent("Speech synthesis unavailable.");
-    renderVoiceDebugUi();
-    setVoiceStatus("Speech playback is not supported in this browser.", true);
-    return;
-  }
-
-  pushVoiceEvent(`Speech synthesis queued from ${source}.`);
-  const utterance = new SpeechSynthesisUtterance(spoken);
-  utterance.rate = 1;
-  utterance.pitch = 1;
-  utterance.onstart = () => {
-    appState.voice.isSpeaking = true;
-    appState.voice.recognitionState = appState.voice.listening ? "recording + speaking" : "speaking";
-    pushVoiceEvent(`Speech synthesis started from ${source}.`);
-    updateVoiceUi();
-    setVoiceStatus("Speaking selected message.");
-  };
-  utterance.onend = () => {
-    stopSpeechPlayback();
-    appState.voice.recognitionState = appState.voice.listening ? "recording" : "idle";
-    pushVoiceEvent(`Speech synthesis finished from ${source}.`);
-    updateVoiceUi();
-    setVoiceStatus(appState.voice.listening ? "Recording..." : "Voice idle.");
-  };
-  utterance.onerror = () => {
-    stopSpeechPlayback();
-    appState.voice.lastError = "Speech playback failed.";
-    appState.voice.recognitionState = appState.voice.listening ? "recording" : "idle";
-    pushVoiceEvent(`Speech synthesis failed from ${source}.`);
-    updateVoiceUi();
-    setVoiceStatus("Speech playback failed.", true);
-  };
-  window.speechSynthesis.speak(utterance);
-  renderVoiceDebugUi();
+  return speakTextHelper(appState, text, source, {
+    AudioCtor: Audio,
+    fetchRef: fetch,
+    normalizeSpeechText,
+    pushVoiceEvent,
+    renderVoiceDebugUi,
+    setVoiceStatus,
+    stopSpeechPlayback,
+    updateVoiceUi,
+    URLRef: URL,
+    windowRef: window,
+  });
 }
 
 async function sendCommandText(text) {
@@ -412,446 +273,104 @@ async function sendCommandText(text) {
 }
 
 function maybeSpeakReply(history) {
-  if (!appState.voice.speakReplies || !("speechSynthesis" in window)) return;
-  const latestAssistant = [...(history || [])].reverse().find((event) => historyRoleClass(event.type) === "assistant");
-  if (!latestAssistant) return;
-  const spokenText = normalizeSpeechText(latestAssistant.fullLabel || latestAssistant.label || latestAssistant.fullDetail || latestAssistant.detail);
-  if (!spokenText) return;
-  if (latestAssistant.type === "tool_started" || latestAssistant.type === "tool_finished") return;
-  if (spokenText === "NO_REPLY" || spokenText.startsWith("HEARTBEAT_OK")) return;
-  const signature = `${latestAssistant.id || ""}:${latestAssistant.ts || ""}:${spokenText}`;
-  if (signature === appState.voice.lastSpokenSignature) return;
-  if (appState.voice.spokenReplySignatures.includes(signature)) return;
-  appState.voice.lastSpokenSignature = signature;
-  appState.voice.spokenReplySignatures = [...appState.voice.spokenReplySignatures, signature].slice(-40);
-  speakText(spokenText, "agent-reply");
+  return maybeSpeakReplyHelper(appState, history, {
+    historyRoleClass,
+    normalizeSpeechText,
+    speakText,
+  });
 }
 
 function stopMicMeter() {
-  if (appState.voice.meterFrame) {
-    cancelAnimationFrame(appState.voice.meterFrame);
-    appState.voice.meterFrame = 0;
-  }
-  if (appState.voice.audioContext) {
-    appState.voice.audioContext.close().catch(() => {});
-    appState.voice.audioContext = null;
-  }
-  if (appState.voice.micStream) {
-    for (const track of appState.voice.micStream.getTracks()) track.stop();
-    appState.voice.micStream = null;
-  }
-  appState.voice.analyser = null;
-  appState.voice.analyserData = null;
-  appState.voice.micLevel = 0;
-  appState.voice.currentInputLabel = "";
-  renderVoiceDebugUi();
+  return stopMicMeterHelper(appState, {
+    cancelAnimationFrameRef: cancelAnimationFrame,
+    renderVoiceDebugUi,
+  });
 }
 
 async function transcribeRecordedAudio(blob) {
-  if (!blob || !appState.selectedAgentId) return;
-  appState.voice.isTranscribing = true;
-  appState.voice.recognitionState = "transcribing";
-  appState.voice.lastError = "";
-  updateVoiceUi();
-  setVoiceStatus("Uploading audio for transcription...");
-  try {
-    const form = new FormData();
-    form.append("file", blob, `voice.${appState.voice.recordingMimeType.includes("ogg") ? "ogg" : "webm"}`);
-    form.append("model", appState.voice.transcribeModel);
-    const response = await fetch(`/api/agent-world/agents/${encodeURIComponent(appState.selectedAgentId)}/voice/transcribe`, {
-      method: "POST",
-      body: form,
-    });
-    if (!response.ok) {
-      let detail = `transcription failed: ${response.status}`;
-      try {
-        const payload = await response.json();
-        detail = payload?.detail?.reason || payload?.detail?.detail || detail;
-      } catch {}
-      throw new Error(detail);
-    }
-    const payload = await response.json();
-    const transcript = normalizeSpeechText(payload?.text || "");
-    appState.voice.transcriptBuffer = transcript;
-    appState.voice.interimTranscript = "";
-    pushVoiceEvent("OpenAI transcription completed.");
-    renderVoiceDebugUi();
-    if (transcript) {
-      const input = document.getElementById("command-input");
-      if (input) input.value = transcript;
-    }
-    if (appState.voice.autoSend && transcript) {
-      setVoiceStatus("Sending transcript...");
-      const sent = await sendCommandText(transcript);
-      if (sent) {
-        const input = document.getElementById("command-input");
-        if (input) input.value = "";
-        appState.voice.transcriptBuffer = "";
-        renderVoiceDebugUi();
-        setVoiceStatus("Transcript sent.");
-      }
-    } else {
-      setVoiceStatus(transcript ? "Transcript captured." : "No speech detected.");
-    }
-  } catch (error) {
-    appState.voice.lastError = error?.message || String(error);
-    pushVoiceEvent(`OpenAI transcription failed: ${appState.voice.lastError}`);
-    setVoiceStatus(`Voice transcription failed: ${appState.voice.lastError}`, true);
-  } finally {
-    appState.voice.isTranscribing = false;
-    appState.voice.listening = false;
-    appState.voice.recognitionState = appState.voice.isSpeaking ? "speaking" : "idle";
-    stopMicMeter();
-    updateVoiceUi();
-  }
+  return transcribeRecordedAudioHelper(appState, blob, {
+    FormDataCtor: FormData,
+    documentRef: document,
+    fetchRef: fetch,
+    normalizeSpeechText,
+    pushVoiceEvent,
+    renderVoiceDebugUi,
+    sendCommandText,
+    setVoiceStatus,
+    stopMicMeter,
+    updateVoiceUi,
+  });
 }
 
 async function refreshVoiceInputDevices() {
-  if (!navigator.mediaDevices?.enumerateDevices) return;
-  try {
-    const devices = await navigator.mediaDevices.enumerateDevices();
-    appState.voice.inputDevices = devices
-      .filter((device) => device.kind === "audioinput")
-      .map((device, index) => ({
-        deviceId: device.deviceId,
-        label: device.label || `Audio Input ${index + 1}`,
-      }));
-    if (appState.voice.selectedInputDeviceId && !appState.voice.inputDevices.some((device) => device.deviceId === appState.voice.selectedInputDeviceId)) {
-      appState.voice.selectedInputDeviceId = "";
-      setStoredMap(TILEMAP_STORAGE_KEYS.voiceInputDeviceId, "");
-    }
-    updateVoiceUi();
-  } catch (error) {
-    pushVoiceEvent(`Input device scan failed: ${error?.message || String(error)}`);
-  }
+  return refreshVoiceInputDevicesHelper(appState, {
+    navigatorRef: navigator,
+    pushVoiceEvent,
+    setStoredMap,
+    updateVoiceUi,
+  });
 }
 
 function startMicMeterLoop() {
-  const analyser = appState.voice.analyser;
-  const data = appState.voice.analyserData;
-  if (!analyser || !data) return;
-  analyser.getByteTimeDomainData(data);
-  let peak = 0;
-  let sumSquares = 0;
-  for (let index = 0; index < data.length; index += 1) {
-    const normalized = Math.abs((data[index] - 128) / 128);
-    sumSquares += normalized * normalized;
-    if (normalized > peak) peak = normalized;
-  }
-  const rms = Math.sqrt(sumSquares / data.length);
-  const boostedLevel = Math.max(peak * 3.5, rms * 9);
-  appState.voice.micLevel = Math.max(appState.voice.micLevel * 0.72, Math.min(1, boostedLevel));
-  renderVoiceDebugUi();
-  appState.voice.meterFrame = requestAnimationFrame(startMicMeterLoop);
+  return startMicMeterLoopHelper(appState, {
+    renderVoiceDebugUi,
+    requestAnimationFrameRef: requestAnimationFrame,
+    startMicMeterLoop,
+  });
 }
 
 async function ensureMicMeter() {
-  if (appState.voice.micStream && appState.voice.audioContext && appState.voice.analyser) return true;
-  if (!appState.voice.meterSupported) {
-    pushVoiceEvent("Microphone meter unavailable in this browser.");
-    return false;
-  }
-  try {
-    const audioConstraints = {
-      echoCancellation: true,
-      noiseSuppression: true,
-      autoGainControl: true,
-    };
-    if (appState.voice.selectedInputDeviceId) {
-      audioConstraints.deviceId = { exact: appState.voice.selectedInputDeviceId };
-    }
-    const stream = await navigator.mediaDevices.getUserMedia({
-      audio: audioConstraints,
-    });
-    const AudioContextCtor = window.AudioContext || window.webkitAudioContext;
-    const audioContext = new AudioContextCtor();
-    const source = audioContext.createMediaStreamSource(stream);
-    const analyser = audioContext.createAnalyser();
-    analyser.fftSize = 1024;
-    source.connect(analyser);
-    appState.voice.micStream = stream;
-    appState.voice.audioContext = audioContext;
-    appState.voice.analyser = analyser;
-    appState.voice.analyserData = new Uint8Array(analyser.frequencyBinCount);
-    const activeTrack = stream.getAudioTracks()[0];
-    const activeSettings = activeTrack?.getSettings?.() || {};
-    const activeDeviceId = activeSettings.deviceId || "";
-    const matchedDevice = appState.voice.inputDevices.find((device) => device.deviceId === activeDeviceId);
-    appState.voice.currentInputLabel = matchedDevice?.label || activeTrack?.label || "";
-    if (activeDeviceId && activeDeviceId !== appState.voice.selectedInputDeviceId) {
-      appState.voice.selectedInputDeviceId = activeDeviceId;
-      setStoredMap(TILEMAP_STORAGE_KEYS.voiceInputDeviceId, activeDeviceId);
-    }
-    pushVoiceEvent("Microphone meter connected.");
-    if (appState.voice.currentInputLabel) pushVoiceEvent(`Active input: ${appState.voice.currentInputLabel}`);
-    await refreshVoiceInputDevices();
-    startMicMeterLoop();
-    return true;
-  } catch (error) {
-    appState.voice.lastError = error?.message || String(error);
-    pushVoiceEvent(`Microphone meter failed: ${appState.voice.lastError}`);
-    updateVoiceUi();
-    setVoiceStatus(`Microphone access failed: ${appState.voice.lastError}`, true);
-    return false;
-  }
+  return ensureMicMeterHelper(appState, {
+    navigatorRef: navigator,
+    pushVoiceEvent,
+    refreshVoiceInputDevices,
+    setStoredMap,
+    setVoiceStatus,
+    startMicMeterLoop,
+    updateVoiceUi,
+    windowRef: window,
+  });
 }
 
 function stopVoiceCapture() {
-  if (appState.voice.isSpeaking) {
-    stopSpeechPlayback();
-    appState.voice.recognitionState = appState.voice.listening ? "recording" : "idle";
-    updateVoiceUi();
-    setVoiceStatus(appState.voice.listening ? "Recording..." : "Voice idle.");
-  }
-  if (appState.voice.mediaRecorder && appState.voice.mediaRecorder.state !== "inactive") {
-    try {
-      pushVoiceEvent("Recording stop requested.");
-      appState.voice.mediaRecorder.stop();
-    } catch (error) {
-      appState.voice.lastError = error?.message || String(error);
-      pushVoiceEvent(`Recording stop failed: ${appState.voice.lastError}`);
-      stopMicMeter();
-      updateVoiceUi();
-      setVoiceStatus(`Voice stop failed: ${appState.voice.lastError}`, true);
-    }
-    return;
-  }
-  if (appState.voice.recognition && appState.voice.listening) {
-    try {
-      pushVoiceEvent("Stop requested.");
-      appState.voice.recognition.stop();
-    } catch (error) {
-      appState.voice.lastError = error?.message || String(error);
-      pushVoiceEvent(`Stop failed: ${appState.voice.lastError}`);
-      updateVoiceUi();
-      setVoiceStatus(`Voice stop failed: ${appState.voice.lastError}`, true);
-    }
-  }
+  return stopVoiceCaptureHelper(appState, {
+    pushVoiceEvent,
+    setVoiceStatus,
+    stopMicMeter,
+    stopSpeechPlayback,
+    updateVoiceUi,
+  });
 }
 
 async function startVoiceCapture() {
-  if (!appState.selectedAgentId) {
-    setVoiceStatus("Select an agent before starting voice mode.", true);
-    return;
-  }
-  if (appState.voice.backendConfigured && appState.voice.recordingSupported) {
-    appState.voice.transcriptBuffer = "";
-    appState.voice.interimTranscript = "";
-    appState.voice.lastError = "";
-    renderVoiceDebugUi();
-    const ready = await ensureMicMeter();
-    if (!ready || !appState.voice.micStream) return;
-    try {
-      const preferredMimeTypes = [
-        "audio/webm;codecs=opus",
-        "audio/ogg;codecs=opus",
-        "audio/webm",
-      ];
-      const mimeType = preferredMimeTypes.find((candidate) => window.MediaRecorder?.isTypeSupported?.(candidate)) || "";
-      appState.voice.recordingMimeType = mimeType || "audio/webm";
-      appState.voice.recordedChunks = [];
-      const recorder = mimeType ? new MediaRecorder(appState.voice.micStream, { mimeType }) : new MediaRecorder(appState.voice.micStream);
-      appState.voice.mediaRecorder = recorder;
-      recorder.ondataavailable = (event) => {
-        if (event.data && event.data.size > 0) appState.voice.recordedChunks.push(event.data);
-      };
-      recorder.onstart = () => {
-        appState.voice.listening = true;
-        appState.voice.recognitionState = "recording";
-        pushVoiceEvent("Recording started.");
-        updateVoiceUi();
-        setVoiceStatus("Recording voice...");
-      };
-      recorder.onerror = (event) => {
-        appState.voice.lastError = event?.error?.message || "recording error";
-        appState.voice.listening = false;
-        pushVoiceEvent(`Recording error: ${appState.voice.lastError}`);
-        stopMicMeter();
-        updateVoiceUi();
-        setVoiceStatus(`Voice input error: ${appState.voice.lastError}`, true);
-      };
-      recorder.onstop = async () => {
-        const blob = new Blob(appState.voice.recordedChunks, {
-          type: appState.voice.recordingMimeType || "audio/webm",
-        });
-        appState.voice.mediaRecorder = null;
-        appState.voice.recordedChunks = [];
-        pushVoiceEvent("Recording stopped.");
-        if (blob.size > 0) await transcribeRecordedAudio(blob);
-        else {
-          appState.voice.listening = false;
-          stopMicMeter();
-          updateVoiceUi();
-          setVoiceStatus("No audio captured.", true);
-        }
-      };
-      recorder.start();
-      return;
-    } catch (error) {
-      appState.voice.lastError = error?.message || String(error);
-      pushVoiceEvent(`Recording start failed: ${appState.voice.lastError}`);
-      stopMicMeter();
-      updateVoiceUi();
-      setVoiceStatus(`Voice start failed: ${appState.voice.lastError}`, true);
-      return;
-    }
-  }
-
-  if (!appState.voice.recognition) {
-    pushVoiceEvent("Start requested but recognition is unavailable.");
-    setVoiceStatus("Speech recognition is not available in this browser.", true);
-    return;
-  }
-  appState.voice.transcriptBuffer = "";
-  appState.voice.interimTranscript = "";
-  appState.voice.lastError = "";
-  renderVoiceDebugUi();
-  await ensureMicMeter();
-  try {
-    pushVoiceEvent("Recognition start requested.");
-    appState.voice.recognition.start();
-  } catch (error) {
-    appState.voice.lastError = error?.message || String(error);
-    appState.voice.recognitionState = "start failed";
-    pushVoiceEvent(`Recognition start failed: ${appState.voice.lastError}`);
-    updateVoiceUi();
-    setVoiceStatus(`Voice start failed: ${appState.voice.lastError}`, true);
-  }
+  return startVoiceCaptureHelper(appState, {
+    MediaRecorderCtor: MediaRecorder,
+    ensureMicMeter,
+    pushVoiceEvent,
+    renderVoiceDebugUi,
+    setVoiceStatus,
+    stopMicMeter,
+    transcribeRecordedAudio,
+    updateVoiceUi,
+    windowRef: window,
+  });
 }
 
 function initVoiceControls() {
-  const RecognitionCtor = window.SpeechRecognition || window.webkitSpeechRecognition;
-  const AudioContextCtor = window.AudioContext || window.webkitAudioContext;
-  appState.voice.recordingSupported = !!(navigator.mediaDevices?.getUserMedia && window.MediaRecorder);
-  appState.voice.ttsSupported = "speechSynthesis" in window;
-  appState.voice.supported = typeof RecognitionCtor === "function";
-  appState.voice.meterSupported = !!(navigator.mediaDevices?.getUserMedia && AudioContextCtor);
-  const browserHints = [];
-  if (!window.isSecureContext) browserHints.push("not a secure context");
-  if (!appState.voice.supported) browserHints.push("speech recognition API missing");
-  if (!appState.voice.ttsSupported) browserHints.push("speech synthesis API missing");
-  if (!appState.voice.meterSupported) browserHints.push("mic meter API missing");
-  if (!appState.voice.recordingSupported) browserHints.push("media recorder API missing");
-  appState.voice.supportSummary = [
-    appState.voice.recordingSupported ? "recording available" : "recording unavailable",
-    appState.voice.supported ? "recognition available" : "recognition unavailable",
-    appState.voice.meterSupported ? "mic meter available" : "mic meter unavailable",
-    appState.voice.ttsSupported ? "speech output available" : "speech output unavailable",
-    window.isSecureContext ? "secure context" : "insecure context",
-    ...browserHints,
-  ].join(" | ");
-  appState.voice.selectedInputDeviceId = getStoredMap(TILEMAP_STORAGE_KEYS.voiceInputDeviceId, "");
-  pushVoiceEvent("Voice controls initialized.");
-  updateVoiceUi();
-  refreshVoiceInputDevices();
-  fetchVoiceConfig();
-  if (!appState.voice.recordingSupported && !appState.voice.supported) {
-    setVoiceStatus("Voice input is unavailable here. Try a Chromium-based browser.", true);
-    return;
-  }
-  if (!appState.voice.supported) {
-    setVoiceStatus(appState.voice.backendConfigured ? "OpenAI voice recording ready." : "Voice input is unavailable here. Try a Chromium-based browser.", !appState.voice.backendConfigured);
-    return;
-  }
-  const recognition = new RecognitionCtor();
-  recognition.lang = "en-US";
-  recognition.interimResults = true;
-  recognition.continuous = false;
-  appState.voice.recognition = recognition;
-
-  recognition.onstart = () => {
-    appState.voice.listening = true;
-    appState.voice.recognitionState = "listening";
-    appState.voice.draftBeforeListening = document.getElementById("command-input")?.value.trim() || "";
-    appState.voice.lastError = "";
-    pushVoiceEvent("Recognition started.");
-    updateVoiceUi();
-    setVoiceStatus("Listening for speech...");
-  };
-  recognition.onend = async () => {
-    appState.voice.listening = false;
-    appState.voice.recognitionState = "idle";
-    appState.voice.interimTranscript = "";
-    stopMicMeter();
-    pushVoiceEvent("Recognition ended.");
-    updateVoiceUi();
-    const finalDraft = normalizeSpeechText(`${appState.voice.draftBeforeListening} ${appState.voice.transcriptBuffer}`);
-    if (finalDraft) {
-      const input = document.getElementById("command-input");
-      if (input) input.value = finalDraft;
-    }
-    if (appState.voice.autoSend && finalDraft) {
-      setVoiceStatus("Sending transcript...");
-      const sent = await sendCommandText(finalDraft);
-      if (sent) {
-        const input = document.getElementById("command-input");
-        if (input) input.value = "";
-        appState.voice.transcriptBuffer = "";
-        appState.voice.draftBeforeListening = "";
-        appState.voice.interimTranscript = "";
-        pushVoiceEvent("Transcript auto-sent.");
-        renderVoiceDebugUi();
-        setVoiceStatus("Transcript sent.");
-        return;
-      }
-    }
-    setVoiceStatus("Voice idle.");
-  };
-  recognition.onerror = (event) => {
-    appState.voice.listening = false;
-    appState.voice.recognitionState = `error: ${event.error || "unknown"}`;
-    appState.voice.lastError = event.error || "unknown";
-    stopMicMeter();
-    pushVoiceEvent(`Recognition error: ${appState.voice.lastError}`);
-    updateVoiceUi();
-    setVoiceStatus(`Voice input error: ${event.error || "unknown"}.`, true);
-  };
-  recognition.onresult = async (event) => {
-    let finalTranscript = "";
-    let interimTranscript = "";
-    for (let index = event.resultIndex; index < event.results.length; index += 1) {
-      const result = event.results[index];
-      const transcript = result?.[0]?.transcript || "";
-      if (result.isFinal) finalTranscript += `${transcript} `;
-      else interimTranscript += `${transcript} `;
-    }
-    const combined = normalizeSpeechText(`${appState.voice.transcriptBuffer} ${finalTranscript}`);
-    if (combined) appState.voice.transcriptBuffer = combined;
-    appState.voice.interimTranscript = normalizeSpeechText(interimTranscript);
-    const preview = normalizeSpeechText(`${appState.voice.draftBeforeListening} ${combined} ${interimTranscript}`);
-    if (preview) {
-      const input = document.getElementById("command-input");
-      if (input) input.value = preview;
-    }
-    pushVoiceEvent(finalTranscript.trim() ? "Recognition produced final transcript." : "Recognition produced interim transcript.");
-    renderVoiceDebugUi();
-    if (finalTranscript.trim()) {
-      setVoiceStatus(appState.voice.autoSend ? "Transcript captured. Sending..." : "Transcript captured.");
-    }
-  };
-  recognition.onaudiostart = () => {
-    appState.voice.recognitionState = "hearing audio";
-    pushVoiceEvent("Audio capture started.");
-    updateVoiceUi();
-  };
-  recognition.onsoundstart = () => {
-    appState.voice.recognitionState = "sound detected";
-    pushVoiceEvent("Sound detected.");
-    updateVoiceUi();
-  };
-  recognition.onspeechstart = () => {
-    appState.voice.recognitionState = "speech detected";
-    pushVoiceEvent("Speech detected.");
-    updateVoiceUi();
-  };
-  recognition.onspeechend = () => {
-    pushVoiceEvent("Speech ended.");
-    updateVoiceUi();
-  };
-  recognition.onaudioend = () => {
-    pushVoiceEvent("Audio capture ended.");
-    updateVoiceUi();
-  };
+  return initVoiceControlsHelper(appState, {
+    documentRef: document,
+    fetchVoiceConfig,
+    getStoredMap,
+    navigatorRef: navigator,
+    pushVoiceEvent,
+    refreshVoiceInputDevices,
+    renderVoiceDebugUi,
+    sendCommandText,
+    setVoiceStatus,
+    stopMicMeter,
+    updateVoiceUi,
+    windowRef: window,
+  });
 }
 
 function populateAgentSelect(agents) {
