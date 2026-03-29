@@ -82,7 +82,7 @@ import {
   showRichMessage as showRichMessageHelper,
   showStashItem as showStashItemHelper,
   stripControlTags,
-} from "./features/chat/messageView.js";
+} from "./features/chat/messageView.js?v=0.2.0-settings-16";
 import {
   closeWorldDetails as closeWorldDetailsHelper,
   connectStream as connectStreamHelper,
@@ -266,8 +266,8 @@ import {
   renderVisualSelectionPreview as renderVisualSelectionPreviewShell,
   setActiveEditorSubview as setActiveEditorSubviewShell,
   syncEditorInputs as syncEditorInputsShell,
-} from "./app/editorShell.js";
-import { createSettingsVoiceRuntime } from "./app/settingsVoiceRuntime.js";
+} from "./app/editorShell.js?v=0.2.0-settings-16";
+import { createSettingsVoiceRuntime } from "./app/settingsVoiceRuntime.js?v=0.2.0-settings-16";
 import {
   closeWorldDetails as closeWorldDetailsShell,
   connectStream as connectStreamShell,
@@ -282,7 +282,7 @@ import {
   showStashItem as showStashItemShell,
   syncSelectedAgentDetailFromWorld as syncSelectedAgentDetailFromWorldShell,
 } from "./app/worldShell.js";
-import { createRenderWorldRuntime } from "./app/renderWorldRuntime.js";
+import { createRenderWorldRuntime } from "./app/renderWorldRuntime.js?v=0.2.0-settings-16";
 import {
   populateAgentSelect as populateAgentSelectHelper,
   populateRegionIdSelect as populateRegionIdSelectHelper,
