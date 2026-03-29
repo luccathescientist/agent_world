@@ -1,11 +1,9 @@
 import {
   AGENT_BUBBLE_PALETTES,
   AGENT_INACTIVE_HIDE_MS,
-  CANONICAL_ANCHOR_ALIASES,
   CHAT_BUBBLE_PREVIEW_SAMPLES,
   CHAT_BUBBLE_SLOT_LAYOUT,
   DEFAULT_ANCHOR_TILES,
-  DEFAULT_CHAT_BUBBLE_FRAME,
   DEFAULT_FLOOR_ATLAS_PATH,
   DEFAULT_OFFICE_ATLAS_PATH,
   DEFAULT_SELECTED_AGENT_ID,
@@ -20,7 +18,6 @@ import {
   TILE_SIZE,
   TILEMAP_STORAGE_KEYS,
   VISUAL_LAYER_CONFIG,
-  WORLD_TOP_PADDING,
 } from "./src/core/constants.js";
 import { setText } from "./src/core/dom.js";
 import { escapeHtml, formatDate, formatTime } from "./src/core/format.js";
@@ -41,11 +38,9 @@ import {
   parseMapText,
   parseObjectRow,
   parseObjectToken,
-  resolveGridShape,
   serializeFloorLines,
   serializeObjectLines,
   tokenLabel,
-  validateObjectGrid,
 } from "./src/features/tilemap/mapText.js";
 import {
   applyImportedAgentWorldStorageState,
@@ -137,6 +132,25 @@ import {
   tileFromWorldPoint as tileFromWorldPointHelper,
   tilePoint,
 } from "./src/features/world/pathing.js";
+import {
+  buildTilemapState as buildTilemapStateHelper,
+  canonicalizeAnchorId as canonicalizeAnchorIdHelper,
+  cellsKeySet,
+  furnitureTokenAt as furnitureTokenAtHelper,
+  getAnchorTile as getAnchorTileHelper,
+  getRenderHeight as getRenderHeightHelper,
+  getSceneTopPadding as getSceneTopPaddingHelper,
+  getWorldCols as getWorldColsHelper,
+  getWorldHeight as getWorldHeightHelper,
+  getWorldRows as getWorldRowsHelper,
+  getWorldWidth as getWorldWidthHelper,
+  normalizeRoomRegions as normalizeRoomRegionsHelper,
+  normalizeStashPoint as normalizeStashPointHelper,
+  propTokenAt as propTokenAtHelper,
+  regionCenter,
+  regionForAnchor as regionForAnchorHelper,
+  regionForCell as regionForCellHelper,
+} from "./src/features/world/worldState.js";
 import {
   buildPrimitiveTexture as buildPrimitiveTextureHelper,
   buildTileTextures as buildTileTexturesHelper,
@@ -696,83 +710,35 @@ function writeGameStateToLocalStorage(payload, syncTextarea = true) {
 }
 
 function getAnchorTile(anchorId) {
-  return appState.tilemap?.layout?.anchors?.[anchorId] || DEFAULT_ANCHOR_TILES[anchorId] || DEFAULT_ANCHOR_TILES.lounge;
+  return getAnchorTileHelper(appState, anchorId);
 }
 
 function canonicalizeAnchorId(rawId) {
-  const cleaned = String(rawId || "").trim();
-  if (!cleaned) return "";
-  const compact = cleaned.toLowerCase().replace(/[^a-z]/g, "");
-  return CANONICAL_ANCHOR_ALIASES[compact] || cleaned;
-}
-
-function normalizeRegionCells(cells) {
-  const maxRows = appState.renderer?.assets?.layout?.rows || appState.tilemap?.layout?.rows || DEFAULT_WORLD_ROWS;
-  const maxCols = appState.renderer?.assets?.layout?.cols || appState.tilemap?.layout?.cols || DEFAULT_WORLD_COLS;
-  const rawCells = cells
-    .filter((cell) => Number.isInteger(cell?.row) && Number.isInteger(cell?.col))
-    .map((cell) => ({ row: cell.row, col: cell.col }));
-  const needsOneBasedShift = rawCells.some((cell) => cell.row >= maxRows || cell.col >= maxCols)
-    && rawCells.every((cell) => cell.row > 0 && cell.col > 0);
-  const adjusted = needsOneBasedShift
-    ? rawCells.map((cell) => ({ row: cell.row - 1, col: cell.col - 1 }))
-    : rawCells;
-  return adjusted.filter((cell) => cell.row >= 0 && cell.col >= 0 && cell.row < maxRows && cell.col < maxCols);
+  return canonicalizeAnchorIdHelper(rawId);
 }
 
 function normalizeRoomRegions(rawRegions) {
-  if (!Array.isArray(rawRegions)) return [];
-  return rawRegions
-    .filter((region) => region && Array.isArray(region.cells) && region.id)
-    .map((region) => ({
-      id: canonicalizeAnchorId(region.id),
-      label: String(region.label || region.id).trim() || String(region.id),
-      kind: region.kind === "door" ? "door" : "room",
-      cells: normalizeRegionCells(region.cells),
-      labelCell: normalizeRegionCells(region.labelCell ? [region.labelCell] : [])[0] || null,
-    }))
-    .filter((region) => region.cells.length);
+  return normalizeRoomRegionsHelper(appState, rawRegions);
 }
 
 function normalizeStashPoint(rawStash) {
-  const maxRows = appState.renderer?.assets?.layout?.rows || appState.tilemap?.layout?.rows || DEFAULT_WORLD_ROWS;
-  const maxCols = appState.renderer?.assets?.layout?.cols || appState.tilemap?.layout?.cols || DEFAULT_WORLD_COLS;
-  const row = Number.isInteger(rawStash?.row) ? rawStash.row : 14;
-  const col = Number.isInteger(rawStash?.col) ? rawStash.col : 15;
-  return {
-    row: Math.max(0, Math.min(maxRows - 1, row)),
-    col: Math.max(0, Math.min(maxCols - 1, col)),
-  };
-}
-
-function cellsKeySet(cells) {
-  return new Set(cells.map((cell) => `${cell.row}:${cell.col}`));
+  return normalizeStashPointHelper(appState, rawStash);
 }
 
 function regionForCell(row, col) {
-  const key = `${row}:${col}`;
-  return appState.roomRegions.find((region) => region.cells.some((cell) => `${cell.row}:${cell.col}` === key)) || null;
+  return regionForCellHelper(appState, row, col);
 }
 
 function regionForAnchor(anchorId) {
-  const canonical = canonicalizeAnchorId(anchorId);
-  return appState.roomRegions.find((region) => canonicalizeAnchorId(region.id) === canonical) || null;
+  return regionForAnchorHelper(appState, anchorId);
 }
 
 function furnitureTokenAt(row, col) {
-  return appState.tilemap?.furnitureGrid?.[row]?.[col] || ".";
+  return furnitureTokenAtHelper(appState, row, col);
 }
 
 function propTokenAt(row, col) {
-  return appState.tilemap?.propGrid?.[row]?.[col] || ".";
-}
-
-function regionCenter(region) {
-  if (!region?.cells?.length) return null;
-  return {
-    row: region.cells.reduce((sum, cell) => sum + cell.row, 0) / region.cells.length,
-    col: region.cells.reduce((sum, cell) => sum + cell.col, 0) / region.cells.length,
-  };
+  return propTokenAtHelper(appState, row, col);
 }
 
 function isIdleLikeAgent(agent) {
@@ -809,55 +775,28 @@ function roomWaypointTiles(anchorId, startTile = null) {
   });
 }
 
-function deriveAnchorsFromRegions(layout, roomRegions) {
-  const anchors = {};
-  for (const [anchorId, fallback] of Object.entries(DEFAULT_ANCHOR_TILES)) {
-    const existing = layout.anchors?.[anchorId];
-    anchors[anchorId] = {
-      col: existing?.col ?? fallback.col,
-      row: existing?.row ?? fallback.row,
-      label: existing?.label ?? fallback.label,
-    };
-  }
-  for (const region of roomRegions) {
-    if (region.kind !== "room" || !region.cells.length) continue;
-    const avgRow = region.cells.reduce((sum, cell) => sum + cell.row, 0) / region.cells.length;
-    const avgCol = region.cells.reduce((sum, cell) => sum + cell.col, 0) / region.cells.length;
-    const nearest = region.cells.reduce((best, cell) => {
-      const score = Math.abs(cell.row - avgRow) + Math.abs(cell.col - avgCol);
-      return !best || score < best.score ? { ...cell, score } : best;
-    }, null);
-    anchors[region.id] = {
-      col: nearest?.col ?? anchors[region.id]?.col ?? 0,
-      row: nearest?.row ?? anchors[region.id]?.row ?? 0,
-      label: region.label || anchors[region.id]?.label || region.id.toUpperCase(),
-    };
-  }
-  return anchors;
-}
-
 function getWorldCols() {
-  return appState.tilemap?.layout?.cols || appState.renderer?.assets?.layout?.cols || DEFAULT_WORLD_COLS;
+  return getWorldColsHelper(appState);
 }
 
 function getWorldRows() {
-  return appState.tilemap?.layout?.rows || appState.renderer?.assets?.layout?.rows || DEFAULT_WORLD_ROWS;
+  return getWorldRowsHelper(appState);
 }
 
 function getWorldWidth() {
-  return getWorldCols() * TILE_SIZE;
+  return getWorldWidthHelper(appState);
 }
 
 function getWorldHeight() {
-  return getWorldRows() * TILE_SIZE;
+  return getWorldHeightHelper(appState);
 }
 
 function getSceneTopPadding() {
-  return appState.activeTab === "world" ? WORLD_TOP_PADDING : 0;
+  return getSceneTopPaddingHelper(appState);
 }
 
 function getRenderHeight() {
-  return getWorldHeight() + getSceneTopPadding();
+  return getRenderHeightHelper(appState);
 }
 
 function isBenchmarkAgent(agent) {
@@ -1017,67 +956,11 @@ function getFloorTexture(renderer, floorToken) {
 }
 
 function buildTilemapState(floorText, wallText, furnitureText, propText, manifest, layout, roomRegions = []) {
-  const floorLines = parseMapText(floorText).map(parseFloorRow);
-  const wallLines = parseMapText(wallText).map(parseObjectRow);
-  const furnitureLines = parseMapText(furnitureText).map(parseObjectRow);
-  const propLines = parseMapText(propText).map(parseObjectRow);
-  const resolvedShape = resolveGridShape(layout, floorLines, wallLines, furnitureLines, propLines);
-  const cols = resolvedShape.cols;
-  const rows = resolvedShape.rows;
-  validateObjectGrid(floorLines, cols, rows);
-  validateObjectGrid(wallLines, cols, rows);
-  validateObjectGrid(furnitureLines, cols, rows);
-  validateObjectGrid(propLines, cols, rows);
-
-  const walkableGrid = [];
-  let walkableTiles = 0;
-  let solidTiles = 0;
-  let doorTiles = 0;
-  for (let row = 0; row < rows; row += 1) {
-    const walkRow = [];
-    for (let col = 0; col < cols; col += 1) {
-      const floorToken = parseFloorToken(floorLines[row][col]);
-      const wallToken = parseObjectToken(wallLines[row][col]);
-      const furnitureToken = parseObjectToken(furnitureLines[row][col]);
-      const propToken = parseObjectToken(propLines[row][col]);
-      if (floorToken.kind === "code" && (!manifest[floorToken.code] || manifest[floorToken.code].kind !== "floor")) {
-        throw new Error(`Unknown floor code "${floorToken.code}" at ${row + 1}:${col + 1}`);
-      }
-      const passable = floorToken.passable && wallToken.passable;
-      walkRow.push(passable);
-      if (passable) walkableTiles += 1;
-      else solidTiles += 1;
-      if (wallToken.door) doorTiles += 1;
-    }
-    walkableGrid.push(walkRow);
-  }
-
-  const normalizedRegions = normalizeRoomRegions(roomRegions);
-  const nextLayout = {
-    ...layout,
-    cols,
-    rows,
-    stash: normalizeStashPoint(layout.stash),
-    roomRegions: normalizedRegions,
-  };
-  nextLayout.anchors = deriveAnchorsFromRegions(nextLayout, normalizedRegions);
-
-  return {
-    manifest,
-    layout: nextLayout,
-    floorText: normalizeMapText(floorText),
-    wallText: normalizeMapText(wallText),
-    furnitureText: normalizeMapText(furnitureText),
-    propText: normalizeMapText(propText),
-    floorGrid: floorLines,
-    wallGrid: wallLines,
-    furnitureGrid: furnitureLines,
-    propGrid: propLines,
-    walkableGrid,
-    walkableTiles,
-    solidTiles,
-    doorTiles,
-  };
+  return buildTilemapStateHelper(floorText, wallText, furnitureText, propText, manifest, layout, roomRegions, {
+    normalizeRoomRegions: normalizeRoomRegionsHelper,
+    normalizeStashPoint: normalizeStashPointHelper,
+    state: appState,
+  });
 }
 
 function createAnchorLabel(text, x, y) {
