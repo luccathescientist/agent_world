@@ -317,22 +317,10 @@ import {
 } from "./app/shell.js";
 import { appState } from "./state/appState.js";
 const chatBubbleThemeState = { atlasImagePromise: null };
-
-function setVoiceStatus(text, isError = false) {
-  return setVoiceStatusShell(text, isError, { documentRef: document });
-}
-
-function setVoiceDebugText(id, value) {
-  return setVoiceDebugTextShell(id, value, { documentRef: document });
-}
-
-function setSettingsResult(text, isError = false) {
-  return setSettingsResultShell(text, isError, { documentRef: document });
-}
-
-function applyRuntimeStatusTone(id, state) {
-  return applyRuntimeStatusToneShell(id, state, { documentRef: document });
-}
+const setVoiceStatus = (text, isError = false) => setVoiceStatusShell(text, isError, { documentRef: document });
+const setVoiceDebugText = (id, value) => setVoiceDebugTextShell(id, value, { documentRef: document });
+const setSettingsResult = (text, isError = false) => setSettingsResultShell(text, isError, { documentRef: document });
+const applyRuntimeStatusTone = (id, state) => applyRuntimeStatusToneShell(id, state, { documentRef: document });
 
 function renderCodeWithLineNumbers(text) {
   return renderCodeWithLineNumbersShell(text, {
@@ -618,9 +606,7 @@ function initVoiceControls() {
   });
 }
 
-function populateAgentSelect(agents) {
-  return populateAgentSelectHelper(appState, agents, { documentRef: document });
-}
+const populateAgentSelect = (agents) => populateAgentSelectHelper(appState, agents, { documentRef: document });
 
 function populateRegionIdSelect(select) {
   return populateRegionIdSelectHelper(appState, select, {
@@ -628,9 +614,7 @@ function populateRegionIdSelect(select) {
   });
 }
 
-function selectedChatBubbleTheme() {
-  return selectedChatBubbleThemeHelper(appState);
-}
+const selectedChatBubbleTheme = () => selectedChatBubbleThemeHelper(appState);
 
 function applyChatBubbleFrameStyles() {
   return applyChatBubbleFrameStylesHelper(appState, chatBubbleThemeState, {
@@ -640,13 +624,9 @@ function applyChatBubbleFrameStyles() {
   });
 }
 
-function chatBubbleSlotOverlayMarkup(role) {
-  return chatBubbleSlotOverlayMarkupHelper(role, appState, { escapeHtml });
-}
+const chatBubbleSlotOverlayMarkup = (role) => chatBubbleSlotOverlayMarkupHelper(role, appState, { escapeHtml });
 
-function applyChatRoleTheme(element, role) {
-  return applyChatRoleThemeHelper(element, role);
-}
+const applyChatRoleTheme = (element, role) => applyChatRoleThemeHelper(element, role);
 
 function statusClass(runtimeStatus) {
   if (runtimeStatus === "blocked") return "blocked";
@@ -701,21 +681,14 @@ function nextAmbientRandom(state) {
   return next / 0x100000000;
 }
 
-function setMessageSelection(kind, title, body, path = null, locked = true) {
-  return setMessageSelectionHelper(appState, kind, title, body, path, locked);
-}
+const setMessageSelection = (kind, title, body, path = null, locked = true) =>
+  setMessageSelectionHelper(appState, kind, title, body, path, locked);
 
-function createText(text, style) {
-  return new PIXI.Text(text, style);
-}
+const createText = (text, style) => new PIXI.Text(text, style);
 
-function displayActionText(text) {
-  return displayActionTextHelper(text, { stripControlTags });
-}
+const displayActionText = (text) => displayActionTextHelper(text, { stripControlTags });
 
-function formatInlineRichText(text) {
-  return formatInlineRichTextHelper(text, { escapeHtml });
-}
+const formatInlineRichText = (text) => formatInlineRichTextHelper(text, { escapeHtml });
 
 function formatRichTextHtml(text) {
   return formatRichTextHtmlHelper(text, {
@@ -725,9 +698,7 @@ function formatRichTextHtml(text) {
   });
 }
 
-function renderRichText(target, text) {
-  return renderRichTextHelper(target, text, { formatRichTextHtml });
-}
+const renderRichText = (target, text) => renderRichTextHelper(target, text, { formatRichTextHtml });
 
 function roomLabelForAnchor(anchorId) {
   const region = regionForAnchor(anchorId);
@@ -788,9 +759,7 @@ function buildCurrentGameStatePayload() {
   });
 }
 
-function syncGameStateTextarea() {
-  return syncGameStateTextareaHelper(appState, { buildCurrentGameStatePayload });
-}
+const syncGameStateTextarea = () => syncGameStateTextareaHelper(appState, { buildCurrentGameStatePayload });
 
 function writeGameStateToLocalStorage(payload, syncTextarea = true) {
   if (!syncTextarea) {
@@ -804,37 +773,14 @@ function writeGameStateToLocalStorage(payload, syncTextarea = true) {
   return writeGameStateToLocalStorageHelper(appState, payload, { syncGameStateTextarea });
 }
 
-function getAnchorTile(anchorId) {
-  return getAnchorTileHelper(appState, anchorId);
-}
-
-function canonicalizeAnchorId(rawId) {
-  return canonicalizeAnchorIdHelper(rawId);
-}
-
-function normalizeRoomRegions(rawRegions) {
-  return normalizeRoomRegionsHelper(appState, rawRegions);
-}
-
-function normalizeStashPoint(rawStash) {
-  return normalizeStashPointHelper(appState, rawStash);
-}
-
-function regionForCell(row, col) {
-  return regionForCellHelper(appState, row, col);
-}
-
-function regionForAnchor(anchorId) {
-  return regionForAnchorHelper(appState, anchorId);
-}
-
-function furnitureTokenAt(row, col) {
-  return furnitureTokenAtHelper(appState, row, col);
-}
-
-function propTokenAt(row, col) {
-  return propTokenAtHelper(appState, row, col);
-}
+const getAnchorTile = (anchorId) => getAnchorTileHelper(appState, anchorId);
+const canonicalizeAnchorId = (rawId) => canonicalizeAnchorIdHelper(rawId);
+const normalizeRoomRegions = (rawRegions) => normalizeRoomRegionsHelper(appState, rawRegions);
+const normalizeStashPoint = (rawStash) => normalizeStashPointHelper(appState, rawStash);
+const regionForCell = (row, col) => regionForCellHelper(appState, row, col);
+const regionForAnchor = (anchorId) => regionForAnchorHelper(appState, anchorId);
+const furnitureTokenAt = (row, col) => furnitureTokenAtHelper(appState, row, col);
+const propTokenAt = (row, col) => propTokenAtHelper(appState, row, col);
 
 function isIdleLikeAgent(agent) {
   return agent?.visualState === "idle" || agent?.visualState === "waiting";
@@ -870,29 +816,12 @@ function roomWaypointTiles(anchorId, startTile = null) {
   });
 }
 
-function getWorldCols() {
-  return getWorldColsHelper(appState);
-}
-
-function getWorldRows() {
-  return getWorldRowsHelper(appState);
-}
-
-function getWorldWidth() {
-  return getWorldWidthHelper(appState);
-}
-
-function getWorldHeight() {
-  return getWorldHeightHelper(appState);
-}
-
-function getSceneTopPadding() {
-  return getSceneTopPaddingHelper(appState);
-}
-
-function getRenderHeight() {
-  return getRenderHeightHelper(appState);
-}
+const getWorldCols = () => getWorldColsHelper(appState);
+const getWorldRows = () => getWorldRowsHelper(appState);
+const getWorldWidth = () => getWorldWidthHelper(appState);
+const getWorldHeight = () => getWorldHeightHelper(appState);
+const getSceneTopPadding = () => getSceneTopPaddingHelper(appState);
+const getRenderHeight = () => getRenderHeightHelper(appState);
 
 function isBenchmarkAgent(agent) {
   const id = String(agent?.id || "").toLowerCase();
@@ -915,9 +844,7 @@ function inBounds(row, col) {
   });
 }
 
-function isWalkable(row, col) {
-  return isWalkableHelper(appState, row, col);
-}
+const isWalkable = (row, col) => isWalkableHelper(appState, row, col);
 
 function nearestWalkableTile(row, col) {
   return nearestWalkableTileHelper(appState, row, col, {
@@ -1116,13 +1043,9 @@ async function loadArtAssets() {
   });
 }
 
-function setTilemapStatus(text, isError = false) {
-  return setTilemapStatusHelper(text, isError, { documentRef: document });
-}
+const setTilemapStatus = (text, isError = false) => setTilemapStatusHelper(text, isError, { documentRef: document });
 
-function syncWorldDetailVisibility() {
-  return syncWorldDetailVisibilityHelper(appState, { documentRef: document });
-}
+const syncWorldDetailVisibility = () => syncWorldDetailVisibilityHelper(appState, { documentRef: document });
 
 function mountRendererView() {
   return mountRendererViewShell(appState, {
@@ -1691,9 +1614,7 @@ async function showRichMessage(kind, title, text, path = null) {
   });
 }
 
-function historyRoleMeta(type) {
-  return historyRoleMetaHelper(type, { historyRoleClass });
-}
+const historyRoleMeta = (type) => historyRoleMetaHelper(type, { historyRoleClass });
 
 function renderChat(history) {
   return renderChatShell(appState, history, {
