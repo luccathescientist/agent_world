@@ -74,7 +74,7 @@ test("settingsVoiceRuntime wires settings fetch/save flows through shell adapter
 
 test("settingsVoiceRuntime sendCommandText and voice actions keep browser/runtime bindings", async () => {
   const result = { textContent: "", style: {} };
-  const state = { selectedAgentId: "agent-1", detail: { history: [], session: { history: [] } } };
+  const state = { selectedAgentId: "agent-1", detail: { history: [], session: { history: [] } }, stream: {} };
   const calls = [];
   const runtime = createSettingsVoiceRuntime(state, {
     documentRef: {
@@ -137,7 +137,7 @@ test("settingsVoiceRuntime sendCommandText and voice actions keep browser/runtim
   assert.equal(state.detail.history[0].type, "operator_command");
   assert.ok(state.detail.history.some((event) => event.label === "hello"));
   assert.equal(state.detail.session.history.length, state.detail.history.length);
-  assert.ok(calls.includes("load"));
+  assert.equal(calls.includes("load"), false);
   assert.ok(calls.includes("startVoiceCapture"));
   assert.ok(calls.includes("ensureMicMeter"));
   assert.ok(calls.some((entry) => Array.isArray(entry) && entry[0] === "transcribeRecordedAudio"));

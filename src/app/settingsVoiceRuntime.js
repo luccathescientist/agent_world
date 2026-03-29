@@ -339,7 +339,9 @@ export function createSettingsVoiceRuntime(state, deps = {}) {
     if (result) {
       result.textContent = `${response.status === "accepted" ? "Sent" : "Rejected"} at ${formatTime(response.acceptedAt)}: ${response.echoedCommand}${response.reason ? ` (${response.reason})` : ""}`;
     }
-    await load();
+    if (response.status !== "accepted" || !state.stream) {
+      await load();
+    }
     return response.status === "accepted";
   }
 
