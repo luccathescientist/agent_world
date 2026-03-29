@@ -77,6 +77,7 @@ export function createSettingsVoiceRuntime(state, deps = {}) {
     requestAnimationFrameRef = globalThis.requestAnimationFrame,
     cancelAnimationFrameRef = globalThis.cancelAnimationFrame,
     load = async () => {},
+    renderChat = () => {},
     renderHistory = () => {},
     setText = setTextDefault,
     escapeHtml = escapeHtmlDefault,
@@ -339,6 +340,7 @@ export function createSettingsVoiceRuntime(state, deps = {}) {
         };
       }
       renderHistory(nextHistory);
+      renderChat(nextHistory);
     }
     if (result) {
       result.textContent = `${response.status === "accepted" ? "Sent" : "Rejected"} at ${formatTime(response.acceptedAt)}: ${response.echoedCommand}${response.reason ? ` (${response.reason})` : ""}`;

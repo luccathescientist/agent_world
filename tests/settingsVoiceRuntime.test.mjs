@@ -94,6 +94,7 @@ test("settingsVoiceRuntime sendCommandText and voice actions keep browser/runtim
     },
     formatTime: () => "12:00",
     load: async () => calls.push("load"),
+    renderChat: (history) => calls.push(["renderChat", history]),
     renderHistory: (history) => calls.push(["renderHistory", history]),
     speakTextShell: async (_state, text, source, deps) => {
       calls.push(["speakText", text, source]);
@@ -133,6 +134,7 @@ test("settingsVoiceRuntime sendCommandText and voice actions keep browser/runtim
   assert.match(result.textContent, /Sent at 12:00: hello/);
   assert.ok(calls.some((entry) => Array.isArray(entry) && entry[0] === "getJson"));
   assert.ok(calls.some((entry) => Array.isArray(entry) && entry[0] === "renderHistory"));
+  assert.ok(calls.some((entry) => Array.isArray(entry) && entry[0] === "renderChat"));
   assert.ok(state.detail.history.length >= 1);
   assert.equal(state.detail.history[0].type, "operator_command");
   assert.ok(state.detail.history.some((event) => event.label === "hello"));
@@ -160,6 +162,7 @@ test("settingsVoiceRuntime still renders optimistic history when detail is absen
       reason: "",
     }),
     formatTime: () => "12:00",
+    renderChat: (history) => calls.push(["chat", history]),
     renderHistory: (history) => calls.push(history),
   });
 
@@ -167,6 +170,7 @@ test("settingsVoiceRuntime still renders optimistic history when detail is absen
 
   assert.equal(state.pendingHistoryEvents.length, 1);
   assert.equal(state.pendingHistoryEvents[0].label, "hello");
-  assert.equal(calls.length, 1);
+  assert.equal(calls.length, 2);
   assert.equal(calls[0][0].type, "operator_command");
+  assert.equal(calls[1][0], "chat");
 });
