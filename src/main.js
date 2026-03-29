@@ -241,6 +241,13 @@ import {
   saveGameState as saveGameStateHelper,
   submitCommand as submitCommandHelper,
 } from "./app/runtime.js";
+import {
+  populateAgentSelect as populateAgentSelectHelper,
+  populateRegionIdSelect as populateRegionIdSelectHelper,
+  setActiveTab as setActiveTabHelper,
+  setTilemapStatus as setTilemapStatusHelper,
+  syncWorldDetailVisibility as syncWorldDetailVisibilityHelper,
+} from "./app/shell.js";
 import { appState } from "./state/appState.js";
 const chatBubbleThemeState = { atlasImagePromise: null };
 
@@ -520,24 +527,13 @@ function initVoiceControls() {
 }
 
 function populateAgentSelect(agents) {
-  const select = document.getElementById("agent-select");
-  if (!select) return;
-  const options = [`<option value="">Select agent</option>`];
-  for (const agent of agents || []) {
-    const selected = agent.id === appState.selectedAgentId ? " selected" : "";
-    options.push(`<option value="${agent.id}"${selected}>${agent.name || agent.id}</option>`);
-  }
-  select.innerHTML = options.join("");
+  return populateAgentSelectHelper(appState, agents, { documentRef: document });
 }
 
 function populateRegionIdSelect(select) {
-  if (!select) return;
-  const ids = [
-    ...Object.keys(DEFAULT_ANCHOR_TILES),
-    ...appState.roomRegions.map((region) => region.id),
-  ].filter((value, index, list) => value && list.indexOf(value) === index);
-  select.innerHTML = [`<option value="">Select room</option>`, ...ids.map((id) => `<option value="${id}">${id}</option>`)].join("");
-  select.value = appState.editor.regionId || "";
+  return populateRegionIdSelectHelper(appState, select, {
+    defaultAnchorTiles: DEFAULT_ANCHOR_TILES,
+  });
 }
 
 function selectedChatBubbleTheme() {
@@ -1025,15 +1021,11 @@ async function loadArtAssets() {
 }
 
 function setTilemapStatus(text, isError = false) {
-  const el = document.getElementById("tilemap-status");
-  if (!el) return;
-  el.textContent = text;
-  el.style.color = isError ? "var(--warning)" : "";
+  return setTilemapStatusHelper(text, isError, { documentRef: document });
 }
 
 function syncWorldDetailVisibility() {
-  const open = appState.activeTab === "world" && Boolean(appState.selectedAgentId);
-  document.body.classList.toggle("world-detail-open", open);
+  return syncWorldDetailVisibilityHelper(appState, { documentRef: document });
 }
 
 function mountRendererView() {
@@ -1085,28 +1077,17 @@ function getLayerTexture(renderer, objectToken, layerName) {
 }
 
 function setActiveTab(tabName) {
-  if (tabName === "editor") appState.activeTab = "editor";
-  else if (tabName === "settings") appState.activeTab = "settings";
-  else appState.activeTab = "world";
-  for (const button of document.querySelectorAll(".tab-btn")) {
-    button.classList.toggle("active", button.dataset.tab === appState.activeTab);
-  }
-  for (const panel of document.querySelectorAll(".tab-panel")) {
-    panel.classList.toggle("active", panel.dataset.panel === appState.activeTab);
-  }
-  if (appState.activeTab !== "settings") {
-    mountRendererView();
-    resizeRendererViewport();
-  }
-  syncWorldDetailVisibility();
-  if (appState.activeTab !== "settings") {
-    if (appState.renderer) drawRoom(appState.renderer);
-    if (appState.world) renderWorld(appState.world);
-    renderEditorSubviews();
-    renderVisualEditor();
-  } else {
-    renderSettingsSummary();
-  }
+  return setActiveTabHelper(appState, tabName, {
+    documentRef: document,
+    drawRoom,
+    mountRendererView,
+    renderEditorSubviews,
+    renderSettingsSummary,
+    renderVisualEditor,
+    renderWorld,
+    resizeRendererViewport,
+    syncWorldDetailVisibility,
+  });
 }
 
 function setActiveEditorSubview(viewName) {
