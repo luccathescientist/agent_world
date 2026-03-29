@@ -146,6 +146,14 @@ import {
   renderEditorSelectionOverlay as renderEditorSelectionOverlayHelper,
 } from "./src/render/scene.js";
 import {
+  mountRendererView as mountRendererViewHelper,
+  renderWorld as renderWorldHelper,
+  resizeRendererViewport as resizeRendererViewportHelper,
+  syncRendererCanvasSize as syncRendererCanvasSizeHelper,
+  syncSceneOffset as syncSceneOffsetHelper,
+  tickAgents as tickAgentsHelper,
+} from "./src/render/worldRenderer.js";
+import {
   applyEditorState as applyEditorStateHelper,
   applyVisualAtlasCell as applyVisualAtlasCellHelper,
   applyVisualToken as applyVisualTokenHelper,
@@ -1362,44 +1370,32 @@ function syncWorldDetailVisibility() {
 }
 
 function mountRendererView() {
-  if (!appState.renderer?.pixiApp?.view) return;
-  const targetId = appState.activeTab === "editor"
-    ? (appState.editor.activeSubview === "room-mapping" ? "editor-room-world-canvas" : "editor-world-canvas")
-    : "world-canvas";
-  const host = document.getElementById(targetId);
-  if (!host) return;
-  if (appState.renderer.pixiApp.view.parentElement !== host) {
-    host.appendChild(appState.renderer.pixiApp.view);
-  }
-  syncRendererCanvasSize();
+  return mountRendererViewHelper(appState, {
+    documentRef: document,
+    syncRendererCanvasSize,
+  });
 }
 
 function syncSceneOffset() {
-  if (!appState.renderer) return;
-  const offsetY = getSceneTopPadding();
-  for (const layerName of ["floorLayer", "wallLayer", "depthLayer", "overlayLayer", "interactionLayer", "labelLayer", "agentLabelLayer", "bubbleLayer"]) {
-    if (appState.renderer[layerName]) appState.renderer[layerName].y = offsetY;
-  }
-  if (appState.renderer.backgroundLayer) appState.renderer.backgroundLayer.y = 0;
+  return syncSceneOffsetHelper(appState, {
+    getSceneTopPadding,
+  });
 }
 
 function resizeRendererViewport() {
-  if (!appState.renderer?.pixiApp?.renderer) return;
-  appState.renderer.pixiApp.renderer.resize(getWorldWidth(), getRenderHeight());
-  syncSceneOffset();
-  syncRendererCanvasSize();
+  return resizeRendererViewportHelper(appState, {
+    getRenderHeight,
+    getWorldWidth,
+    syncRendererCanvasSize,
+    syncSceneOffset,
+  });
 }
 
 function syncRendererCanvasSize() {
-  const view = appState.renderer?.pixiApp?.view;
-  if (!view) return;
-  if (appState.activeTab === "editor" && !["tilemap", "room-mapping"].includes(appState.editor.activeSubview || "tilemap")) {
-    view.style.width = `${Math.round(getWorldWidth() * appState.editor.zoom)}px`;
-    view.style.height = `${Math.round(getRenderHeight() * appState.editor.zoom)}px`;
-    return;
-  }
-  view.style.width = "100%";
-  view.style.height = "auto";
+  return syncRendererCanvasSizeHelper(appState, {
+    getRenderHeight,
+    getWorldWidth,
+  });
 }
 
 function buildPrimitiveTexture(pixiApp, primitiveName) {
@@ -1886,59 +1882,15 @@ function applyPathing(sprite, agent) {
 }
 
 function tickAgents(delta) {
-  if (!appState.renderer) return;
-  for (const sprite of appState.renderer.agents.values()) {
-    const agent = sprite._agent;
-    if (!agent) continue;
-    let remaining = 2.9 * delta;
-    let moving = false;
-    while (remaining > 0.001) {
-      const pathing = applyPathing(sprite, agent);
-      const dx = pathing.target.x - sprite.x;
-      const dy = pathing.target.y - sprite.y;
-      const distance = Math.hypot(dx, dy);
-      if (distance <= 0.001) {
-        sprite._state.currentTile = pathing.nextTile;
-        if (sprite._state.path?.length > 1) {
-          sprite._state.path = sprite._state.path.slice(1);
-          continue;
-        }
-        break;
-      }
-      moving = true;
-      if (Math.abs(dx) > Math.abs(dy)) sprite._state.facing = dx >= 0 ? "right" : "left";
-      else sprite._state.facing = dy >= 0 ? "down" : "up";
-      if (distance <= remaining) {
-        sprite.x = pathing.target.x;
-        sprite.y = pathing.target.y;
-        remaining -= distance;
-        sprite._state.currentTile = pathing.nextTile;
-        if (sprite._state.path?.length > 1) {
-          sprite._state.path = sprite._state.path.slice(1);
-          continue;
-        }
-        break;
-      }
-      sprite.x += (dx / distance) * remaining;
-      sprite.y += (dy / distance) * remaining;
-      remaining = 0;
-    }
-    positionBubble(sprite);
-    positionAgentLabel(sprite);
-    sprite.zIndex = sprite.y;
-    appState.renderer.depthLayer.sortDirty = true;
-    const frames = chooseDisplayFrames(appState.renderer, agent, moving);
-    const current = sprite._anim.textures || [];
-    const changed = current.length !== frames.length || current.some((t, i) => t !== frames[i]);
-    if (changed) {
-      sprite._anim.textures = frames;
-      sprite._anim.gotoAndPlay(0);
-    }
-    updateActivityCue(sprite, agent, moving);
-    sprite._anim.scale.set(shouldMirrorSpriteForFacing(appState.renderer, agent, sprite._state.facing) ? -1.72 : 1.72, 1.72);
-    sprite._anim.tint = agent.runtimeStatus === "offline" ? 0xc3bfd1 : agent.runtimeStatus === "blocked" ? 0xffc0ba : 0xffffff;
-    updateAgentLabel(sprite, sprite.agentId === appState.selectedAgentId);
-  }
+  return tickAgentsHelper(appState, delta, {
+    applyPathing,
+    chooseDisplayFrames,
+    positionAgentLabel,
+    positionBubble,
+    shouldMirrorSpriteForFacing,
+    updateActivityCue,
+    updateAgentLabel,
+  });
 }
 
 async function initRenderer() {
@@ -2072,60 +2024,20 @@ window.addEventListener("resize", () => {
 });
 
 function renderWorld(worldState) {
-  appState.world = worldState;
-  setText("room-name", worldState.room?.name || "Agent World");
-  setText("server-time", formatDate(worldState.serverTime));
-  const totalAgents = worldState.agents?.length || 0;
-  const visibleAgents = (worldState.agents || []).filter((agent) => shouldShowAgentSprite(agent)).length;
-  const hiddenAgents = Math.max(0, totalAgents - visibleAgents);
-  setText("agent-count", hiddenAgents
-    ? `${visibleAgents}/${totalAgents} visible · ${hiddenAgents} inactive`
-    : `${totalAgents} agent${totalAgents === 1 ? "" : "s"}`);
-  populateAgentSelect(worldState.agents || []);
-  if (!appState.renderer || !worldState.agents) return;
-  const { depthLayer, agents } = appState.renderer;
-  const liveIds = new Set();
-  for (const agent of worldState.agents) {
-    liveIds.add(agent.id);
-    let sprite = agents.get(agent.id);
-    if (!sprite) {
-      sprite = createAgentSprite(agent);
-      agents.set(agent.id, sprite);
-      depthLayer.addChild(sprite);
-    }
-    sprite._agent = agent;
-    sprite._bubblePalette = bubblePaletteForAgent(agent);
-    const visibleInWorld = shouldShowAgentSprite(agent);
-    const visible = visibleInWorld && !(appState.activeTab === "editor" && !appState.editor.showAgents);
-    sprite.visible = visible;
-    if (sprite._bubbleWrap) sprite._bubbleWrap.visible = visible;
-    if (sprite._labelWrap) sprite._labelWrap.visible = visible;
-    sprite.interactive = visible && appState.activeTab !== "editor";
-    sprite.buttonMode = visible && appState.activeTab !== "editor";
-    sprite.cursor = visible && appState.activeTab !== "editor" ? "pointer" : "default";
-    updateBubble(sprite, agent.currentAction);
-    positionBubble(sprite);
-    updateAgentLabel(sprite, agent.id === appState.selectedAgentId);
-    positionAgentLabel(sprite);
-    updateActivityCue(sprite, agent, false);
-    sprite._selection.clear();
-    if (agent.id === appState.selectedAgentId) {
-      sprite._selection.lineStyle(4, 0x76d0a8, 1);
-      sprite._selection.drawCircle(0, -38, 28);
-    }
-    sprite.scale.set(agent.runtimeStatus === "active" ? 1 : 0.94);
-    sprite.alpha = agent.runtimeStatus === "offline" ? 0.76 : 1;
-    sprite.zIndex = sprite.y;
-  }
-  for (const [id, sprite] of agents.entries()) {
-    if (liveIds.has(id)) continue;
-    if (sprite._bubbleWrap?.parent) sprite._bubbleWrap.parent.removeChild(sprite._bubbleWrap);
-    if (sprite._labelWrap?.parent) sprite._labelWrap.parent.removeChild(sprite._labelWrap);
-    depthLayer.removeChild(sprite);
-    agents.delete(id);
-  }
-  depthLayer.sortDirty = true;
-  syncSelectedAgentDetailFromWorld(worldState);
+  return renderWorldHelper(appState, worldState, {
+    bubblePaletteForAgent,
+    createAgentSprite,
+    createBenchmarkSprite,
+    formatDate,
+    isBenchmarkAgent,
+    populateAgentSelect,
+    setText,
+    shouldShowAgentSprite,
+    syncSelectedAgentDetailFromWorld,
+    updateActivityCue,
+    updateAgentLabel,
+    updateBubble,
+  });
 }
 
 function syncSelectedAgentDetailFromWorld(worldState) {
