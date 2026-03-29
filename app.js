@@ -132,6 +132,11 @@ import {
   setRegionLabelPosition as setRegionLabelPositionHelper,
 } from "./src/features/editor/roomMappingEditor.js";
 import {
+  renderEditorSubviews as renderEditorSubviewsHelper,
+  setActiveEditorSubview as setActiveEditorSubviewHelper,
+  syncEditorInputs as syncEditorInputsHelper,
+} from "./src/features/editor/visualEditor.js";
+import {
   appendVoiceTranscript as appendVoiceTranscriptHelper,
   ensureMicMeter as ensureMicMeterHelper,
   fetchVoiceConfig as fetchVoiceConfigHelper,
@@ -1681,86 +1686,31 @@ function setActiveTab(tabName) {
 }
 
 function setActiveEditorSubview(viewName) {
-  if (!["tilemap", "room-mapping", "chat-bubble", "agent"].includes(viewName)) viewName = "tilemap";
-  appState.editor.activeSubview = viewName;
-  renderEditorSubviews();
-  if (appState.renderer && (viewName === "tilemap" || viewName === "room-mapping")) {
-    mountRendererView();
-    resizeRendererViewport();
-    drawRoom(appState.renderer);
-  }
-  renderVisualEditor();
+  return setActiveEditorSubviewHelper(appState, viewName, {
+    drawRoom,
+    mountRendererView,
+    renderEditorSubviews,
+    renderVisualEditor,
+    resizeRendererViewport,
+  });
 }
 
 function renderEditorSubviews() {
-  const currentView = appState.editor.activeSubview || "tilemap";
-  const visualToolTitle = document.getElementById("visual-tool-title");
-  const previewTitle = document.getElementById("editor-preview-title");
-  for (const button of document.querySelectorAll(".editor-subtab-btn")) {
-    button.classList.toggle("active", button.dataset.editorView === currentView);
-  }
-  for (const panel of document.querySelectorAll(".editor-subview")) {
-    const views = String(panel.dataset.editorViews || "")
-      .split(/\s+/)
-      .map((value) => value.trim())
-      .filter(Boolean);
-    panel.classList.toggle("active", views.includes(currentView));
-  }
-  for (const panel of document.querySelectorAll(".editor-preview-mode")) {
-    panel.classList.toggle("active", panel.dataset.editorPreview === currentView);
-  }
-  for (const section of document.querySelectorAll("[data-editor-only]")) {
-    section.hidden = section.dataset.editorOnly !== currentView;
-  }
-  if (currentView === "chat-bubble" && !["floor", "wall"].includes(appState.editor.selectedLayer)) {
-    appState.editor.selectedLayer = "wall";
-  }
-  for (const button of document.querySelectorAll("#visual-layer-toggle [data-layer]")) {
-    const layer = button.dataset.layer || "";
-    const allowed = currentView !== "chat-bubble" || layer === "floor" || layer === "wall";
-    button.hidden = !allowed;
-  }
-  if (visualToolTitle) {
-    visualToolTitle.textContent = currentView === "chat-bubble" ? "Bubble Tile Palette" : "Tile Palette";
-  }
-  if (previewTitle) {
-    previewTitle.textContent =
-      currentView === "chat-bubble"
-        ? "Chat Bubble Preview"
-        : currentView === "agent"
-          ? "Agent Sprite Preview"
-          : currentView === "room-mapping"
-            ? "Room Mapping Preview"
-            : "Tilemap Preview";
-  }
-  setText(
-    "editor-subview-pill",
-    currentView === "chat-bubble"
-      ? "Chat Bubble"
-      : currentView === "agent"
-        ? "Agent"
-        : currentView === "room-mapping"
-          ? "Room Mapping"
-          : "Tilemap",
-  );
+  return renderEditorSubviewsHelper(appState, {
+    documentRef: document,
+    setText,
+  });
 }
 
 function syncEditorInputs() {
-  const floorInput = document.getElementById("floor-map-input");
-  const wallInput = document.getElementById("wall-map-input");
-  const furnitureInput = document.getElementById("furniture-map-input");
-  const propInput = document.getElementById("prop-map-input");
-  if (floorInput && floorInput.value !== appState.editor.draftFloorText) floorInput.value = appState.editor.draftFloorText;
-  if (wallInput && wallInput.value !== appState.editor.draftWallText) wallInput.value = appState.editor.draftWallText;
-  if (furnitureInput && furnitureInput.value !== appState.editor.draftFurnitureText) furnitureInput.value = appState.editor.draftFurnitureText;
-  if (propInput && propInput.value !== appState.editor.draftPropText) propInput.value = appState.editor.draftPropText;
-  const tileCodes = Object.keys(appState.tilemap?.manifest || {}).length;
-  setText("tilemap-summary", `${getWorldCols()}x${getWorldRows()} grid · ${tileCodes} codes`);
-  if (appState.tilemap) {
-    setText("tilemap-walkability", `${appState.tilemap.walkableTiles} walkable · ${appState.tilemap.solidTiles} solid · ${appState.tilemap.doorTiles} doors`);
-  }
-  syncGameStateTextarea();
-  renderVisualEditor();
+  return syncEditorInputsHelper(appState, {
+    documentRef: document,
+    getWorldCols,
+    getWorldRows,
+    renderVisualEditor,
+    setText,
+    syncGameStateTextarea,
+  });
 }
 
 function applyStructuredGameState(snapshot, successMessage = "Loaded game state.") {
