@@ -406,3 +406,100 @@ test("renderVisualEditor chat bubble hotspot rerenders through injected callback
   hotspotHandlers[0]();
   assert.equal(rerenders, 1);
 });
+
+test("renderVisualEditor redraws selection preview after atlas image loads", () => {
+  let previewCalls = 0;
+  const atlasImage = {
+    _src: "/atlas/floor.png",
+    complete: false,
+    naturalWidth: 0,
+    clientWidth: 96,
+    clientHeight: 96,
+    dataset: {},
+    onload: null,
+    getAttribute(name) {
+      return name === "src" ? this._src : null;
+    },
+    setAttribute(name, value) {
+      if (name === "src") this._src = value;
+    },
+  };
+  const elements = {
+    "selected-map-cell": { textContent: "" },
+    "selected-layer-cell": { textContent: "" },
+    "hovered-atlas-cell": { textContent: "" },
+    "atlas-picker-title": { textContent: "" },
+    "atlas-picker-mode": { textContent: "" },
+    "atlas-picker-image": atlasImage,
+    "atlas-picker-hover": { style: {} },
+    "visual-token-empty": { textContent: "" },
+    "grid-cols-input": { value: "" },
+    "grid-rows-input": { value: "" },
+    "editor-zoom-select": { value: "" },
+    "toggle-editor-agents": { checked: false },
+    "region-kind-input": { value: "" },
+    "region-id-input": { value: "" },
+    "region-label-input": { value: "" },
+    "room-region-summary": { textContent: "" },
+    "room-region-list": { innerHTML: "", querySelectorAll() { return []; } },
+    "stash-cell-summary": { textContent: "" },
+    "editor-chat-bubble-preview-list": { innerHTML: "", querySelectorAll() { return []; } },
+    "chat-bubble-text-color": { value: "" },
+    "chat-bubble-slot-summary": { textContent: "" },
+  };
+
+  renderVisualEditor({
+    editor: {
+      activeSubview: "chat-bubble",
+      hoveredAtlasCell: null,
+      hoveredRegionId: "",
+      regionKind: "room",
+      regionLabel: "",
+      selectedCell: { row: 0, col: 0 },
+      selectedChatBubbleRole: "assistant",
+      selectedChatBubbleSlot: "mm",
+      selectedLayer: "floor",
+      showAgents: true,
+      zoom: 1,
+    },
+    renderer: { assets: { layout: { stash: { col: 0, row: 0 } } } },
+    roomRegions: [],
+    tilemap: { layout: { stash: { col: 0, row: 0 } } },
+  }, {
+    applyChatRoleTheme: () => {},
+    chatBubbleMarkup: () => "<div></div>",
+    chatBubbleSlotOverlayMarkup: () => "<div></div>",
+    deleteRoomRegion: () => {},
+    documentRef: {
+      activeElement: null,
+      getElementById(id) {
+        return elements[id] || null;
+      },
+      querySelectorAll() {
+        return [];
+      },
+    },
+    drawRoom: () => {},
+    formatRichTextHtml: (value) => value,
+    getAtlasPathForLayer: () => "/atlas/wall.png",
+    getDraftCellValue: () => ".",
+    getSelectedCells: () => [{ row: 0, col: 0 }],
+    getVisualLayerConfig: () => ({ cols: 3, rows: 3, label: "Wall", modeLabel: "Atlas", title: "Wall Atlas" }),
+    getWorldCols: () => 3,
+    getWorldRows: () => 3,
+    normalizeStashPoint: (value) => value,
+    populateRegionIdSelect: () => {},
+    renderAgentEditorPanel: () => {},
+    renderVisualSelectionPreview: () => {
+      previewCalls += 1;
+    },
+    rerenderVisualEditor: () => {},
+    selectedChatBubbleTheme: () => ({ frame: { mm: { layer: "wall", token: "2:2" } }, textColor: "#ffffff" }),
+    syncRendererCanvasSize: () => {},
+  });
+
+  assert.equal(atlasImage._src, "/atlas/wall.png");
+  assert.equal(typeof atlasImage.onload, "function");
+  atlasImage.onload();
+  assert.equal(previewCalls, 2);
+});

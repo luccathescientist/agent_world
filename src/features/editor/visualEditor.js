@@ -284,6 +284,7 @@ export function renderVisualEditor(state, helpers = {}) {
   stashSummary.textContent = `Stash ${stash.col + 1}:${stash.row + 1}`;
   const atlasPath = getAtlasPathForLayer(layer);
   if (atlasImage.getAttribute("src") !== atlasPath) {
+    atlasImage.onload = () => renderVisualSelectionPreview();
     atlasImage.setAttribute("src", atlasPath);
   }
   atlasImage.dataset.cols = String(config.cols);
