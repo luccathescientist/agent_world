@@ -94,6 +94,7 @@ test("settingsVoiceRuntime sendCommandText and voice actions keep browser/runtim
     },
     formatTime: () => "12:00",
     load: async () => calls.push("load"),
+    appendOptimisticChatEvent: (event, totalCount) => calls.push(["appendOptimisticChatEvent", event, totalCount]),
     renderChat: (history) => calls.push(["renderChat", history]),
     renderHistory: (history) => calls.push(["renderHistory", history]),
     speakTextShell: async (_state, text, source, deps) => {
@@ -135,6 +136,7 @@ test("settingsVoiceRuntime sendCommandText and voice actions keep browser/runtim
   assert.ok(calls.some((entry) => Array.isArray(entry) && entry[0] === "getJson"));
   assert.ok(calls.some((entry) => Array.isArray(entry) && entry[0] === "renderHistory"));
   assert.ok(calls.some((entry) => Array.isArray(entry) && entry[0] === "renderChat"));
+  assert.ok(calls.some((entry) => Array.isArray(entry) && entry[0] === "appendOptimisticChatEvent"));
   assert.ok(state.detail.history.length >= 1);
   assert.equal(state.detail.history[0].type, "operator_command");
   assert.ok(state.detail.history.some((event) => event.label === "hello"));
@@ -162,6 +164,7 @@ test("settingsVoiceRuntime still renders optimistic history when detail is absen
       reason: "",
     }),
     formatTime: () => "12:00",
+    appendOptimisticChatEvent: (event, totalCount) => calls.push(["append", event, totalCount]),
     renderChat: (history) => calls.push(["chat", history]),
     renderHistory: (history) => calls.push(history),
   });
@@ -170,7 +173,8 @@ test("settingsVoiceRuntime still renders optimistic history when detail is absen
 
   assert.equal(state.pendingHistoryEvents.length, 1);
   assert.equal(state.pendingHistoryEvents[0].label, "hello");
-  assert.equal(calls.length, 2);
-  assert.equal(calls[0][0].type, "operator_command");
-  assert.equal(calls[1][0], "chat");
+  assert.equal(calls.length, 3);
+  assert.equal(calls[0][0], "append");
+  assert.equal(calls[1][0].type, "operator_command");
+  assert.equal(calls[2][0], "chat");
 });

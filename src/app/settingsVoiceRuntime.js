@@ -76,6 +76,7 @@ export function createSettingsVoiceRuntime(state, deps = {}) {
     URLRef = globalThis.URL,
     requestAnimationFrameRef = globalThis.requestAnimationFrame,
     cancelAnimationFrameRef = globalThis.cancelAnimationFrame,
+    appendOptimisticChatEvent = () => {},
     load = async () => {},
     renderChat = () => {},
     renderHistory = () => {},
@@ -339,6 +340,7 @@ export function createSettingsVoiceRuntime(state, deps = {}) {
           },
         };
       }
+      appendOptimisticChatEvent(optimisticEvent, nextHistory.length);
       renderHistory(nextHistory);
       renderChat(nextHistory);
     }

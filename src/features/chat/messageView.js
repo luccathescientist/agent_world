@@ -238,6 +238,51 @@ export function renderChat(state, history, helpers = {}) {
   maybeSpeakReply(history);
 }
 
+export function appendChatEvent(state, event, helpers = {}) {
+  const {
+    applyChatRoleTheme = () => {},
+    chatBubbleMarkup = () => "",
+    classifyPath = () => "file",
+    createElement = (tag) => document.createElement(tag),
+    documentRef = document,
+    extractPaths = () => [],
+    fileUrl = (value) => value,
+    formatRichTextHtml = (value) => value,
+    formatTime = (value) => value,
+    historyRoleClass = (value) => value,
+    historyRoleMeta = () => ({ label: "", icon: "" }),
+    setText = () => {},
+    showRichMessage = () => {},
+    windowRef = globalThis.window,
+    totalCount = null,
+  } = helpers;
+  const list = documentRef.getElementById("chat-list");
+  if (!list || !event) return;
+  const item = createElement("article");
+  const role = historyRoleClass(event.type);
+  const meta = historyRoleMeta(event.type);
+  item.className = `chat-item ${role}`;
+  applyChatRoleTheme(item, role);
+  const paths = extractPaths(event.fullLabel || event.label, event.fullDetail || event.detail);
+  item.innerHTML = chatBubbleMarkup(role, `${meta.icon} ${meta.label}`, event.type, formatTime(event.ts), formatRichTextHtml(event.fullLabel || event.label));
+  if (paths[0] && classifyPath(paths[0]) === "image") {
+    const img = createElement("img");
+    img.src = fileUrl(paths[0]);
+    img.className = "chat-thumb";
+    img.addEventListener("click", (pointerEvent) => {
+      pointerEvent.stopPropagation();
+      windowRef.open(fileUrl(paths[0]), "_blank", "noopener,noreferrer");
+    });
+    item.querySelector(".chat-bubble-content")?.appendChild(img);
+  }
+  item.addEventListener("click", () => {
+    showRichMessage(event.type, event.fullLabel || event.label, event.fullDetail || event.detail || event.fullLabel || event.label, paths[0] || null);
+  });
+  list.prepend(item);
+  const nextCount = Number.isFinite(totalCount) ? totalCount : list.children.length;
+  setText("chat-summary", `${nextCount} messages`);
+}
+
 export function renderHistory(events, helpers = {}) {
   const {
     createElement = (tag) => document.createElement(tag),
