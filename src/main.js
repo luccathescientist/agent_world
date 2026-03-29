@@ -55,17 +55,6 @@ import {
   writeGameStateToLocalStorage as writeGameStateToLocalStorageHelper,
 } from "./features/tilemap/tilemapState.js";
 import {
-  collectSettingsPayload as collectSettingsPayloadHelper,
-  fetchSettingsData as fetchSettingsDataHelper,
-  renderCodeWithLineNumbers as renderCodeWithLineNumbersHelper,
-  renderSettingsChecks as renderSettingsChecksHelper,
-  renderSettingsSummary as renderSettingsSummaryHelper,
-  saveSettings as saveSettingsHelper,
-  saveSettingsFromJsonEditor as saveSettingsFromJsonEditorHelper,
-  syncSettingsForm as syncSettingsFormHelper,
-  syncSettingsJsonEditor as syncSettingsJsonEditorHelper,
-} from "./features/settings/settingsPanel.js";
-import {
   applyChatBubbleFrameStyles as applyChatBubbleFrameStylesHelper,
   applyChatRoleTheme as applyChatRoleThemeHelper,
   chatBubbleMarkup,
@@ -214,24 +203,8 @@ import {
   syncEditorInputs as syncEditorInputsHelper,
 } from "./features/editor/visualEditor.js";
 import {
-  appendVoiceTranscript as appendVoiceTranscriptHelper,
-  ensureMicMeter as ensureMicMeterHelper,
-  fetchVoiceConfig as fetchVoiceConfigHelper,
-  initVoiceControls as initVoiceControlsHelper,
   maybeSpeakReply as maybeSpeakReplyHelper,
   normalizeSpeechText,
-  pushVoiceEvent as pushVoiceEventHelper,
-  refreshVoiceInputDevices as refreshVoiceInputDevicesHelper,
-  renderVoiceDebugUi as renderVoiceDebugUiHelper,
-  renderVoiceTranscriptDebug as renderVoiceTranscriptDebugHelper,
-  speakText as speakTextHelper,
-  startMicMeterLoop as startMicMeterLoopHelper,
-  startVoiceCapture as startVoiceCaptureHelper,
-  stopMicMeter as stopMicMeterHelper,
-  stopSpeechPlayback as stopSpeechPlaybackHelper,
-  stopVoiceCapture as stopVoiceCaptureHelper,
-  transcribeRecordedAudio as transcribeRecordedAudioHelper,
-  updateVoiceUi as updateVoiceUiHelper,
 } from "./features/voice/voiceController.js";
 import { initDomEvents, startApp } from "./bootstrap/domEvents.js";
 import {
@@ -293,37 +266,7 @@ import {
   setActiveEditorSubview as setActiveEditorSubviewShell,
   syncEditorInputs as syncEditorInputsShell,
 } from "./app/editorShell.js";
-import {
-  appendVoiceTranscript as appendVoiceTranscriptShell,
-  applyRuntimeStatusTone as applyRuntimeStatusToneShell,
-  collectSettingsPayload as collectSettingsPayloadShell,
-  ensureMicMeter as ensureMicMeterShell,
-  fetchSettingsData as fetchSettingsDataShell,
-  fetchVoiceConfig as fetchVoiceConfigShell,
-  initVoiceControls as initVoiceControlsShell,
-  pushVoiceEvent as pushVoiceEventShell,
-  refreshVoiceInputDevices as refreshVoiceInputDevicesShell,
-  renderCodeWithLineNumbers as renderCodeWithLineNumbersShell,
-  renderSettingsChecks as renderSettingsChecksShell,
-  renderSettingsSummary as renderSettingsSummaryShell,
-  renderVoiceDebugUi as renderVoiceDebugUiShell,
-  renderVoiceTranscriptDebug as renderVoiceTranscriptDebugShell,
-  saveSettings as saveSettingsShell,
-  saveSettingsFromJsonEditor as saveSettingsFromJsonEditorShell,
-  setSettingsResult as setSettingsResultShell,
-  setVoiceDebugText as setVoiceDebugTextShell,
-  setVoiceStatus as setVoiceStatusShell,
-  speakText as speakTextShell,
-  startMicMeterLoop as startMicMeterLoopShell,
-  startVoiceCapture as startVoiceCaptureShell,
-  stopMicMeter as stopMicMeterShell,
-  stopSpeechPlayback as stopSpeechPlaybackShell,
-  stopVoiceCapture as stopVoiceCaptureShell,
-  syncSettingsForm as syncSettingsFormShell,
-  syncSettingsJsonEditor as syncSettingsJsonEditorShell,
-  transcribeRecordedAudio as transcribeRecordedAudioShell,
-  updateVoiceUi as updateVoiceUiShell,
-} from "./app/settingsVoiceShell.js";
+import { createSettingsVoiceRuntime } from "./app/settingsVoiceRuntime.js";
 import {
   closeWorldDetails as closeWorldDetailsShell,
   connectStream as connectStreamShell,
@@ -346,293 +289,43 @@ import {
   syncWorldDetailVisibility as syncWorldDetailVisibilityHelper,
 } from "./app/shell.js";
 import { appState } from "./state/appState.js";
+
 const chatBubbleThemeState = { atlasImagePromise: null };
-const setVoiceStatus = (text, isError = false) => setVoiceStatusShell(text, isError, { documentRef: document });
-const setVoiceDebugText = (id, value) => setVoiceDebugTextShell(id, value, { documentRef: document });
-const setSettingsResult = (text, isError = false) => setSettingsResultShell(text, isError, { documentRef: document });
-const applyRuntimeStatusTone = (id, state) => applyRuntimeStatusToneShell(id, state, { documentRef: document });
-
-function renderCodeWithLineNumbers(text) {
-  return renderCodeWithLineNumbersShell(text, {
-    escapeHtml,
-    renderCodeWithLineNumbersHelper,
-  });
-}
-
-function renderSettingsChecks() {
-  return renderSettingsChecksShell(appState, {
-    documentRef: document,
-    escapeHtml,
-    renderCodeWithLineNumbers,
-    renderSettingsChecksHelper,
-    setText,
-  });
-}
-
-function syncSettingsJsonEditor() {
-  return syncSettingsJsonEditorShell(appState, {
-    documentRef: document,
-    syncSettingsJsonEditorHelper,
-  });
-}
-
-function syncSettingsForm() {
-  return syncSettingsFormShell(appState, {
-    documentRef: document,
-    syncSettingsFormHelper,
-  });
-}
-
-function renderSettingsSummary() {
-  return renderSettingsSummaryShell(appState, {
-    applyRuntimeStatusTone,
-    renderSettingsChecks,
-    renderSettingsSummaryHelper,
-    setText,
-  });
-}
-
-function collectSettingsPayload() {
-  return collectSettingsPayloadShell({
-    collectSettingsPayloadHelper,
-    documentRef: document,
-  });
-}
-
-async function fetchSettingsData() {
-  return fetchSettingsDataShell(appState, {
-    fetchDiagnostics: () => getJson("/api/agent-world/settings/diagnostics"),
-    fetchSettings: () => getJson("/api/agent-world/settings"),
-    fetchSettingsDataHelper,
-    renderSettingsSummary,
-    setSettingsResult,
-    syncSettingsForm,
-    syncSettingsJsonEditor,
-  });
-}
-
-async function saveSettings() {
-  return saveSettingsShell(appState, {
-    collectSettingsPayload,
-    fetchSettingsData,
-    fetchVoiceConfig,
-    postSettings: (payload) => postJson("/api/agent-world/settings", payload),
-    renderSettingsSummary,
-    saveSettingsHelper,
-    setSettingsResult,
-  });
-}
-
-async function saveSettingsFromJsonEditor() {
-  return saveSettingsFromJsonEditorShell(appState, {
-    documentRef: document,
-    fetchSettingsData,
-    fetchVoiceConfig,
-    postSettings: (payload) => postJson("/api/agent-world/settings", payload),
-    renderSettingsSummary,
-    saveSettingsFromJsonEditorHelper,
-    setSettingsResult,
-    syncSettingsForm,
-    syncSettingsJsonEditor,
-  });
-}
-
-async function fetchVoiceConfig() {
-  return fetchVoiceConfigShell(appState, {
-    fetchVoiceConfigHelper,
-    getJson,
-    pushVoiceEvent,
-    updateVoiceUi,
-  });
-}
-
-function pushVoiceEvent(message) {
-  return pushVoiceEventShell(appState, message, {
-    pushVoiceEventHelper,
-    setVoiceDebugText,
-  });
-}
-
-function renderVoiceTranscriptDebug() {
-  return renderVoiceTranscriptDebugShell(appState, {
-    normalizeSpeechText,
-    renderVoiceTranscriptDebugHelper,
-    setVoiceDebugText,
-  });
-}
-
-function renderVoiceDebugUi() {
-  return renderVoiceDebugUiShell(appState, {
-    documentRef: document,
-    renderVoiceDebugUiHelper,
-    renderVoiceTranscriptDebug,
-    setVoiceDebugText,
-  });
-}
-
-function updateVoiceUi() {
-  return updateVoiceUiShell(appState, {
-    documentRef: document,
-    renderVoiceDebugUi,
-    updateVoiceUiHelper,
-  });
-}
-
-function appendVoiceTranscript(text) {
-  return appendVoiceTranscriptShell(text, {
-    appendVoiceTranscriptHelper,
-    documentRef: document,
-  });
-}
-
-function stopSpeechPlayback() {
-  return stopSpeechPlaybackShell(appState, {
-    stopSpeechPlaybackHelper,
-    URLRef: URL,
-    windowRef: window,
-  });
-}
-
-async function speakText(text, source = "manual") {
-  return speakTextShell(appState, text, source, {
-    AudioCtor: Audio,
-    fetchRef: fetch,
-    normalizeSpeechText,
-    pushVoiceEvent,
-    renderVoiceDebugUi,
-    setVoiceStatus,
-    speakTextHelper,
-    stopSpeechPlayback,
-    updateVoiceUi,
-    URLRef: URL,
-    windowRef: window,
-  });
-}
-
-async function sendCommandText(text) {
-  const result = document.getElementById("command-result");
-  const commandText = String(text || "").trim();
-  if (!commandText) return false;
-  if (!appState.selectedAgentId) {
-    result.textContent = "No agent selected.";
-    return false;
-  }
-  const response = await getJson(`/api/agent-world/agents/${encodeURIComponent(appState.selectedAgentId)}/command`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ text: commandText, mode: "append", source: "ui" }),
-  });
-  result.textContent = `${response.status === "accepted" ? "Sent" : "Rejected"} at ${formatTime(response.acceptedAt)}: ${response.echoedCommand}${response.reason ? ` (${response.reason})` : ""}`;
-  await load();
-  return response.status === "accepted";
-}
+const {
+  fetchSettingsData,
+  fetchVoiceConfig,
+  initVoiceControls,
+  pushVoiceEvent,
+  renderSettingsSummary,
+  saveSettings,
+  saveSettingsFromJsonEditor,
+  sendCommandText,
+  setSettingsResult,
+  setVoiceStatus,
+  speakText,
+  startVoiceCapture,
+  stopSpeechPlayback,
+  stopVoiceCapture,
+  updateVoiceUi,
+} = createSettingsVoiceRuntime(appState, {
+  AudioCtor: Audio,
+  MediaRecorderCtor: MediaRecorder,
+  FormDataCtor: FormData,
+  URLRef: URL,
+  cancelAnimationFrameRef: cancelAnimationFrame,
+  documentRef: document,
+  fetchRef: fetch,
+  load: () => load(),
+  navigatorRef: navigator,
+  requestAnimationFrameRef: requestAnimationFrame,
+  windowRef: window,
+});
 
 function maybeSpeakReply(history) {
   return maybeSpeakReplyHelper(appState, history, {
     historyRoleClass,
     normalizeSpeechText,
     speakText,
-  });
-}
-
-function stopMicMeter() {
-  return stopMicMeterShell(appState, {
-    cancelAnimationFrameRef: cancelAnimationFrame,
-    renderVoiceDebugUi,
-    stopMicMeterHelper,
-  });
-}
-
-async function transcribeRecordedAudio(blob) {
-  return transcribeRecordedAudioShell(appState, blob, {
-    FormDataCtor: FormData,
-    documentRef: document,
-    fetchRef: fetch,
-    normalizeSpeechText,
-    pushVoiceEvent,
-    renderVoiceDebugUi,
-    sendCommandText,
-    setVoiceStatus,
-    stopMicMeter,
-    transcribeRecordedAudioHelper,
-    updateVoiceUi,
-  });
-}
-
-async function refreshVoiceInputDevices() {
-  return refreshVoiceInputDevicesShell(appState, {
-    navigatorRef: navigator,
-    pushVoiceEvent,
-    refreshVoiceInputDevicesHelper,
-    setStoredMap,
-    updateVoiceUi,
-  });
-}
-
-function startMicMeterLoop() {
-  return startMicMeterLoopShell(appState, {
-    renderVoiceDebugUi,
-    requestAnimationFrameRef: requestAnimationFrame,
-    startMicMeterLoop,
-    startMicMeterLoopHelper,
-  });
-}
-
-async function ensureMicMeter() {
-  return ensureMicMeterShell(appState, {
-    ensureMicMeterHelper,
-    navigatorRef: navigator,
-    pushVoiceEvent,
-    refreshVoiceInputDevices,
-    setStoredMap,
-    setVoiceStatus,
-    startMicMeterLoop,
-    updateVoiceUi,
-    windowRef: window,
-  });
-}
-
-function stopVoiceCapture() {
-  return stopVoiceCaptureShell(appState, {
-    pushVoiceEvent,
-    setVoiceStatus,
-    stopMicMeter,
-    stopVoiceCaptureHelper,
-    stopSpeechPlayback,
-    updateVoiceUi,
-  });
-}
-
-async function startVoiceCapture() {
-  return startVoiceCaptureShell(appState, {
-    MediaRecorderCtor: MediaRecorder,
-    ensureMicMeter,
-    pushVoiceEvent,
-    renderVoiceDebugUi,
-    setVoiceStatus,
-    startVoiceCaptureHelper,
-    stopMicMeter,
-    transcribeRecordedAudio,
-    updateVoiceUi,
-    windowRef: window,
-  });
-}
-
-function initVoiceControls() {
-  return initVoiceControlsShell(appState, {
-    documentRef: document,
-    fetchVoiceConfig,
-    getStoredMap,
-    initVoiceControlsHelper,
-    navigatorRef: navigator,
-    pushVoiceEvent,
-    refreshVoiceInputDevices,
-    renderVoiceDebugUi,
-    sendCommandText,
-    setVoiceStatus,
-    stopMicMeter,
-    updateVoiceUi,
-    windowRef: window,
   });
 }
 
