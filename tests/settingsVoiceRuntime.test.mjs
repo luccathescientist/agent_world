@@ -142,3 +142,31 @@ test("settingsVoiceRuntime sendCommandText and voice actions keep browser/runtim
   assert.ok(calls.includes("ensureMicMeter"));
   assert.ok(calls.some((entry) => Array.isArray(entry) && entry[0] === "transcribeRecordedAudio"));
 });
+
+test("settingsVoiceRuntime still renders optimistic history when detail is absent", async () => {
+  const calls = [];
+  const state = { selectedAgentId: "agent-1", detail: null, pendingHistoryEvents: [], stream: {} };
+  const runtime = createSettingsVoiceRuntime(state, {
+    documentRef: {
+      getElementById(id) {
+        if (id === "command-result") return { textContent: "", style: {} };
+        return null;
+      },
+    },
+    getJson: async () => ({
+      status: "accepted",
+      acceptedAt: "2026-03-29T12:00:00Z",
+      echoedCommand: "hello",
+      reason: "",
+    }),
+    formatTime: () => "12:00",
+    renderHistory: (history) => calls.push(history),
+  });
+
+  await runtime.sendCommandText("hello");
+
+  assert.equal(state.pendingHistoryEvents.length, 1);
+  assert.equal(state.pendingHistoryEvents[0].label, "hello");
+  assert.equal(calls.length, 1);
+  assert.equal(calls[0][0].type, "operator_command");
+});

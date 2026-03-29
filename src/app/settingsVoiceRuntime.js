@@ -316,7 +316,7 @@ export function createSettingsVoiceRuntime(state, deps = {}) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ text: commandText, mode: "append", source: "ui" }),
     });
-    if (response.status === "accepted" && state.detail) {
+    if (response.status === "accepted") {
       const optimisticEvent = {
         type: "operator_command",
         label: commandText,
@@ -326,15 +326,18 @@ export function createSettingsVoiceRuntime(state, deps = {}) {
         ts: response.acceptedAt || new Date().toISOString(),
       };
       state.pendingHistoryEvents = [...(state.pendingHistoryEvents || []), optimisticEvent];
-      const nextHistory = [...(state.detail.history || []), optimisticEvent];
-      state.detail = {
-        ...state.detail,
-        history: nextHistory,
-        session: {
-          ...(state.detail.session || {}),
+      const baseHistory = [...(state.detail?.history || state.detail?.session?.history || [])];
+      const nextHistory = [...baseHistory, optimisticEvent];
+      if (state.detail) {
+        state.detail = {
+          ...state.detail,
           history: nextHistory,
-        },
-      };
+          session: {
+            ...(state.detail.session || {}),
+            history: nextHistory,
+          },
+        };
+      }
       renderHistory(nextHistory);
     }
     if (result) {
