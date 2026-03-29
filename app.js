@@ -125,6 +125,13 @@ import {
   shouldMirrorPreviewSprite as shouldMirrorPreviewSpriteHelper,
 } from "./src/features/editor/agentEditor.js";
 import {
+  assignRegionSelection as assignRegionSelectionHelper,
+  clearRegionSelection as clearRegionSelectionHelper,
+  deleteRoomRegion as deleteRoomRegionHelper,
+  resolveRoomRegion as resolveRoomRegionHelper,
+  setRegionLabelPosition as setRegionLabelPositionHelper,
+} from "./src/features/editor/roomMappingEditor.js";
+import {
   appendVoiceTranscript as appendVoiceTranscriptHelper,
   ensureMicMeter as ensureMicMeterHelper,
   fetchVoiceConfig as fetchVoiceConfigHelper,
@@ -2090,118 +2097,54 @@ function renderEditorSelectionOverlay(renderer) {
 }
 
 function assignRegionSelection() {
-  const cells = getSelectedCells();
-  if (!cells.length) {
-    setTilemapStatus("Select cells before assigning a room region.", true);
-    return;
-  }
-  const regionId = canonicalizeAnchorId(appState.editor.regionId.trim());
-  if (!regionId) {
-    setTilemapStatus("Room region id is required.", true);
-    return;
-  }
-  const regionLabel = appState.editor.regionLabel.trim() || regionId;
-  const existingRegion = appState.roomRegions.find((region) => region.id === regionId);
-  const nextRegion = {
-    id: regionId,
-    label: regionLabel,
-    kind: appState.editor.regionKind,
-    cells,
-    labelCell: existingRegion?.labelCell || null,
-  };
-  const selectedKeys = cellsKeySet(cells);
-  const survivors = appState.roomRegions
-    .map((region) => ({
-      ...region,
-      cells: region.cells.filter((cell) => !selectedKeys.has(`${cell.row}:${cell.col}`)),
-    }))
-    .filter((region) => region.cells.length && region.id !== regionId);
-  appState.roomRegions = normalizeRoomRegions([...survivors, nextRegion]);
-  setStoredJson(TILEMAP_STORAGE_KEYS.roomRegions, appState.roomRegions);
-  commitDraftTilemap(`Assigned ${cells.length} cells to ${appState.editor.regionKind} ${regionId}.`);
+  return assignRegionSelectionHelper(appState, {
+    canonicalizeAnchorId,
+    cellsKeySet,
+    commitDraftTilemap,
+    getSelectedCells,
+    normalizeRoomRegions,
+    setStoredJson,
+    setTilemapStatus,
+  });
 }
 
 function resolveRoomRegion(rawId, selectedCell = null) {
-  const canonicalId = canonicalizeAnchorId(rawId);
-  if (canonicalId) {
-    const byId = appState.roomRegions.find((region) => region.id === canonicalId);
-    if (byId) return byId;
-  }
-  const typed = String(rawId || "").trim().toLowerCase();
-  if (typed) {
-    const byLabel = appState.roomRegions.find((region) => String(region.label || "").trim().toLowerCase() === typed);
-    if (byLabel) return byLabel;
-  }
-  if (selectedCell) {
-    const byCell = regionForCell(selectedCell.row, selectedCell.col);
-    if (byCell) return byCell;
-  }
-  return null;
+  return resolveRoomRegionHelper(appState, rawId, selectedCell, {
+    canonicalizeAnchorId,
+    regionForCell,
+  });
 }
 
 function deleteRoomRegion(regionId) {
-  const canonicalId = canonicalizeAnchorId(regionId);
-  if (!canonicalId) return;
-  const beforeCount = appState.roomRegions.length;
-  appState.roomRegions = normalizeRoomRegions(appState.roomRegions.filter((region) => region.id !== canonicalId));
-  if (appState.roomRegions.length === beforeCount) {
-    setTilemapStatus(`No room region found for ${canonicalId}.`, true);
-    return;
-  }
-  if (appState.editor.hoveredRegionId === canonicalId) appState.editor.hoveredRegionId = "";
-  setStoredJson(TILEMAP_STORAGE_KEYS.roomRegions, appState.roomRegions);
-  commitDraftTilemap(`Deleted room region ${canonicalId}.`);
+  return deleteRoomRegionHelper(appState, regionId, {
+    canonicalizeAnchorId,
+    commitDraftTilemap,
+    normalizeRoomRegions,
+    setStoredJson,
+    setTilemapStatus,
+  });
 }
 
 function setRegionLabelPosition() {
-  const selected = appState.editor.selectedCell;
-  if (!selected) {
-    setTilemapStatus("Select a cell before positioning a room label.", true);
-    return;
-  }
-  const region = resolveRoomRegion(appState.editor.regionId, selected);
-  if (!region) {
-    setTilemapStatus("Choose a room id before positioning its label.", true);
-    return;
-  }
-  let updated = false;
-  appState.roomRegions = normalizeRoomRegions(
-    appState.roomRegions.map((region) => {
-      if (region.id !== resolveRoomRegion(appState.editor.regionId, selected).id) return region;
-      updated = true;
-      return {
-        ...region,
-        labelCell: { row: selected.row, col: selected.col },
-      };
-    }),
-  );
-  if (!updated) {
-    setTilemapStatus(`No room region found for ${region.id}.`, true);
-    return;
-  }
-  setStoredJson(TILEMAP_STORAGE_KEYS.roomRegions, appState.roomRegions);
-  drawRoom(appState.renderer);
-  renderVisualEditor();
-  setTilemapStatus(`Set label position for ${region.id} to ${selected.col + 1}:${selected.row + 1}.`);
+  return setRegionLabelPositionHelper(appState, {
+    drawRoom,
+    normalizeRoomRegions,
+    renderVisualEditor,
+    resolveRoomRegion,
+    setStoredJson,
+    setTilemapStatus,
+  });
 }
 
 function clearRegionSelection() {
-  const cells = getSelectedCells();
-  if (!cells.length) {
-    setTilemapStatus("Select cells before clearing a room region.", true);
-    return;
-  }
-  const selectedKeys = cellsKeySet(cells);
-  appState.roomRegions = normalizeRoomRegions(
-    appState.roomRegions
-      .map((region) => ({
-        ...region,
-        cells: region.cells.filter((cell) => !selectedKeys.has(`${cell.row}:${cell.col}`)),
-      }))
-      .filter((region) => region.cells.length),
-  );
-  setStoredJson(TILEMAP_STORAGE_KEYS.roomRegions, appState.roomRegions);
-  commitDraftTilemap(`Cleared room mappings from ${cells.length} cells.`);
+  return clearRegionSelectionHelper(appState, {
+    cellsKeySet,
+    commitDraftTilemap,
+    getSelectedCells,
+    normalizeRoomRegions,
+    setStoredJson,
+    setTilemapStatus,
+  });
 }
 
 function commitDraftTilemap(successMessage = "Applied draft tilemap.") {
