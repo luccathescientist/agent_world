@@ -132,6 +132,8 @@ import {
   setRegionLabelPosition as setRegionLabelPositionHelper,
 } from "./src/features/editor/roomMappingEditor.js";
 import {
+  renderVisualEditor as renderVisualEditorHelper,
+  renderVisualSelectionPreview as renderVisualSelectionPreviewHelper,
   renderEditorSubviews as renderEditorSubviewsHelper,
   setActiveEditorSubview as setActiveEditorSubviewHelper,
   syncEditorInputs as syncEditorInputsHelper,
@@ -1755,231 +1757,38 @@ function applyStructuredGameState(snapshot, successMessage = "Loaded game state.
 }
 
 function renderVisualSelectionPreview() {
-  const canvas = document.getElementById("visual-selection-preview");
-  if (!canvas) return;
-  const ctx = canvas.getContext("2d");
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  ctx.imageSmoothingEnabled = false;
-
-  const titleEl = document.getElementById("visual-selection-title");
-  const detailEl = document.getElementById("visual-selection-detail");
-  const isChatBubbleView = appState.editor.activeSubview === "chat-bubble";
-  let layer = appState.editor.selectedLayer;
-  const hover = appState.editor.hoveredAtlasCell;
-  const selected = appState.editor.selectedAtlasCell;
-  const selectedCell = appState.editor.selectedCell;
-  let assignedValue = selectedCell ? getDraftCellValue(layer, selectedCell.row, selectedCell.col) : null;
-  let assignedAtlasCell = getAssignedAtlasCell(layer, assignedValue);
-  let assignedPreviewToken = getAssignedPreviewToken(layer, assignedValue);
-  if (isChatBubbleView) {
-    const theme = selectedChatBubbleTheme();
-    const frame = theme?.frame?.[appState.editor.selectedChatBubbleSlot || "mm"] || null;
-    if (frame?.layer && ["floor", "wall"].includes(frame.layer)) {
-      layer = frame.layer;
-      assignedValue = frame.token || ".";
-      assignedAtlasCell = getAssignedAtlasCell(layer, assignedValue);
-      assignedPreviewToken = getAssignedPreviewToken(layer, assignedValue);
-    } else {
-      assignedValue = null;
-      assignedAtlasCell = null;
-      assignedPreviewToken = null;
-    }
-  }
-  const atlasCell = hover || selected || assignedAtlasCell;
-
-  if (!atlasCell && !assignedPreviewToken) {
-    titleEl.textContent = isChatBubbleView ? "No bubble tile selected" : "No atlas tile selected";
-    detailEl.textContent = isChatBubbleView
-      ? "Pick Agent, Tool, or User, click a bubble segment in the preview, then choose a floor or wall atlas tile."
-      : "Click a map cell, then hover or click a tile in the atlas.";
-    return;
-  }
-
-  if (hover || selected || assignedAtlasCell) {
-    const image = document.getElementById("atlas-picker-image");
-    if (!image?.complete || !image.naturalWidth) return;
-    const tileSize = appState.renderer?.assets?.layout?.atlasTileSize || TILE_SIZE;
-    const sx = (atlasCell.x - 1) * tileSize;
-    const sy = (atlasCell.y - 1) * tileSize;
-    ctx.drawImage(image, sx, sy, tileSize, tileSize, 0, 0, canvas.width, canvas.height);
-  } else if (assignedPreviewToken?.kind === "primitive" && appState.renderer?.assets?.primitiveTextures?.[assignedPreviewToken.primitive]) {
-    const texture = appState.renderer.assets.primitiveTextures[assignedPreviewToken.primitive];
-    const source = texture.baseTexture.resource?.source;
-    const frame = texture.frame;
-    if (source && frame) {
-      ctx.drawImage(source, frame.x, frame.y, frame.width, frame.height, 0, 0, canvas.width, canvas.height);
-    }
-  }
-
-  const code = atlasCell ? `${atlasCell.x}:${atlasCell.y}` : String(assignedValue || "--");
-  if (isChatBubbleView) {
-    const roleLabel = appState.editor.selectedChatBubbleRole === "assistant"
-      ? "Agent"
-      : appState.editor.selectedChatBubbleRole === "tool"
-        ? "Tool"
-        : "User";
-    const slotLabel = String(appState.editor.selectedChatBubbleSlot || "mm").toUpperCase();
-    titleEl.textContent = `${roleLabel} ${slotLabel} · ${getVisualLayerConfig().label} ${code}`;
-    detailEl.textContent = hover
-      ? `Ready to assign ${layer} ${code} to ${roleLabel} ${slotLabel}.`
-      : assignedValue && assignedValue !== "--"
-        ? `Selected bubble segment uses ${assignedValue}.`
-        : `Ready to assign ${layer} ${code} to ${roleLabel} ${slotLabel}.`;
-    return;
-  }
-
-  titleEl.textContent = atlasCell
-    ? `${getVisualLayerConfig().label} ${atlasCell.x}:${atlasCell.y}`
-    : `${getVisualLayerConfig().label} ${assignedValue}`;
-  detailEl.textContent = hover
-    ? `Will write \`${code}\` into the ${layer} map.`
-    : assignedValue && assignedValue !== "--"
-      ? `Current ${layer} value is \`${assignedValue}\`.`
-      : `Will write \`${code}\` into the ${layer} map.`;
+  return renderVisualSelectionPreviewHelper(appState, {
+    documentRef: document,
+    getAssignedAtlasCell,
+    getAssignedPreviewToken,
+    getDraftCellValue,
+    getVisualLayerConfig,
+    selectedChatBubbleTheme,
+  });
 }
 
 function renderVisualEditor() {
-  const selectedCellEl = document.getElementById("selected-map-cell");
-  const selectedLayerEl = document.getElementById("selected-layer-cell");
-  const hoveredAtlasEl = document.getElementById("hovered-atlas-cell");
-  const atlasTitleEl = document.getElementById("atlas-picker-title");
-  const atlasModeEl = document.getElementById("atlas-picker-mode");
-  const atlasImage = document.getElementById("atlas-picker-image");
-  const atlasHover = document.getElementById("atlas-picker-hover");
-  const emptyButton = document.getElementById("visual-token-empty");
-  const colsInput = document.getElementById("grid-cols-input");
-  const rowsInput = document.getElementById("grid-rows-input");
-  const zoomSelect = document.getElementById("editor-zoom-select");
-  const showAgentsToggle = document.getElementById("toggle-editor-agents");
-  const regionKindInput = document.getElementById("region-kind-input");
-  const regionIdInput = document.getElementById("region-id-input");
-  const regionLabelInput = document.getElementById("region-label-input");
-  const regionSummary = document.getElementById("room-region-summary");
-  const regionList = document.getElementById("room-region-list");
-  const stashSummary = document.getElementById("stash-cell-summary");
-  const chatBubblePreviewList = document.getElementById("editor-chat-bubble-preview-list");
-  const chatBubbleTextColor = document.getElementById("chat-bubble-text-color");
-  const chatBubbleSlotSummary = document.getElementById("chat-bubble-slot-summary");
-
-  if (!selectedCellEl || !selectedLayerEl || !hoveredAtlasEl || !atlasTitleEl || !atlasModeEl || !atlasImage || !atlasHover || !emptyButton || !colsInput || !rowsInput || !zoomSelect || !showAgentsToggle || !regionKindInput || !regionIdInput || !regionLabelInput || !regionSummary || !regionList || !stashSummary || !chatBubblePreviewList || !chatBubbleTextColor || !chatBubbleSlotSummary) {
-    return;
-  }
-
-  const layer = appState.editor.selectedLayer;
-  const currentView = appState.editor.activeSubview || "tilemap";
-  const config = getVisualLayerConfig();
-  const selectedCell = appState.editor.selectedCell;
-  const selectedCells = getSelectedCells();
-  const currentValue = selectedCell ? getDraftCellValue(layer, selectedCell.row, selectedCell.col) : "--";
-  selectedCellEl.textContent = selectedCell
-    ? selectedCells.length > 1
-      ? `Cells ${selectedCells.length} selected`
-      : `Cell ${selectedCell.col + 1}:${selectedCell.row + 1}`
-    : "Cell --";
-  selectedLayerEl.textContent = `${config.label} ${currentValue}`;
-  const hovered = appState.editor.hoveredAtlasCell;
-  hoveredAtlasEl.textContent = hovered ? `Atlas ${hovered.x}:${hovered.y}` : "Atlas --";
-
-  atlasTitleEl.textContent = currentView === "chat-bubble" ? `${config.label} Atlas` : config.title;
-  atlasModeEl.textContent = config.modeLabel;
-  if (document.activeElement !== colsInput) colsInput.value = String(getWorldCols());
-  if (document.activeElement !== rowsInput) rowsInput.value = String(getWorldRows());
-  zoomSelect.value = String(appState.editor.zoom);
-  showAgentsToggle.checked = appState.editor.showAgents;
-  regionKindInput.value = appState.editor.regionKind;
-  populateRegionIdSelect(regionIdInput);
-  if (document.activeElement !== regionLabelInput) regionLabelInput.value = appState.editor.regionLabel;
-  const activeChatTheme = selectedChatBubbleTheme();
-  chatBubbleTextColor.value = activeChatTheme?.textColor || DEFAULT_CHAT_TEXT_COLORS[appState.editor.selectedChatBubbleRole] || "#fff4d7";
-  const chatRoleLabel = appState.editor.selectedChatBubbleRole === "assistant"
-    ? "Agent"
-    : appState.editor.selectedChatBubbleRole === "tool"
-      ? "Tool"
-      : "User";
-  chatBubbleSlotSummary.textContent = `${chatRoleLabel} · ${(appState.editor.selectedChatBubbleSlot || "mm").toUpperCase()}`;
-  regionSummary.textContent = `${appState.roomRegions.length} regions`;
-  const stash = normalizeStashPoint(appState.tilemap?.layout?.stash || appState.renderer?.assets?.layout?.stash || { col: 15, row: 14 });
-  stashSummary.textContent = `Stash ${stash.col + 1}:${stash.row + 1}`;
-  const atlasPath = getAtlasPathForLayer(layer);
-  if (atlasImage.getAttribute("src") !== atlasPath) {
-    atlasImage.setAttribute("src", atlasPath);
-  }
-  atlasImage.dataset.cols = String(config.cols);
-  atlasImage.dataset.rows = String(config.rows);
-
-  if (hovered) {
-    const cellWidth = atlasImage.clientWidth / config.cols;
-    const cellHeight = atlasImage.clientHeight / config.rows;
-    atlasHover.style.display = "block";
-    atlasHover.style.width = `${cellWidth}px`;
-    atlasHover.style.height = `${cellHeight}px`;
-    atlasHover.style.transform = `translate(${(hovered.x - 1) * cellWidth}px, ${(hovered.y - 1) * cellHeight}px)`;
-  } else {
-    atlasHover.style.display = "none";
-  }
-
-  emptyButton.textContent = layer === "floor" ? "Set `.` floor" : "Set `.`";
-  syncRendererCanvasSize();
-  renderAgentEditorPanel();
-
-  for (const button of document.querySelectorAll("#visual-layer-toggle [data-layer]")) {
-    button.classList.toggle("active", button.dataset.layer === layer);
-  }
-  regionList.innerHTML = appState.roomRegions.length
-    ? appState.roomRegions.map((region) => `
-      <div class="room-region-item${appState.editor.hoveredRegionId === region.id ? " active" : ""}" data-region-id="${region.id}">
-        <div class="room-region-copy">
-          <span>${region.label}</span>
-          <span class="room-region-meta">${region.kind} · ${region.id} · ${region.cells.length} cells${region.labelCell ? ` · label ${region.labelCell.col + 1}:${region.labelCell.row + 1}` : ""}</span>
-        </div>
-        <button class="secondary-btn room-region-delete" type="button" data-region-id="${region.id}">Delete</button>
-      </div>
-    `).join("")
-    : `<div class="room-region-item"><span>No mapped rooms yet.</span><span class="room-region-meta">Select cells and assign one.</span></div>`;
-  for (const row of regionList.querySelectorAll(".room-region-item[data-region-id]")) {
-    row.addEventListener("mouseenter", () => {
-      appState.editor.hoveredRegionId = row.dataset.regionId || "";
-      drawRoom(appState.renderer);
-    });
-    row.addEventListener("mouseleave", () => {
-      appState.editor.hoveredRegionId = "";
-      drawRoom(appState.renderer);
-    });
-  }
-  for (const button of regionList.querySelectorAll(".room-region-delete")) {
-    button.addEventListener("click", (event) => {
-      event.stopPropagation();
-      deleteRoomRegion(button.dataset.regionId || "");
-    });
-  }
-  chatBubblePreviewList.innerHTML = CHAT_BUBBLE_PREVIEW_SAMPLES.map((sample) => `
-    <article class="chat-bubble-preview-card ${sample.role}">
-      <div class="chat-bubble-preview-label">${sample.label}</div>
-      <div class="chat-item ${sample.role} preview">
-        ${chatBubbleMarkup(sample.role, sample.metaLabel, sample.eventType, sample.time, formatRichTextHtml(sample.body))}
-        ${chatBubbleSlotOverlayMarkup(sample.role)}
-      </div>
-    </article>
-  `).join("");
-  for (const item of chatBubblePreviewList.querySelectorAll(".chat-item.preview")) {
-    const role = item.classList.contains("user") ? "user" : item.classList.contains("tool") ? "tool" : "assistant";
-    applyChatRoleTheme(item, role);
-  }
-  for (const button of chatBubblePreviewList.querySelectorAll(".chat-bubble-slot-hotspot")) {
-    button.addEventListener("click", () => {
-      appState.editor.selectedChatBubbleRole = ["assistant", "tool", "user"].includes(button.dataset.role) ? button.dataset.role : "assistant";
-      appState.editor.selectedChatBubbleSlot = button.dataset.slot || "mm";
-      const frame = selectedChatBubbleTheme()?.frame?.[appState.editor.selectedChatBubbleSlot] || null;
-      if (frame?.layer && ["floor", "wall"].includes(frame.layer)) {
-        appState.editor.selectedLayer = frame.layer;
-      }
-      renderVisualEditor();
-    });
-  }
-  for (const button of document.querySelectorAll(".chat-bubble-role-btn")) {
-    button.classList.toggle("active", button.dataset.role === appState.editor.selectedChatBubbleRole);
-  }
-  renderVisualSelectionPreview();
+  return renderVisualEditorHelper(appState, {
+    applyChatRoleTheme,
+    chatBubbleMarkup,
+    chatBubbleSlotOverlayMarkup,
+    deleteRoomRegion,
+    documentRef: document,
+    drawRoom,
+    formatRichTextHtml,
+    getAtlasPathForLayer,
+    getDraftCellValue,
+    getSelectedCells,
+    getVisualLayerConfig,
+    getWorldCols,
+    getWorldRows,
+    normalizeStashPoint,
+    populateRegionIdSelect,
+    renderAgentEditorPanel,
+    renderVisualSelectionPreview,
+    selectedChatBubbleTheme,
+    syncRendererCanvasSize,
+  });
 }
 
 function renderAgentEditorPanel() {

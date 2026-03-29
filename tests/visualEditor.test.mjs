@@ -3,6 +3,8 @@ import assert from "node:assert/strict";
 
 import {
   renderEditorSubviews,
+  renderVisualEditor,
+  renderVisualSelectionPreview,
   setActiveEditorSubview,
   syncEditorInputs,
 } from "../src/features/editor/visualEditor.js";
@@ -134,4 +136,171 @@ test("syncEditorInputs mirrors draft text into inputs and refreshes summaries", 
   assert.equal(texts.get("tilemap-walkability"), "10 walkable · 4 solid · 1 doors");
   assert.equal(synced, 1);
   assert.equal(rendered, 1);
+});
+
+test("renderVisualSelectionPreview shows empty-state guidance when nothing is selected", () => {
+  const titleEl = { textContent: "" };
+  const detailEl = { textContent: "" };
+  const ctx = {
+    clearRect() {},
+    imageSmoothingEnabled: true,
+  };
+  renderVisualSelectionPreview({
+    editor: {
+      activeSubview: "tilemap",
+      hoveredAtlasCell: null,
+      selectedAtlasCell: null,
+      selectedCell: null,
+      selectedLayer: "floor",
+    },
+  }, {
+    documentRef: {
+      getElementById(id) {
+        if (id === "visual-selection-preview") {
+          return {
+            width: 32,
+            height: 32,
+            getContext() {
+              return ctx;
+            },
+          };
+        }
+        if (id === "visual-selection-title") return titleEl;
+        if (id === "visual-selection-detail") return detailEl;
+        return null;
+      },
+    },
+    getAssignedAtlasCell: () => null,
+    getAssignedPreviewToken: () => null,
+    getDraftCellValue: () => null,
+    getVisualLayerConfig: () => ({ label: "Floor" }),
+    selectedChatBubbleTheme: () => null,
+  });
+  assert.equal(titleEl.textContent, "No atlas tile selected");
+  assert.match(detailEl.textContent, /Click a map cell/);
+  assert.equal(ctx.imageSmoothingEnabled, false);
+});
+
+test("renderVisualEditor updates summary fields and atlas state", () => {
+  const elements = {
+    "selected-map-cell": { textContent: "" },
+    "selected-layer-cell": { textContent: "" },
+    "hovered-atlas-cell": { textContent: "" },
+    "atlas-picker-title": { textContent: "" },
+    "atlas-picker-mode": { textContent: "" },
+    "atlas-picker-image": {
+      _src: "",
+      clientWidth: 160,
+      clientHeight: 128,
+      dataset: {},
+      getAttribute(name) {
+        return name === "src" ? this._src : null;
+      },
+      setAttribute(name, value) {
+        if (name === "src") this._src = value;
+      },
+    },
+    "atlas-picker-hover": { style: {} },
+    "visual-token-empty": { textContent: "" },
+    "grid-cols-input": { value: "" },
+    "grid-rows-input": { value: "" },
+    "editor-zoom-select": { value: "" },
+    "toggle-editor-agents": { checked: false },
+    "region-kind-input": { value: "" },
+    "region-id-input": { value: "" },
+    "region-label-input": { value: "" },
+    "room-region-summary": { textContent: "" },
+    "room-region-list": {
+      innerHTML: "",
+      querySelectorAll() {
+        return [];
+      },
+    },
+    "stash-cell-summary": { textContent: "" },
+    "editor-chat-bubble-preview-list": {
+      innerHTML: "",
+      querySelectorAll() {
+        return [];
+      },
+    },
+    "chat-bubble-text-color": { value: "" },
+    "chat-bubble-slot-summary": { textContent: "" },
+  };
+  const layerButton = makeToggleElement({ layer: "floor" });
+  const roleButton = makeToggleElement({ role: "assistant" });
+  let previewCalls = 0;
+  let agentPanelCalls = 0;
+  let populateCalls = 0;
+  renderVisualEditor({
+    editor: {
+      activeSubview: "tilemap",
+      hoveredAtlasCell: { x: 2, y: 3 },
+      hoveredRegionId: "",
+      regionKind: "room",
+      regionLabel: "Library",
+      selectedCell: { row: 4, col: 6 },
+      selectedChatBubbleRole: "assistant",
+      selectedChatBubbleSlot: "mm",
+      selectedLayer: "floor",
+      showAgents: true,
+      zoom: 2,
+    },
+    renderer: {
+      assets: {
+        layout: { stash: { col: 1, row: 2 } },
+      },
+    },
+    roomRegions: [{ id: "library", kind: "room", label: "Library", cells: [{ row: 1, col: 2 }] }],
+    tilemap: {
+      layout: { stash: { col: 3, row: 4 } },
+    },
+  }, {
+    applyChatRoleTheme: () => {},
+    chatBubbleMarkup: () => "<div></div>",
+    chatBubbleSlotOverlayMarkup: () => "<div></div>",
+    deleteRoomRegion: () => {},
+    documentRef: {
+      activeElement: null,
+      getElementById(id) {
+        return elements[id] || null;
+      },
+      querySelectorAll(selector) {
+        if (selector === "#visual-layer-toggle [data-layer]") return [layerButton];
+        if (selector === ".chat-bubble-role-btn") return [roleButton];
+        return [];
+      },
+    },
+    drawRoom: () => {},
+    formatRichTextHtml: (value) => value,
+    getAtlasPathForLayer: () => "/atlas/floor.png",
+    getDraftCellValue: () => "1:2",
+    getSelectedCells: () => [{ row: 4, col: 6 }],
+    getVisualLayerConfig: () => ({ cols: 5, rows: 4, label: "Floor", modeLabel: "Atlas", title: "Floor Atlas" }),
+    getWorldCols: () => 20,
+    getWorldRows: () => 10,
+    normalizeStashPoint: (value) => value,
+    populateRegionIdSelect: () => {
+      populateCalls += 1;
+    },
+    renderAgentEditorPanel: () => {
+      agentPanelCalls += 1;
+    },
+    renderVisualSelectionPreview: () => {
+      previewCalls += 1;
+    },
+    selectedChatBubbleTheme: () => ({ textColor: "#abcdef" }),
+    syncRendererCanvasSize: () => {},
+  });
+  assert.equal(elements["selected-map-cell"].textContent, "Cell 7:5");
+  assert.equal(elements["selected-layer-cell"].textContent, "Floor 1:2");
+  assert.equal(elements["hovered-atlas-cell"].textContent, "Atlas 2:3");
+  assert.equal(elements["atlas-picker-title"].textContent, "Floor Atlas");
+  assert.equal(elements["atlas-picker-image"]._src, "/atlas/floor.png");
+  assert.equal(elements["chat-bubble-text-color"].value, "#abcdef");
+  assert.equal(elements["stash-cell-summary"].textContent, "Stash 4:5");
+  assert.equal(layerButton.classList.contains("active"), true);
+  assert.equal(roleButton.classList.contains("active"), true);
+  assert.equal(populateCalls, 1);
+  assert.equal(agentPanelCalls, 1);
+  assert.equal(previewCalls, 1);
 });
