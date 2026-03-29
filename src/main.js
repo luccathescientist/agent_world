@@ -255,6 +255,15 @@ import {
   syncSceneOffset as syncSceneOffsetShell,
 } from "./app/renderShell.js";
 import {
+  previewSpriteFrame as previewSpriteFrameShell,
+  renderAgentEditorPanel as renderAgentEditorPanelShell,
+  renderEditorSubviews as renderEditorSubviewsShell,
+  renderVisualEditor as renderVisualEditorShell,
+  renderVisualSelectionPreview as renderVisualSelectionPreviewShell,
+  setActiveEditorSubview as setActiveEditorSubviewShell,
+  syncEditorInputs as syncEditorInputsShell,
+} from "./app/editorShell.js";
+import {
   populateAgentSelect as populateAgentSelectHelper,
   populateRegionIdSelect as populateRegionIdSelectHelper,
   setActiveTab as setActiveTabHelper,
@@ -1115,28 +1124,31 @@ function setActiveTab(tabName) {
 }
 
 function setActiveEditorSubview(viewName) {
-  return setActiveEditorSubviewHelper(appState, viewName, {
+  return setActiveEditorSubviewShell(appState, viewName, {
     drawRoom,
     mountRendererView,
     renderEditorSubviews,
     renderVisualEditor,
     resizeRendererViewport,
+    setActiveEditorSubviewHelper,
   });
 }
 
 function renderEditorSubviews() {
-  return renderEditorSubviewsHelper(appState, {
+  return renderEditorSubviewsShell(appState, {
     documentRef: document,
+    renderEditorSubviewsHelper,
     setText,
   });
 }
 
 function syncEditorInputs() {
-  return syncEditorInputsHelper(appState, {
+  return syncEditorInputsShell(appState, {
     documentRef: document,
     getWorldCols,
     getWorldRows,
     renderVisualEditor,
+    syncEditorInputsHelper,
     setText,
     syncGameStateTextarea,
   });
@@ -1158,18 +1170,19 @@ function applyStructuredGameState(snapshot, successMessage = "Loaded game state.
 }
 
 function renderVisualSelectionPreview() {
-  return renderVisualSelectionPreviewHelper(appState, {
+  return renderVisualSelectionPreviewShell(appState, {
     documentRef: document,
     getAssignedAtlasCell,
     getAssignedPreviewToken,
     getDraftCellValue,
     getVisualLayerConfig,
+    renderVisualSelectionPreviewHelper,
     selectedChatBubbleTheme,
   });
 }
 
 function renderVisualEditor() {
-  return renderVisualEditorHelper(appState, {
+  return renderVisualEditorShell(appState, {
     applyChatRoleTheme,
     chatBubbleMarkup,
     chatBubbleSlotOverlayMarkup,
@@ -1186,6 +1199,7 @@ function renderVisualEditor() {
     normalizeStashPoint,
     populateRegionIdSelect,
     renderAgentEditorPanel,
+    renderVisualEditorHelper,
     renderVisualSelectionPreview,
     selectedChatBubbleTheme,
     syncRendererCanvasSize,
@@ -1193,17 +1207,19 @@ function renderVisualEditor() {
 }
 
 function renderAgentEditorPanel() {
-  return renderAgentEditorPanelHelper(appState, {
+  return renderAgentEditorPanelShell(appState, {
     documentRef: document,
     escapeHtml,
     previewSpriteFrame,
+    renderAgentEditorPanelHelper,
     setText,
     shouldShowAgentSprite,
   });
 }
 
 function previewSpriteFrame(agent) {
-  return previewSpriteFrameHelper(appState, agent, {
+  return previewSpriteFrameShell(appState, agent, {
+    previewSpriteFrameHelper,
     previewSpriteFrameName,
     shouldMirrorPreviewSprite,
   });
