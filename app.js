@@ -153,6 +153,7 @@ import {
   syncSceneOffset as syncSceneOffsetHelper,
   tickAgents as tickAgentsHelper,
 } from "./src/render/worldRenderer.js";
+import { initRenderer as initRendererHelper } from "./src/render/pixiApp.js";
 import {
   applyEditorState as applyEditorStateHelper,
   applyVisualAtlasCell as applyVisualAtlasCellHelper,
@@ -1894,128 +1895,28 @@ function tickAgents(delta) {
 }
 
 async function initRenderer() {
-  if (appState.renderer || !window.PIXI) return;
-  const host = document.getElementById("world-canvas");
-  const pixiApp = new PIXI.Application({
-    width: getWorldWidth(),
-    height: getRenderHeight(),
-    antialias: false,
-    autoDensity: true,
-    resolution: 1,
-    backgroundAlpha: 0,
-  });
-  host.appendChild(pixiApp.view);
-
-  const backgroundLayer = new PIXI.Container();
-  const floorLayer = new PIXI.Container();
-  const wallLayer = new PIXI.Container();
-  const depthLayer = new PIXI.Container();
-  depthLayer.sortableChildren = true;
-  const overlayLayer = new PIXI.Container();
-  const interactionLayer = new PIXI.Container();
-  const labelLayer = new PIXI.Container();
-  const agentLabelLayer = new PIXI.Container();
-  const bubbleLayer = new PIXI.Container();
-  pixiApp.stage.addChild(backgroundLayer, floorLayer, wallLayer, depthLayer, overlayLayer, interactionLayer, labelLayer, agentLabelLayer, bubbleLayer);
-
-  const assets = await loadArtAssets();
-  assets.tileTextures = await buildTileTextures(pixiApp, assets.tileManifest);
-  const officeAtlas = await PIXI.Assets.load(assets.layout.officeAtlasPath || DEFAULT_OFFICE_ATLAS_PATH);
-  const floorAtlas = await PIXI.Assets.load(assets.layout.floorAtlasPath || DEFAULT_FLOOR_ATLAS_PATH);
-  const wallAtlas = await PIXI.Assets.load(assets.layout.wallAtlasPath || DEFAULT_WALL_ATLAS_PATH);
-  assets.floorAtlasBaseTexture = floorAtlas.baseTexture || floorAtlas;
-  assets.floorAtlasBaseTexture.scaleMode = PIXI.SCALE_MODES.NEAREST;
-  assets.officeAtlasBaseTexture = officeAtlas.baseTexture || officeAtlas;
-  assets.officeAtlasBaseTexture.scaleMode = PIXI.SCALE_MODES.NEAREST;
-  assets.wallAtlasBaseTexture = wallAtlas.baseTexture || wallAtlas;
-  assets.wallAtlasBaseTexture.scaleMode = PIXI.SCALE_MODES.NEAREST;
-  assets.officeAtlasTextures = {};
-  assets.wallAtlasTextures = {};
-  assets.floorAtlasTextures = {};
-  assets.primitiveTextures = {
-    wall: buildPrimitiveTexture(pixiApp, "wall"),
-    door: buildPrimitiveTexture(pixiApp, "door"),
-  };
-  assets.layout.stash = normalizeStashPoint(assets.stash || assets.layout.stash || { col: 15, row: 14 });
-  appState.tilemap = buildTilemapState(assets.floorText, assets.wallText, assets.furnitureText, assets.propText, assets.tileManifest, assets.layout, assets.roomRegions);
-  appState.roomRegions = appState.tilemap.layout.roomRegions || [];
-  assets.layout.cols = appState.tilemap.layout.cols;
-  assets.layout.rows = appState.tilemap.layout.rows;
-  assets.layout.anchors = appState.tilemap.layout.anchors;
-  appState.gameStateRaw = assets.gameStateRaw || {};
-  appState.editor.baseFloorText = normalizeMapText(assets.floorText);
-  appState.editor.baseWallText = normalizeMapText(assets.wallText);
-  appState.editor.baseFurnitureText = normalizeMapText(assets.furnitureText);
-  appState.editor.basePropText = normalizeMapText(assets.propText);
-  appState.editor.baseCols = assets.layout.cols || DEFAULT_WORLD_COLS;
-  appState.editor.baseRows = assets.layout.rows || DEFAULT_WORLD_ROWS;
-  appState.editor.draftFloorText = appState.tilemap.floorText;
-  appState.editor.draftWallText = appState.tilemap.wallText;
-  appState.editor.draftFurnitureText = appState.tilemap.furnitureText;
-  appState.editor.draftPropText = appState.tilemap.propText;
-
-  appState.renderer = {
-    host,
-    pixiApp,
-    backgroundLayer,
-    floorLayer,
-    wallLayer,
-    depthLayer,
-    overlayLayer,
-    interactionLayer,
-    labelLayer,
-    agentLabelLayer,
-    bubbleLayer,
-    agents: new Map(),
-    assets,
-  };
-  drawRoom(appState.renderer);
-  syncEditorInputs();
-  setTilemapStatus("Tilemap loaded.");
-  pixiApp.ticker.add((delta) => tickAgents(delta));
-  syncSceneOffset();
-  pixiApp.renderer.resize(getWorldWidth(), getRenderHeight());
-  mountRendererView();
-  syncRendererCanvasSize();
-
-  pixiApp.view.addEventListener("mousemove", (event) => {
-    if (appState.activeTab !== "editor") return;
-    const cell = getCanvasCellFromEvent(event, pixiApp.view);
-    if (!cell) {
-      setHoveredMapCell(null, null);
-      return;
-    }
-    setHoveredMapCell(cell.row, cell.col);
-    if (appState.editor.isSelecting) {
-      appState.editor.selectionFocus = { row: cell.row, col: cell.col };
-      appState.editor.selectedCell = { row: cell.row, col: cell.col };
-      drawRoom(appState.renderer);
-      renderVisualEditor();
-    }
-  });
-  pixiApp.view.addEventListener("mouseleave", () => setHoveredMapCell(null, null));
-  pixiApp.view.addEventListener("mousedown", (event) => {
-    if (appState.activeTab !== "editor") return;
-    const cell = getCanvasCellFromEvent(event, pixiApp.view);
-    if (!cell) return;
-    appState.editor.isSelecting = true;
-    appState.editor.selectionAnchor = { row: cell.row, col: cell.col };
-    appState.editor.selectionFocus = { row: cell.row, col: cell.col };
-    appState.editor.selectedCell = { row: cell.row, col: cell.col };
-    appState.editor.selectedAtlasCell = null;
-    drawRoom(appState.renderer);
-    renderVisualEditor();
-  });
-  window.addEventListener("mouseup", (event) => {
-    if (!appState.editor.isSelecting) return;
-    appState.editor.isSelecting = false;
-    const cell = getCanvasCellFromEvent(event, pixiApp.view);
-    if (cell) {
-      appState.editor.selectionFocus = { row: cell.row, col: cell.col };
-      appState.editor.selectedCell = { row: cell.row, col: cell.col };
-    }
-    drawRoom(appState.renderer);
-    renderVisualEditor();
+  return initRendererHelper(appState, {
+    PIXIRef: window.PIXI,
+    buildPrimitiveTexture,
+    buildTileTextures,
+    buildTilemapState,
+    documentRef: document,
+    drawRoom,
+    getCanvasCellFromEvent,
+    getRenderHeight,
+    getWorldWidth,
+    loadArtAssets,
+    mountRendererView,
+    normalizeMapText,
+    normalizeStashPoint,
+    renderVisualEditor,
+    setHoveredMapCell,
+    setTilemapStatus,
+    syncEditorInputs,
+    syncRendererCanvasSize,
+    syncSceneOffset,
+    tickAgents,
+    windowRef: window,
   });
 }
 
