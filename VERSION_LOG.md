@@ -79,11 +79,15 @@ Expected focus:
 
 Added the standalone settings model, settings UI, raw config editor, and feature-oriented OpenClaw diagnostics for runtime visibility and debugging.
 
+#### `b44622f` - `Decouple voice from OpenClaw workspace and load .env config`
+
+Moved voice to an Agent World-owned backend with direct OpenAI SDK calls, split voice diagnostics into clearer checks, and added repo-local `.env` loading.
+
 ### In Progress
 
 Uncommitted working tree changes currently include:
 
-- version-log maintenance for the `0.2.0` settings checkpoint
+- version-log maintenance for the `0.2.0` voice-decoupling checkpoint
 
 ---
 
@@ -146,7 +150,7 @@ Expected focus:
 
 - per-agent voice/text interaction completion
 - reply mode selection
-- clearer OpenClaw-backed voice settings and diagnostics
+- clearer Agent World-owned voice settings and diagnostics
 
 Commits:
 
