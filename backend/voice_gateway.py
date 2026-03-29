@@ -11,34 +11,9 @@ import subprocess
 import tempfile
 from typing import Any, Dict, Optional
 
-
-REPO_ROOT = Path(__file__).resolve().parents[1]
-
-
-def _resolve_openclaw_workspace() -> Optional[Path]:
-    candidates = []
-    configured = os.getenv("OPENCLAW_WORKSPACE")
-    if configured:
-        candidates.append(Path(configured).expanduser())
-    candidates.extend(
-        [
-            REPO_ROOT / "vendor" / "openclaw",
-            REPO_ROOT.parent / "openclaw",
-            Path.home() / "workspace" / "openclaw",
-        ]
-    )
-    for candidate in candidates:
-        if candidate.exists():
-            return candidate.resolve()
-    return Path(configured).expanduser().resolve() if configured else None
+from .settings import get_openclaw_workspace
 
 
-OPENCLAW_WORKSPACE = _resolve_openclaw_workspace()
-OPENCLAW_TSX_LOADER = (
-    OPENCLAW_WORKSPACE / "node_modules" / "tsx" / "dist" / "loader.mjs"
-    if OPENCLAW_WORKSPACE
-    else None
-)
 VOICE_BRIDGE_PATH = Path(__file__).resolve().parents[1] / "tools" / "openclaw_voice_bridge.mjs"
 DEFAULT_TRANSCRIBE_MODEL = "gpt-4o-mini-transcribe"
 DEFAULT_TTS_MODEL = "gpt-4o-mini-tts"
@@ -46,29 +21,35 @@ DEFAULT_TTS_VOICE = "nova"
 
 
 def _bridge_payload(payload: Dict[str, Any], timeout: float = 120.0) -> Dict[str, Any]:
-    if not OPENCLAW_WORKSPACE:
+    openclaw_workspace = get_openclaw_workspace()
+    openclaw_tsx_loader = (
+        openclaw_workspace / "node_modules" / "tsx" / "dist" / "loader.mjs"
+        if openclaw_workspace
+        else None
+    )
+    if not openclaw_workspace:
         return {
             "ok": False,
             "reason": "openclaw_workspace_not_configured",
             "detail": "Set OPENCLAW_WORKSPACE to an OpenClaw checkout before using voice features.",
         }
-    if not OPENCLAW_TSX_LOADER or not OPENCLAW_TSX_LOADER.exists():
+    if not openclaw_tsx_loader or not openclaw_tsx_loader.exists():
         return {
             "ok": False,
             "reason": "openclaw_tsx_loader_missing",
-            "detail": f"Expected tsx loader at {OPENCLAW_TSX_LOADER}",
+            "detail": f"Expected tsx loader at {openclaw_tsx_loader}",
         }
     proc = subprocess.run(
         [
             "node",
             "--import",
-            str(OPENCLAW_TSX_LOADER),
+            str(openclaw_tsx_loader),
             str(VOICE_BRIDGE_PATH),
         ],
         input=json.dumps(payload),
         capture_output=True,
         text=True,
-        cwd=str(OPENCLAW_WORKSPACE),
+        cwd=str(openclaw_workspace),
         timeout=timeout,
     )
     stdout = (proc.stdout or "").strip()

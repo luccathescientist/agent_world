@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Agent World</title>
-  <link rel="stylesheet" href="/agent-world-static/styles.css" />
+  <link rel="stylesheet" href="/agent-world-static/styles.css?v=0.2.0-settings-5" />
 </head>
 <body>
   <div class="app-shell">
@@ -17,10 +17,12 @@
         <div class="mode-switch" aria-label="Workspace Tabs">
           <button id="tab-world" class="tab-btn active" type="button" data-tab="world">World</button>
           <button id="tab-editor" class="tab-btn" type="button" data-tab="editor">Editor</button>
+          <button id="tab-settings" class="tab-btn" type="button" data-tab="settings">Settings</button>
         </div>
         <div class="pill-row">
           <span class="pill" id="server-time">--</span>
-          <span class="pill accent">build v0.4</span>
+          <span class="pill" id="openclaw-runtime-pill">OpenClaw --</span>
+          <span class="pill accent">build v0.2.0-dev5</span>
         </div>
       </div>
     </header>
@@ -391,9 +393,95 @@
         </section>
       </section>
     </main>
+
+    <main class="settings-layout tab-panel" id="settings-tab-panel" data-panel="settings">
+      <section class="card pixel-panel settings-panel">
+        <div class="panel-header">
+          <h2>Install Settings</h2>
+          <div class="pill-row">
+            <span class="pill" id="settings-path">agent_world.json</span>
+            <span class="pill" id="settings-summary">Loading...</span>
+          </div>
+        </div>
+        <form id="settings-form" class="settings-form">
+          <div class="settings-grid">
+            <label class="editor-field">
+              <span>OpenClaw Home</span>
+              <input id="settings-openclaw-home" type="text" placeholder="~/.openclaw" />
+            </label>
+            <label class="editor-field">
+              <span>OpenClaw Workspace</span>
+              <input id="settings-openclaw-workspace" type="text" placeholder="~/workspace/openclaw" />
+            </label>
+            <label class="editor-field">
+              <span>OpenClaw Media Dir</span>
+              <input id="settings-openclaw-media-dir" type="text" placeholder="~/.openclaw/media" />
+            </label>
+            <label class="editor-field">
+              <span>Server Host</span>
+              <input id="settings-server-host" type="text" placeholder="0.0.0.0" />
+            </label>
+            <label class="editor-field">
+              <span>Server Port</span>
+              <input id="settings-server-port" type="number" min="1" max="65535" placeholder="8890" />
+            </label>
+          </div>
+          <label class="tile-editor-block">
+            <span>Extra Allowed File Roots</span>
+            <textarea id="settings-allowed-file-roots" class="tilemap-input" spellcheck="false" placeholder="/path/one&#10;/path/two"></textarea>
+          </label>
+          <div class="button-row settings-actions">
+            <button id="settings-save" type="submit">Save Settings</button>
+            <button id="settings-refresh" class="secondary-btn" type="button">Refresh Diagnostics</button>
+          </div>
+          <p class="editor-copy">Settings are global to this Agent World install. Changes to the server bind host/port apply on the next server start.</p>
+          <p id="settings-result" class="command-result"></p>
+        </form>
+      </section>
+
+      <section class="card pixel-panel settings-panel">
+        <div class="panel-header">
+          <h2>Resolved Paths</h2>
+          <span class="pill" id="settings-diagnostics-state">--</span>
+        </div>
+        <dl class="inspector-grid settings-grid-compact">
+          <div><dt>Settings File</dt><dd id="resolved-settings-path">--</dd></div>
+          <div><dt>OpenClaw Home</dt><dd id="resolved-openclaw-home">--</dd></div>
+          <div><dt>OpenClaw Config</dt><dd id="resolved-openclaw-config">--</dd></div>
+          <div><dt>Main Sessions</dt><dd id="resolved-main-sessions">--</dd></div>
+          <div><dt>OpenClaw Media</dt><dd id="resolved-openclaw-media">--</dd></div>
+          <div><dt>OpenClaw Workspace</dt><dd id="resolved-openclaw-workspace">--</dd></div>
+          <div><dt>TSX Loader</dt><dd id="resolved-tsx-loader">--</dd></div>
+        </dl>
+      </section>
+
+      <section class="card pixel-panel settings-panel">
+        <div class="panel-header">
+          <h2>Diagnostics</h2>
+          <span class="pill" id="settings-check-count">--</span>
+        </div>
+        <div id="settings-checks" class="settings-check-list"></div>
+      </section>
+
+      <section class="card pixel-panel settings-panel">
+        <div class="panel-header">
+          <h2>Raw Config</h2>
+          <span class="pill">Read / Edit</span>
+        </div>
+        <label class="tile-editor-block">
+          <span>agent_world.json</span>
+          <textarea id="settings-json-editor" class="tilemap-input large settings-json-editor" spellcheck="false"></textarea>
+        </label>
+        <div class="button-row settings-actions">
+          <button id="settings-save-json" type="button">Save Raw JSON</button>
+          <button id="settings-reload-json" class="secondary-btn" type="button">Reload From Disk</button>
+        </div>
+        <p class="editor-copy">This is the full config file stored for this Agent World install. Save will validate the JSON before writing it through the settings API.</p>
+      </section>
+    </main>
   </div>
 
   <script src="/agent-world-static/vendor/pixi.min.js"></script>
-  <script src="/agent-world-static/app.js"></script>
+  <script src="/agent-world-static/app.js?v=0.2.0-settings-5"></script>
 </body>
 </html>

@@ -7,9 +7,9 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 import json
-import os
-from pathlib import Path
 from typing import List, Optional
+
+from .settings import get_openclaw_home
 
 
 @dataclass(frozen=True)
@@ -23,15 +23,12 @@ class CoreAgent:
     description: Optional[str] = None
 
 
-OPENCLAW_HOME = Path(os.getenv("OPENCLAW_HOME", Path.home() / ".openclaw")).expanduser()
-OPENCLAW_CONFIG_PATH = OPENCLAW_HOME / "openclaw.json"
-
-
 def _load_agent_config() -> List[dict]:
-    if not OPENCLAW_CONFIG_PATH.exists():
+    openclaw_config_path = get_openclaw_home() / "openclaw.json"
+    if not openclaw_config_path.exists():
         return []
     try:
-        payload = json.loads(OPENCLAW_CONFIG_PATH.read_text())
+        payload = json.loads(openclaw_config_path.read_text())
     except Exception:
         return []
     entries = payload.get("agents", {}).get("list", [])

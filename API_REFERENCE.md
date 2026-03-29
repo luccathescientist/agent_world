@@ -27,6 +27,19 @@ Examples:
 
 ## World Snapshot Routes
 
+### `GET /api/agent-world/settings`
+
+Returns the current global Agent World install settings from `agent_world.json`.
+
+### `POST /api/agent-world/settings`
+
+Persists the global Agent World install settings to `agent_world.json`.
+
+### `GET /api/agent-world/settings/diagnostics`
+
+Returns diagnostics for the configured OpenClaw home, config, agents, media,
+workspace, and voice-loader readiness.
+
 ### `GET /api/agent-world/state`
 
 Returns the current world snapshot.

@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import argparse
 import asyncio
-import os
 from pathlib import Path
 
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
@@ -19,6 +18,7 @@ from backend.state_mapper import (
     derive_agent_world_state,
 )
 from backend.command_router import route_operator_command
+from backend.settings import diagnostics_payload, get_allowed_file_roots, load_settings, save_settings
 from backend.stream import iter_agent_world_stream
 from backend.voice_gateway import (
     synthesize_speech_bytes,
@@ -30,8 +30,6 @@ from backend.world_layout import load_world_game_state, save_world_game_state, s
 
 DEFAULT_PORT = 8890
 ROOT_DIR = Path(__file__).resolve().parent
-OPENCLAW_HOME = Path(os.getenv("OPENCLAW_HOME", Path.home() / ".openclaw")).expanduser()
-OPENCLAW_MEDIA_DIR = Path(os.getenv("OPENCLAW_MEDIA_DIR", OPENCLAW_HOME / "media")).expanduser()
 
 app = FastAPI(title="Agent World")
 
@@ -52,26 +50,14 @@ class AgentWorldVoiceSpeechPayload(BaseModel):
     format: str | None = "mp3"
 
 
-def _allowed_file_roots() -> list[Path]:
-    roots = [ROOT_DIR]
-    if OPENCLAW_HOME.exists():
-        roots.append(OPENCLAW_HOME.resolve())
-    if OPENCLAW_MEDIA_DIR.exists():
-        roots.append(OPENCLAW_MEDIA_DIR.resolve())
-    extra_roots = os.getenv("AGENT_WORLD_ALLOWED_FILE_ROOTS", "").split(os.pathsep)
-    for raw in extra_roots:
-        raw = raw.strip()
-        if not raw:
-            continue
-        path = Path(raw).expanduser()
-        if path.exists():
-            roots.append(path.resolve())
-    return roots
+class AgentWorldSettingsPayload(BaseModel):
+    openclaw: dict | None = None
+    server: dict | None = None
 
 
 def _is_allowed_path(target: Path) -> bool:
     resolved = target.resolve()
-    for root in _allowed_file_roots():
+    for root in get_allowed_file_roots():
         try:
             resolved.relative_to(root)
             return True
@@ -96,6 +82,21 @@ async def agent_world() -> RedirectResponse:
 @app.get("/api/agent-world/state")
 async def agent_world_state():
     return await asyncio.to_thread(derive_agent_world_state)
+
+
+@app.get("/api/agent-world/settings")
+async def agent_world_settings():
+    return await asyncio.to_thread(load_settings)
+
+
+@app.post("/api/agent-world/settings")
+async def agent_world_save_settings(payload: AgentWorldSettingsPayload):
+    return await asyncio.to_thread(save_settings, payload.model_dump())
+
+
+@app.get("/api/agent-world/settings/diagnostics")
+async def agent_world_settings_diagnostics():
+    return await asyncio.to_thread(diagnostics_payload)
 
 
 @app.get("/api/agent-world/events")
@@ -226,8 +227,12 @@ def main() -> None:
     import uvicorn
 
     parser = argparse.ArgumentParser(description="Run the Agent World server.")
-    parser.add_argument("--host", default="0.0.0.0", help="Host interface to bind.")
-    parser.add_argument("--port", type=int, default=DEFAULT_PORT, help=f"Port to bind. Defaults to {DEFAULT_PORT}.")
+    runtime_settings = load_settings()
+    server_settings = runtime_settings.get("server", {}) if isinstance(runtime_settings, dict) else {}
+    default_host = str(server_settings.get("host") or "0.0.0.0")
+    default_port = int(server_settings.get("port") or DEFAULT_PORT)
+    parser.add_argument("--host", default=default_host, help="Host interface to bind.")
+    parser.add_argument("--port", type=int, default=default_port, help=f"Port to bind. Defaults to {default_port}.")
     args = parser.parse_args()
     uvicorn.run(app, host=args.host, port=args.port)
 

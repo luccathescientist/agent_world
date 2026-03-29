@@ -26,6 +26,10 @@ The checked-in [game_state.json](/home/rocketegg/clawd/agent_world/assets/tiles/
 is the default world/layout for a fresh clone. A clean installation should boot
 directly into that baseline office configuration without any extra setup.
 
+The global install settings live in [agent_world.json](/home/rocketegg/clawd/agent_world/agent_world.json).
+This is where Agent World now reads the configured OpenClaw home/workspace and
+its default server bind settings.
+
 ## Fresh Install Smoke Test
 
 Use this checklist to verify a clean clone still boots correctly:
@@ -67,6 +71,8 @@ The system has three major pieces:
   Main Agent World frontend.
 - `server.py`
   Standalone FastAPI server for local development and deployment.
+- `agent_world.json`
+  Global install settings for OpenClaw paths and server defaults.
 - `backend/`
   Backend adapter layer intended to be imported by a host server.
 - `assets/sprites/`

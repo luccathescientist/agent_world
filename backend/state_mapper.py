@@ -5,19 +5,15 @@ from __future__ import annotations
 from datetime import datetime, timezone
 import json
 import mimetypes
-import os
 from pathlib import Path
 import re
 from typing import Any, Dict, List, Optional, Tuple
 
 from .registry import CoreAgent, get_agent, get_visible_agents
+from .settings import get_openclaw_home
 from .world_layout import get_agent_movement_override, load_world_layout
 
 
-OPENCLAW_DIR = Path(os.getenv("OPENCLAW_HOME", Path.home() / ".openclaw")).expanduser()
-OPENCLAW_AGENTS_DIR = OPENCLAW_DIR / "agents"
-CRON_JOBS_PATH = OPENCLAW_DIR / "cron" / "jobs.json"
-CRON_RUNS_DIR = OPENCLAW_DIR / "cron" / "runs"
 HOME_PATH = str(Path.home())
 PATH_PATTERN = re.compile(rf"({re.escape(HOME_PATH)}[^\s)\"'`]*)")
 
@@ -68,7 +64,8 @@ def _load_json_file(path: Path) -> Dict[str, Any]:
 
 
 def _sessions_path_for(agent: CoreAgent) -> Path:
-    return OPENCLAW_AGENTS_DIR / agent.session_agent_id / "sessions" / "sessions.json"
+    openclaw_agents_dir = get_openclaw_home() / "agents"
+    return openclaw_agents_dir / agent.session_agent_id / "sessions" / "sessions.json"
 
 
 def _load_sessions_index(path: Path) -> Dict[str, Any]:
@@ -76,7 +73,7 @@ def _load_sessions_index(path: Path) -> Dict[str, Any]:
 
 
 def _load_cron_jobs() -> Dict[str, Any]:
-    return _load_json_file(CRON_JOBS_PATH)
+    return _load_json_file(get_openclaw_home() / "cron" / "jobs.json")
 
 
 def _get_session_meta(agent: CoreAgent, session_key: str) -> Optional[Dict[str, Any]]:

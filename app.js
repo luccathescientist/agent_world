@@ -284,6 +284,12 @@ const appState = {
     currentInputLabel: "",
     events: [],
   },
+  settings: {
+    data: null,
+    diagnostics: null,
+    loading: false,
+    saving: false,
+  },
 };
 
 async function getJson(url, options) {
@@ -313,6 +319,15 @@ function setText(id, value) {
   if (el) el.textContent = value ?? "--";
 }
 
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
+}
+
 function formatDate(ts) {
   if (!ts) return "--";
   const date = new Date(ts);
@@ -335,6 +350,245 @@ function setVoiceStatus(text, isError = false) {
 function setVoiceDebugText(id, value) {
   const el = document.getElementById(id);
   if (el) el.textContent = value;
+}
+
+function setSettingsResult(text, isError = false) {
+  const el = document.getElementById("settings-result");
+  if (!el) return;
+  el.textContent = text || "";
+  el.style.color = isError ? "var(--warning)" : "var(--muted)";
+}
+
+function applyRuntimeStatusTone(id, state) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  if (state === "online") el.style.color = "var(--accent)";
+  else if (state === "partial") el.style.color = "#f6d673";
+  else if (state === "offline") el.style.color = "var(--warning)";
+  else el.style.color = "";
+}
+
+function renderCodeWithLineNumbers(text) {
+  const lines = String(text || "").split("\n");
+  return `
+    <div class="settings-code">
+      ${lines.map((line, index) => `
+        <div class="settings-code-line">
+          <span class="settings-code-line-no">${index + 1}</span>
+          <span class="settings-code-line-text">${line ? escapeHtml(line) : "&nbsp;"}</span>
+        </div>
+      `).join("")}
+    </div>
+  `;
+}
+
+function renderSettingsChecks() {
+  const container = document.getElementById("settings-checks");
+  if (!container) return;
+  const checks = Array.isArray(appState.settings.diagnostics?.checks) ? appState.settings.diagnostics.checks : [];
+  const readyCount = checks.filter((check) => check?.ok).length;
+  setText("settings-check-count", checks.length ? `${readyCount}/${checks.length} ready` : "No checks");
+  if (!checks.length) {
+    container.innerHTML = '<div class="event-item empty">No diagnostics loaded.</div>';
+    return;
+  }
+  container.innerHTML = checks.map((check) => {
+    const statusClass = check.ok ? "ok" : "warn";
+    const icon = check.ok ? "&#10003;" : "&#10005;";
+    const help = check.appliesTo ? `<span class="settings-check-help" tabindex="0" data-tooltip="${escapeHtml(check.appliesTo)}">?</span>` : "";
+    const noteLine = check.ok && check.detail ? `<p class="settings-check-note">${escapeHtml(check.detail)}</p>` : "";
+    const reasonLine = !check.ok && check.detail ? `<p class="settings-check-reason">${escapeHtml(check.detail)}</p>` : "";
+    const recordSections = Array.isArray(check.records) && check.records.length
+      ? `
+        <div class="settings-record-list">
+          ${check.records.map((record) => `
+            <section class="settings-record">
+              <h4>${escapeHtml(record.title || "Parsed fields")}</h4>
+              <div class="settings-field-list">
+                ${(Array.isArray(record.fields) ? record.fields : []).map((field) => `
+                  <div class="settings-field-row">
+                    <span class="settings-field-label">${escapeHtml(field.label || "Field")}</span>
+                    <span class="settings-field-value">${escapeHtml(field.value || "--")}</span>
+                  </div>
+                `).join("")}
+              </div>
+            </section>
+          `).join("")}
+        </div>
+      `
+      : "";
+    const sourceSections = Array.isArray(check.sources) && check.sources.length
+      ? `
+        <div class="settings-source-list">
+          ${check.sources.map((source) => `
+            <section class="settings-source">
+              <details class="settings-source-toggle">
+                <summary>${escapeHtml(source.label || "Source")}</summary>
+                <div class="settings-source-body">
+                  <h4>${escapeHtml(source.label || "Source")}</h4>
+                  ${renderCodeWithLineNumbers(source.text || "")}
+                </div>
+              </details>
+            </section>
+          `).join("")}
+        </div>
+      `
+      : "";
+    return `
+      <details class="settings-check-item ${statusClass}" ${check.ok ? "" : "open"}>
+        <summary class="settings-check-head">
+          <span class="settings-check-title">
+            ${escapeHtml(check.label || check.id || "Check")}
+            ${help}
+          </span>
+          <span class="settings-check-meta">
+            <span class="settings-check-icon ${statusClass}" aria-hidden="true">${icon}</span>
+          </span>
+        </summary>
+        <div class="settings-check-body">
+          ${noteLine}
+          ${reasonLine}
+          ${recordSections}
+          ${sourceSections}
+        </div>
+      </details>
+    `;
+  }).join("");
+}
+
+function syncSettingsJsonEditor() {
+  const editor = document.getElementById("settings-json-editor");
+  if (!editor) return;
+  const payload = appState.settings.data ?? {};
+  editor.value = JSON.stringify(payload, null, 2);
+}
+
+function syncSettingsForm() {
+  const cfg = appState.settings.data || {};
+  const openclaw = cfg.openclaw || {};
+  const server = cfg.server || {};
+  const allowedRoots = Array.isArray(openclaw.allowedFileRoots) ? openclaw.allowedFileRoots.join("\n") : "";
+  const homeInput = document.getElementById("settings-openclaw-home");
+  const workspaceInput = document.getElementById("settings-openclaw-workspace");
+  const mediaInput = document.getElementById("settings-openclaw-media-dir");
+  const hostInput = document.getElementById("settings-server-host");
+  const portInput = document.getElementById("settings-server-port");
+  const allowedRootsInput = document.getElementById("settings-allowed-file-roots");
+  if (homeInput) homeInput.value = openclaw.home || "";
+  if (workspaceInput) workspaceInput.value = openclaw.workspace || "";
+  if (mediaInput) mediaInput.value = openclaw.mediaDir || "";
+  if (hostInput) hostInput.value = server.host || "";
+  if (portInput) portInput.value = server.port ?? "";
+  if (allowedRootsInput) allowedRootsInput.value = allowedRoots;
+}
+
+function renderSettingsSummary() {
+  const diagnostics = appState.settings.diagnostics;
+  const runtime = diagnostics?.runtime || null;
+  setText("settings-path", diagnostics?.settingsPath || "agent_world.json");
+  setText("resolved-settings-path", diagnostics?.resolvedPaths?.settingsPath || diagnostics?.settingsPath || "--");
+  setText(
+    "settings-summary",
+    appState.settings.loading
+      ? "Loading..."
+      : appState.settings.saving
+        ? "Saving..."
+        : runtime?.label || "Needs attention",
+  );
+  setText("settings-diagnostics-state", runtime?.label || "Needs attention");
+  setText("openclaw-runtime-pill", runtime?.label || "OpenClaw --");
+  applyRuntimeStatusTone("settings-diagnostics-state", runtime?.state);
+  applyRuntimeStatusTone("openclaw-runtime-pill", runtime?.state);
+  setText("resolved-openclaw-home", diagnostics?.resolvedPaths?.openclawHome || "--");
+  setText("resolved-openclaw-config", diagnostics?.resolvedPaths?.openclawConfig || "--");
+  setText("resolved-main-sessions", diagnostics?.resolvedPaths?.mainSessionsIndex || "--");
+  setText("resolved-openclaw-media", diagnostics?.resolvedPaths?.openclawMediaDir || "--");
+  setText("resolved-openclaw-workspace", diagnostics?.resolvedPaths?.openclawWorkspace || "--");
+  setText("resolved-tsx-loader", diagnostics?.resolvedPaths?.tsxLoader || "--");
+  renderSettingsChecks();
+}
+
+function collectSettingsPayload() {
+  const allowedRootsText = document.getElementById("settings-allowed-file-roots")?.value || "";
+  return {
+    openclaw: {
+      home: document.getElementById("settings-openclaw-home")?.value.trim() || "",
+      workspace: document.getElementById("settings-openclaw-workspace")?.value.trim() || "",
+      mediaDir: document.getElementById("settings-openclaw-media-dir")?.value.trim() || "",
+      allowedFileRoots: allowedRootsText
+        .split("\n")
+        .map((value) => value.trim())
+        .filter(Boolean),
+    },
+    server: {
+      host: document.getElementById("settings-server-host")?.value.trim() || "0.0.0.0",
+      port: Number(document.getElementById("settings-server-port")?.value) || 8890,
+    },
+  };
+}
+
+async function fetchSettingsData() {
+  appState.settings.loading = true;
+  renderSettingsSummary();
+  try {
+    const [settings, diagnostics] = await Promise.all([
+      getJson("/api/agent-world/settings"),
+      getJson("/api/agent-world/settings/diagnostics"),
+    ]);
+    appState.settings.data = settings;
+    appState.settings.diagnostics = diagnostics;
+    syncSettingsForm();
+    syncSettingsJsonEditor();
+    renderSettingsSummary();
+    setSettingsResult("");
+  } catch (error) {
+    setSettingsResult(`Settings load error: ${error?.message || String(error)}`, true);
+  } finally {
+    appState.settings.loading = false;
+    renderSettingsSummary();
+  }
+}
+
+async function saveSettings() {
+  appState.settings.saving = true;
+  renderSettingsSummary();
+  try {
+    const payload = collectSettingsPayload();
+    const saved = await postJson("/api/agent-world/settings", payload);
+    appState.settings.data = saved;
+    await fetchSettingsData();
+    setSettingsResult("Settings saved. Server host/port changes apply on the next restart.");
+  } catch (error) {
+    setSettingsResult(`Settings save error: ${error?.message || String(error)}`, true);
+  } finally {
+    appState.settings.saving = false;
+    renderSettingsSummary();
+  }
+}
+
+async function saveSettingsFromJsonEditor() {
+  const editor = document.getElementById("settings-json-editor");
+  if (!editor) return;
+  appState.settings.saving = true;
+  renderSettingsSummary();
+  try {
+    const raw = editor.value.trim();
+    const payload = raw ? JSON.parse(raw) : {};
+    if (!payload || typeof payload !== "object" || Array.isArray(payload)) {
+      throw new Error("Root settings payload must be a JSON object.");
+    }
+    const saved = await postJson("/api/agent-world/settings", payload);
+    appState.settings.data = saved;
+    syncSettingsForm();
+    syncSettingsJsonEditor();
+    await fetchSettingsData();
+    setSettingsResult("Raw settings JSON saved.");
+  } catch (error) {
+    setSettingsResult(`Raw settings save error: ${error?.message || String(error)}`, true);
+  } finally {
+    appState.settings.saving = false;
+    renderSettingsSummary();
+  }
 }
 
 async function fetchVoiceConfig() {
@@ -2549,19 +2803,27 @@ function getLayerTexture(renderer, objectToken, layerName) {
 }
 
 function setActiveTab(tabName) {
-  appState.activeTab = tabName === "editor" ? "editor" : "world";
+  if (tabName === "editor") appState.activeTab = "editor";
+  else if (tabName === "settings") appState.activeTab = "settings";
+  else appState.activeTab = "world";
   for (const button of document.querySelectorAll(".tab-btn")) {
     button.classList.toggle("active", button.dataset.tab === appState.activeTab);
   }
   for (const panel of document.querySelectorAll(".tab-panel")) {
     panel.classList.toggle("active", panel.dataset.panel === appState.activeTab);
   }
-  mountRendererView();
-  resizeRendererViewport();
+  if (appState.activeTab !== "settings") {
+    mountRendererView();
+    resizeRendererViewport();
+  }
   syncWorldDetailVisibility();
-  if (appState.renderer) drawRoom(appState.renderer);
-  if (appState.world) renderWorld(appState.world);
-  renderVisualEditor();
+  if (appState.activeTab !== "settings") {
+    if (appState.renderer) drawRoom(appState.renderer);
+    if (appState.world) renderWorld(appState.world);
+    renderVisualEditor();
+  } else {
+    renderSettingsSummary();
+  }
 }
 
 function syncEditorInputs() {
@@ -4425,6 +4687,7 @@ function getCanvasCellFromEvent(event, view) {
 
 async function load() {
   await initRenderer();
+  await fetchSettingsData();
   const worldState = await getJson("/api/agent-world/state");
   renderWorld(worldState);
   if (!appState.selectedAgentId) {
@@ -4492,6 +4755,22 @@ document.getElementById("close-world-details").addEventListener("click", closeWo
 document.getElementById("refresh-button").addEventListener("click", load);
 document.getElementById("tab-world").addEventListener("click", () => setActiveTab("world"));
 document.getElementById("tab-editor").addEventListener("click", () => setActiveTab("editor"));
+document.getElementById("tab-settings").addEventListener("click", () => setActiveTab("settings"));
+document.getElementById("settings-form").addEventListener("submit", async (event) => {
+  event.preventDefault();
+  await saveSettings();
+});
+document.getElementById("settings-refresh").addEventListener("click", async () => {
+  await fetchSettingsData();
+  setSettingsResult("Diagnostics refreshed.");
+});
+document.getElementById("settings-save-json").addEventListener("click", async () => {
+  await saveSettingsFromJsonEditor();
+});
+document.getElementById("settings-reload-json").addEventListener("click", async () => {
+  await fetchSettingsData();
+  setSettingsResult("Settings JSON reloaded from disk.");
+});
 document.getElementById("toggle-edit-mode").addEventListener("click", () => {
   try {
     toggleEditMode();
