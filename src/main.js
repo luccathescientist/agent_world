@@ -1100,21 +1100,9 @@ function clearStashSelection() {
   });
 }
 
-const {
-  closeWorldDetails,
-  connectStream,
-  drawRoom,
-  initRenderer,
-  renderChat,
-  renderHistory,
-  renderInspector,
-  renderSchedule,
-  renderStash,
-  renderWorld,
-  selectAgent,
-  showRichMessage,
-  showStashItem,
-} = createRenderWorldRuntime(appState, {
+let renderWorldRuntime;
+
+renderWorldRuntime = createRenderWorldRuntime(appState, {
   EventSourceCtor: EventSource,
   URLSearchParamsCtor: URLSearchParams,
   PIXIRef: PIXI,
@@ -1213,7 +1201,7 @@ const {
   showRichMessageHelper,
   showRichMessageShell,
   showStashItemHelper,
-  showStashItemForStashBox: showStashItem,
+  showStashItemForStashBox: (...args) => renderWorldRuntime.showStashItem(...args),
   showStashItemShell,
   statusClass,
   syncEditorInputs,
@@ -1231,6 +1219,22 @@ const {
   updateBubbleHelper,
   windowRef: window,
 });
+
+const {
+  closeWorldDetails,
+  connectStream,
+  drawRoom,
+  initRenderer,
+  renderChat,
+  renderHistory,
+  renderInspector,
+  renderSchedule,
+  renderStash,
+  renderWorld,
+  selectAgent,
+  showRichMessage,
+  showStashItem,
+} = renderWorldRuntime;
 
 window.addEventListener("resize", () => {
   resizeRendererViewport();
