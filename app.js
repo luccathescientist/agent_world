@@ -100,6 +100,22 @@ import {
   syncSelectedAgentDetailFromWorld as syncSelectedAgentDetailFromWorldHelper,
 } from "./src/features/world/agentDetails.js";
 import {
+  anchorPoint as anchorPointHelper,
+  applyPathing as applyPathingHelper,
+  currentTileForAgent as currentTileForAgentHelper,
+  effectiveGoalTileForAgent as effectiveGoalTileForAgentHelper,
+  findPath as findPathHelper,
+  goalTileForAgent as goalTileForAgentHelper,
+  inBounds as inBoundsHelper,
+  isWalkable as isWalkableHelper,
+  nearestWalkableTile as nearestWalkableTileHelper,
+  roomGoalTile as roomGoalTileHelper,
+  roomIdForAgent as roomIdForAgentHelper,
+  roomWaypointTiles as roomWaypointTilesHelper,
+  tileFromWorldPoint as tileFromWorldPointHelper,
+  tilePoint as tilePointHelper,
+} from "./src/features/world/pathing.js";
+import {
   applyEditorState as applyEditorStateHelper,
   applyVisualAtlasCell as applyVisualAtlasCellHelper,
   applyVisualToken as applyVisualTokenHelper,
@@ -919,82 +935,33 @@ function isIdleLikeAgent(agent) {
 }
 
 function roomIdForAgent(agent) {
-  return isIdleLikeAgent(agent)
-    ? "lounge"
-    : agent.targetAnchor || agent.currentAnchor || "lounge";
+  return roomIdForAgentHelper(agent, {
+    isIdleLikeAgent,
+  });
 }
 
 function roomGoalTile(anchorId, startTile = null) {
-  const region = regionForAnchor(anchorId);
-  if (region?.cells?.length && startTile) {
-    const center = regionCenter(region);
-    const candidates = [];
-    for (const cell of region.cells) {
-      if (!isWalkable(cell.row, cell.col)) continue;
-      const path = findPath(startTile, cell);
-      if (!path.length) continue;
-      const isSeat = SEAT_FURNITURE_TILES.has(furnitureTokenAt(cell.row, cell.col));
-      const centerDistance = center
-        ? Math.abs(cell.row - center.row) + Math.abs(cell.col - center.col)
-        : 0;
-      candidates.push({
-        cell,
-        pathLength: path.length,
-        isSeat,
-        centerDistance,
-      });
-    }
-    if (candidates.length) {
-      candidates.sort((a, b) => {
-        if (a.isSeat !== b.isSeat) return a.isSeat ? -1 : 1;
-        if (a.centerDistance !== b.centerDistance) return a.centerDistance - b.centerDistance;
-        return a.pathLength - b.pathLength;
-      });
-      return candidates[0].cell;
-    }
-  }
-  const anchor = getAnchorTile(anchorId);
-  return nearestWalkableTile(anchor.row, anchor.col);
+  return roomGoalTileHelper(anchorId, startTile, {
+    findPath,
+    furnitureTokenAt,
+    getAnchorTile,
+    isWalkable,
+    nearestWalkableTile,
+    regionCenter,
+    regionForAnchor,
+  });
 }
 
 function roomWaypointTiles(anchorId, startTile = null) {
-  const region = regionForAnchor(anchorId);
-  if (!region?.cells?.length) return [];
-  const regionCellKeys = new Set(region.cells.map((cell) => `${cell.row}:${cell.col}`));
-  const points = [];
-  const seen = new Set();
-  const pushPoint = (row, col, type, label) => {
-    if (!inBounds(row, col) || !isWalkable(row, col)) return;
-    const key = `${row}:${col}`;
-    if (seen.has(key)) return;
-    if (regionCellKeys.size && !regionCellKeys.has(key)) return;
-    if (startTile) {
-      const path = findPath(startTile, { row, col });
-      if (!path.length) return;
-    }
-    seen.add(key);
-    points.push({ row, col, type, label });
-  };
-
-  for (const cell of region.cells) {
-    const furnitureToken = furnitureTokenAt(cell.row, cell.col);
-    if (SEAT_FURNITURE_TILES.has(furnitureToken)) {
-      pushPoint(cell.row, cell.col, "seat", furnitureToken);
-    }
-    for (const landmark of ROOM_LANDMARK_TOKENS) {
-      const token = landmark.layer === "prop" ? propTokenAt(cell.row, cell.col) : furnitureToken;
-      if (token === landmark.token) {
-        const offset = landmark.offset || { row: 1, col: 0 };
-        pushPoint(cell.row + offset.row, cell.col + offset.col, "landmark", landmark.label);
-      }
-    }
-  }
-
-  if (!points.length) {
-    const center = regionCenter(region);
-    if (center) pushPoint(Math.round(center.row), Math.round(center.col), "center", "center");
-  }
-  return points;
+  return roomWaypointTilesHelper(anchorId, startTile, {
+    findPath,
+    furnitureTokenAt,
+    inBounds,
+    isWalkable,
+    propTokenAt,
+    regionCenter,
+    regionForAnchor,
+  });
 }
 
 function deriveAnchorsFromRegions(layout, roomRegions) {
@@ -1049,15 +1016,9 @@ function getRenderHeight() {
 }
 
 function anchorPoint(agent) {
-  const anchor = agent.targetAnchor || agent.currentAnchor || "lounge";
-  const base = getAnchorTile(anchor);
-  const slot = agent.slotIndex || 0;
-  const columnOffset = ((slot % 3) - 1) * 18;
-  const rowOffset = Math.floor(slot / 3) * 16;
-  return {
-    x: base.col * TILE_SIZE + TILE_SIZE / 2 + columnOffset,
-    y: base.row * TILE_SIZE + TILE_SIZE - 4 + rowOffset,
-  };
+  return anchorPointHelper(agent, {
+    getAnchorTile,
+  });
 }
 
 function isBenchmarkAgent(agent) {
@@ -1079,100 +1040,53 @@ function benchmarkPoint(agent, benchIndex = 0) {
 }
 
 function tilePoint(row, col) {
-  return {
-    x: col * TILE_SIZE + TILE_SIZE / 2,
-    y: row * TILE_SIZE + TILE_SIZE - 2,
-  };
+  return tilePointHelper(row, col);
 }
 
 function tileFromWorldPoint(x, y) {
-  const col = Math.round((x - TILE_SIZE / 2) / TILE_SIZE);
-  const row = Math.round((y - (TILE_SIZE - 2)) / TILE_SIZE);
-  return nearestWalkableTile(
-    Math.max(0, Math.min(getWorldRows() - 1, row)),
-    Math.max(0, Math.min(getWorldCols() - 1, col)),
-  );
+  return tileFromWorldPointHelper(x, y, {
+    getWorldCols,
+    getWorldRows,
+    nearestWalkableTile,
+  });
 }
 
 function inBounds(row, col) {
-  return row >= 0 && col >= 0 && row < getWorldRows() && col < getWorldCols();
+  return inBoundsHelper(appState, row, col, {
+    getWorldCols: () => getWorldCols(),
+    getWorldRows: () => getWorldRows(),
+  });
 }
 
 function isWalkable(row, col) {
-  return Boolean(appState.tilemap?.walkableGrid?.[row]?.[col]);
+  return isWalkableHelper(appState, row, col);
 }
 
 function nearestWalkableTile(row, col) {
-  if (isWalkable(row, col)) return { row, col };
-  const visited = new Set([`${row}:${col}`]);
-  const queue = [{ row, col }];
-  const dirs = [
-    [0, 1],
-    [1, 0],
-    [0, -1],
-    [-1, 0],
-  ];
-  while (queue.length) {
-    const current = queue.shift();
-    for (const [dr, dc] of dirs) {
-      const nr = current.row + dr;
-      const nc = current.col + dc;
-      const key = `${nr}:${nc}`;
-      if (!inBounds(nr, nc) || visited.has(key)) continue;
-      if (isWalkable(nr, nc)) return { row: nr, col: nc };
-      visited.add(key);
-      queue.push({ row: nr, col: nc });
-    }
-  }
-  return { row, col };
+  return nearestWalkableTileHelper(appState, row, col, {
+    inBounds,
+    isWalkable,
+  });
 }
 
 function goalTileForAgent(agent, startTile = null) {
-  return roomGoalTile(agent.targetAnchor || agent.currentAnchor || "lounge", startTile);
+  return goalTileForAgentHelper(agent, startTile, {
+    roomGoalTile,
+  });
 }
 
 function currentTileForAgent(agent) {
-  const anchor = getAnchorTile(agent.currentAnchor || agent.targetAnchor || "lounge");
-  return nearestWalkableTile(anchor.row, anchor.col);
+  return currentTileForAgentHelper(agent, {
+    getAnchorTile,
+    nearestWalkableTile,
+  });
 }
 
 function findPath(startTile, goalTile) {
-  if (!startTile || !goalTile) return [];
-  const startKey = `${startTile.row}:${startTile.col}`;
-  const goalKey = `${goalTile.row}:${goalTile.col}`;
-  if (startKey === goalKey) return [startTile];
-  const queue = [startTile];
-  const seen = new Set([startKey]);
-  const cameFrom = new Map();
-  const dirs = [
-    [0, 1],
-    [1, 0],
-    [0, -1],
-    [-1, 0],
-  ];
-
-  while (queue.length) {
-    const current = queue.shift();
-    for (const [dr, dc] of dirs) {
-      const next = { row: current.row + dr, col: current.col + dc };
-      const key = `${next.row}:${next.col}`;
-      if (!inBounds(next.row, next.col) || seen.has(key) || !isWalkable(next.row, next.col)) continue;
-      cameFrom.set(key, current);
-      if (key === goalKey) {
-        const path = [next];
-        let cursor = current;
-        while (cursor) {
-          path.push(cursor);
-          const parent = cameFrom.get(`${cursor.row}:${cursor.col}`);
-          cursor = parent || null;
-        }
-        return path.reverse();
-      }
-      seen.add(key);
-      queue.push(next);
-    }
-  }
-  return [];
+  return findPathHelper(startTile, goalTile, {
+    inBounds,
+    isWalkable,
+  });
 }
 
 function getDraftFloorLines() {
@@ -2484,98 +2398,26 @@ function chooseDisplayFrames(renderer, agent, moving) {
 }
 
 function effectiveGoalTileForAgent(sprite, agent, currentTile) {
-  const state = sprite._state;
-  const desiredRoomId = roomIdForAgent(agent);
-  const desiredRegion = regionForAnchor(desiredRoomId);
-  const currentRegion = regionForCell(currentTile.row, currentTile.col);
-  if (state.ambientRoomKey !== desiredRoomId) {
-    state.ambientRoomKey = desiredRoomId;
-    state.ambientGoalTile = null;
-    state.ambientPauseUntil = 0;
-    state.ambientWaypointIndex = 0;
-    state.lastAmbientKey = "";
-  }
-  if (!desiredRegion || currentRegion?.id !== desiredRegion.id) {
-    state.ambientGoalTile = null;
-    state.ambientPauseUntil = 0;
-    return roomGoalTile(desiredRoomId, currentTile);
-  }
-
-  const waypoints = roomWaypointTiles(desiredRoomId, currentTile);
-  if (!waypoints.length) return roomGoalTile(desiredRoomId, currentTile);
-
-  const now = Date.now();
-  const atAmbientGoal = state.ambientGoalTile
-    && state.ambientGoalTile.row === currentTile.row
-    && state.ambientGoalTile.col === currentTile.col;
-  if (atAmbientGoal) {
-    if (!state.ambientPauseUntil) {
-      state.ambientPauseUntil = now + 900 + Math.round(nextAmbientRandom(state) * 1800);
-    }
-    if (now < state.ambientPauseUntil) {
-      return currentTile;
-    }
-    state.ambientGoalTile = null;
-    state.ambientPauseUntil = 0;
-  }
-  if (!state.ambientGoalTile) {
-    const options = waypoints.filter((point) => point.row !== currentTile.row || point.col !== currentTile.col);
-    let pool = options.length ? options : waypoints;
-    if (pool.length > 1 && state.lastAmbientKey) {
-      const filtered = pool.filter((point) => `${point.row}:${point.col}` !== state.lastAmbientKey);
-      if (filtered.length) pool = filtered;
-    }
-    const ranked = pool
-      .map((point) => ({
-        point,
-        score: nextAmbientRandom(state) + (point.type === "seat" ? 0.12 : point.type === "landmark" ? 0.06 : 0),
-      }))
-      .sort((a, b) => b.score - a.score);
-    const next = ranked[0]?.point || pool[0];
-    state.ambientWaypointIndex = (state.ambientWaypointIndex + 1) % pool.length;
-    state.ambientGoalTile = { row: next.row, col: next.col };
-    state.lastAmbientKey = `${next.row}:${next.col}`;
-    state.ambientPauseUntil = 0;
-  }
-  return state.ambientGoalTile || currentTile;
+  return effectiveGoalTileForAgentHelper(appState, sprite, agent, currentTile, {
+    nextAmbientRandom,
+    regionForAnchor,
+    regionForCell,
+    roomGoalTile,
+    roomIdForAgent,
+    roomWaypointTiles,
+  });
 }
 
 function applyPathing(sprite, agent) {
-  const state = sprite._state;
-  const currentAnchorKey = agent.currentAnchor || "";
-  const targetAnchorKey = agent.targetAnchor || agent.currentAnchor || "";
-  if (state.currentAnchorKey !== currentAnchorKey) {
-    state.currentAnchorKey = currentAnchorKey;
-    state.currentTile = tileFromWorldPoint(sprite.x, sprite.y);
-    state.path = [state.currentTile];
-    state.ambientGoalTile = null;
-    state.ambientPauseUntil = 0;
-  }
-  const fallbackTile = goalTileForAgent(agent, state.currentTile || null);
-  const currentTile = state.currentTile && isWalkable(state.currentTile.row, state.currentTile.col)
-    ? state.currentTile
-    : nearestWalkableTile(fallbackTile.row, fallbackTile.col);
-  const goalTile = effectiveGoalTileForAgent(sprite, agent, currentTile);
-  const goalKey = `${goalTile.row}:${goalTile.col}`;
-  if (state.targetAnchorKey !== targetAnchorKey) {
-    state.targetAnchorKey = targetAnchorKey;
-    state.goalKey = "";
-    state.ambientGoalTile = null;
-    state.ambientPauseUntil = 0;
-  }
-  if (state.goalKey !== goalKey) {
-    state.goalKey = goalKey;
-    state.path = findPath(currentTile, goalTile);
-  }
-  if (!state.path?.length) {
-    state.path = [currentTile];
-  }
-  const nextStep = state.path[1] || state.path[0];
-  return {
-    target: tilePoint(nextStep.row, nextStep.col),
-    nextTile: nextStep,
-    goalTile,
-  };
+  return applyPathingHelper(appState, sprite, agent, {
+    effectiveGoalTileForAgent,
+    findPath,
+    goalTileForAgent,
+    isWalkable,
+    nearestWalkableTile,
+    tileFromWorldPoint,
+    tilePoint,
+  });
 }
 
 function tickAgents(delta) {
