@@ -100,6 +100,25 @@ import {
   syncSelectedAgentDetailFromWorld as syncSelectedAgentDetailFromWorldHelper,
 } from "./src/features/world/agentDetails.js";
 import {
+  applyEditorState as applyEditorStateHelper,
+  applyVisualAtlasCell as applyVisualAtlasCellHelper,
+  applyVisualToken as applyVisualTokenHelper,
+  assignChatBubbleTile as assignChatBubbleTileHelper,
+  assignStashSelection as assignStashSelectionHelper,
+  clearStashSelection as clearStashSelectionHelper,
+  commitDraftTilemap as commitDraftTilemapHelper,
+  getAtlasPointerCell as getAtlasPointerCellHelper,
+  getCanvasCellFromEvent as getCanvasCellFromEventHelper,
+  resetChatBubbleFrame as resetChatBubbleFrameHelper,
+  resetEditorState as resetEditorStateHelper,
+  resizeGridText as resizeGridTextHelper,
+  resizeTilemapGrid as resizeTilemapGridHelper,
+  setChatBubbleTextColor as setChatBubbleTextColorHelper,
+  setHoveredMapCell as setHoveredMapCellHelper,
+  setSelectedMapCell as setSelectedMapCellHelper,
+  setVisualLayer as setVisualLayerHelper,
+} from "./src/features/editor/editorState.js";
+import {
   appendVoiceTranscript as appendVoiceTranscriptHelper,
   ensureMicMeter as ensureMicMeterHelper,
   fetchVoiceConfig as fetchVoiceConfigHelper,
@@ -2249,203 +2268,109 @@ function clearRegionSelection() {
 }
 
 function commitDraftTilemap(successMessage = "Applied draft tilemap.") {
-  const nextTilemap = buildTilemapState(
-    appState.editor.draftFloorText,
-    appState.editor.draftWallText,
-    appState.editor.draftFurnitureText,
-    appState.editor.draftPropText,
-    appState.renderer.assets.tileManifest,
-    appState.renderer.assets.layout,
-    appState.roomRegions,
-  );
-  appState.tilemap = nextTilemap;
-  appState.roomRegions = nextTilemap.layout.roomRegions || [];
-  appState.editor.draftFloorText = nextTilemap.floorText;
-  appState.editor.draftWallText = nextTilemap.wallText;
-  appState.editor.draftFurnitureText = nextTilemap.furnitureText;
-  appState.editor.draftPropText = nextTilemap.propText;
-  appState.renderer.assets.layout.cols = nextTilemap.layout.cols;
-  appState.renderer.assets.layout.rows = nextTilemap.layout.rows;
-  setStoredMap(TILEMAP_STORAGE_KEYS.floor, nextTilemap.floorText);
-  setStoredMap(TILEMAP_STORAGE_KEYS.wall, nextTilemap.wallText);
-  setStoredMap(TILEMAP_STORAGE_KEYS.furniture, nextTilemap.furnitureText);
-  setStoredMap(TILEMAP_STORAGE_KEYS.prop, nextTilemap.propText);
-  setStoredJson(TILEMAP_STORAGE_KEYS.roomRegions, appState.roomRegions);
-  resizeRendererViewport();
-  drawRoom(appState.renderer);
-  if (appState.world) renderWorld(appState.world);
-  syncEditorInputs();
-  setTilemapStatus(successMessage);
+  return commitDraftTilemapHelper(appState, successMessage, {
+    buildTilemapState,
+    drawRoom,
+    renderWorld,
+    resizeRendererViewport,
+    setStoredJson,
+    setStoredMap,
+    setTilemapStatus,
+    syncEditorInputs,
+  });
 }
 
 function resizeGridText(text, cols, rows, fillToken, parser, serializer) {
-  const parsed = parseMapText(text).map(parser);
-  const next = [];
-  for (let row = 0; row < rows; row += 1) {
-    const source = parsed[row] || [];
-    const nextRow = [];
-    for (let col = 0; col < cols; col += 1) {
-      nextRow.push(source[col] ?? fillToken);
-    }
-    next.push(nextRow);
-  }
-  return serializer(next);
+  return resizeGridTextHelper(text, cols, rows, fillToken, parser, serializer, {
+    parseMapText,
+  });
 }
 
 function resizeTilemapGrid(cols, rows) {
-  const nextCols = Math.max(4, Math.min(80, Number(cols) || getWorldCols()));
-  const nextRows = Math.max(4, Math.min(80, Number(rows) || getWorldRows()));
-  appState.editor.draftFloorText = resizeGridText(appState.editor.draftFloorText, nextCols, nextRows, ".", parseFloorRow, serializeFloorLines);
-  appState.editor.draftWallText = resizeGridText(appState.editor.draftWallText, nextCols, nextRows, ".", parseObjectRow, serializeObjectLines);
-  appState.editor.draftFurnitureText = resizeGridText(appState.editor.draftFurnitureText, nextCols, nextRows, ".", parseObjectRow, serializeObjectLines);
-  appState.editor.draftPropText = resizeGridText(appState.editor.draftPropText, nextCols, nextRows, ".", parseObjectRow, serializeObjectLines);
-  const nextLayout = { ...appState.renderer.assets.layout, cols: nextCols, rows: nextRows };
-  const nextTilemap = buildTilemapState(
-    appState.editor.draftFloorText,
-    appState.editor.draftWallText,
-    appState.editor.draftFurnitureText,
-    appState.editor.draftPropText,
-    appState.renderer.assets.tileManifest,
-    nextLayout,
-    appState.roomRegions,
-  );
-  appState.tilemap = nextTilemap;
-  appState.roomRegions = nextTilemap.layout.roomRegions || [];
-  appState.renderer.assets.layout = nextLayout;
-  appState.editor.selectedCell = null;
-  appState.editor.hoveredCell = null;
-  resizeRendererViewport();
-  setStoredMap(TILEMAP_STORAGE_KEYS.floor, nextTilemap.floorText);
-  setStoredMap(TILEMAP_STORAGE_KEYS.wall, nextTilemap.wallText);
-  setStoredMap(TILEMAP_STORAGE_KEYS.furniture, nextTilemap.furnitureText);
-  setStoredMap(TILEMAP_STORAGE_KEYS.prop, nextTilemap.propText);
-  setStoredJson(TILEMAP_STORAGE_KEYS.roomRegions, appState.roomRegions);
-  drawRoom(appState.renderer);
-  if (appState.world) renderWorld(appState.world);
-  syncEditorInputs();
-  setTilemapStatus(`Resized grid to ${nextCols}x${nextRows}.`);
+  return resizeTilemapGridHelper(appState, cols, rows, {
+    buildTilemapState,
+    drawRoom,
+    getWorldCols,
+    getWorldRows,
+    parseFloorRow,
+    parseObjectRow,
+    renderWorld,
+    resizeGridText,
+    resizeRendererViewport,
+    serializeFloorLines,
+    serializeObjectLines,
+    setStoredJson,
+    setStoredMap,
+    setTilemapStatus,
+    syncEditorInputs,
+  });
 }
 
 function applyVisualToken(rawValue) {
-  const selected = appState.editor.selectedCell;
-  const layer = appState.editor.selectedLayer;
-  if (!selected) {
-    setTilemapStatus("Select a map cell first.", true);
-    return;
-  }
-  const cells = getSelectedCells();
-  for (const cell of cells) {
-    updateDraftCell(layer, cell.row, cell.col, rawValue);
-  }
-  commitDraftTilemap(
-    cells.length > 1
-      ? `Updated ${cells.length} ${layer} cells to ${rawValue}.`
-      : `Updated ${layer} ${selected.col + 1}:${selected.row + 1} to ${rawValue}.`,
-  );
+  return applyVisualTokenHelper(appState, rawValue, {
+    commitDraftTilemap,
+    getSelectedCells,
+    setTilemapStatus,
+    updateDraftCell,
+  });
 }
 
 function applyVisualAtlasCell(atlasCell) {
-  const layer = appState.editor.selectedLayer;
-  let value = null;
-  if (layer === "floor") {
-    value = `${atlasCell.x}:${atlasCell.y}`;
-  } else {
-    value = `${atlasCell.x}:${atlasCell.y}`;
-  }
-  appState.editor.selectedAtlasCell = atlasCell;
-  applyVisualToken(value);
+  return applyVisualAtlasCellHelper(appState, atlasCell, {
+    applyVisualToken,
+  });
 }
 
 function assignChatBubbleTile() {
-  if (!["wall", "floor"].includes(appState.editor.selectedLayer)) {
-    setTilemapStatus("Switch to the wall or floor layer before assigning a chat bubble tile.", true);
-    return;
-  }
-  if (!appState.editor.selectedAtlasCell) {
-    setTilemapStatus("Choose a floor or wall atlas tile first.", true);
-    return;
-  }
-  const slot = appState.editor.selectedChatBubbleSlot || "mm";
-  const token = `${appState.editor.selectedAtlasCell.x}:${appState.editor.selectedAtlasCell.y}`;
-  const role = appState.editor.selectedChatBubbleRole;
-  const theme = selectedChatBubbleTheme();
-  appState.chatBubbleThemes = {
-    ...appState.chatBubbleThemes,
-    [role]: {
-      ...theme,
-      frame: {
-        ...theme.frame,
-        [slot]: {
-          layer: appState.editor.selectedLayer === "floor" ? "floor" : "wall",
-          token,
-        },
-      },
-    },
-  };
-  setStoredJson(TILEMAP_STORAGE_KEYS.chatBubbleFrame, appState.chatBubbleThemes);
-  applyChatBubbleFrameStyles();
-  renderVisualEditor();
-  renderChat(appState.detail?.session?.history || []);
-  setTilemapStatus(`Set ${role} chat bubble ${slot} to ${appState.editor.selectedLayer} ${token}.`);
+  return assignChatBubbleTileHelper(appState, {
+    applyChatBubbleFrameStyles,
+    renderChat,
+    renderVisualEditor,
+    selectedChatBubbleTheme,
+    setStoredJson,
+    setTilemapStatus,
+  });
 }
 
 function resetChatBubbleFrame() {
-  const role = appState.editor.selectedChatBubbleRole;
-  appState.chatBubbleThemes = {
-    ...appState.chatBubbleThemes,
-    [role]: normalizeChatBubbleTheme(DEFAULT_CHAT_BUBBLE_FRAME, role),
-  };
-  setStoredJson(TILEMAP_STORAGE_KEYS.chatBubbleFrame, appState.chatBubbleThemes);
-  applyChatBubbleFrameStyles();
-  renderVisualEditor();
-  renderChat(appState.detail?.session?.history || []);
-  setTilemapStatus(`Reset ${role} chat bubble theme to the default pattern.`);
+  return resetChatBubbleFrameHelper(appState, {
+    applyChatBubbleFrameStyles,
+    normalizeChatBubbleTheme,
+    renderChat,
+    renderVisualEditor,
+    setStoredJson,
+    setTilemapStatus,
+  });
 }
 
 function setChatBubbleTextColor(color) {
-  const normalized = String(color || "").trim();
-  if (!/^#[0-9a-f]{6}$/i.test(normalized)) return;
-  const role = appState.editor.selectedChatBubbleRole;
-  const theme = selectedChatBubbleTheme();
-  appState.chatBubbleThemes = {
-    ...appState.chatBubbleThemes,
-    [role]: {
-      ...theme,
-      textColor: normalized,
-    },
-  };
-  setStoredJson(TILEMAP_STORAGE_KEYS.chatBubbleFrame, appState.chatBubbleThemes);
-  applyChatBubbleFrameStyles();
-  renderVisualEditor();
-  renderChat(appState.detail?.session?.history || []);
+  return setChatBubbleTextColorHelper(appState, color, {
+    applyChatBubbleFrameStyles,
+    renderChat,
+    renderVisualEditor,
+    selectedChatBubbleTheme,
+    setStoredJson,
+  });
 }
 
 function setVisualLayer(layerName) {
-  appState.editor.selectedLayer = VISUAL_LAYER_CONFIG[layerName] ? layerName : "floor";
-  renderVisualEditor();
+  return setVisualLayerHelper(appState, layerName, {
+    renderVisualEditor,
+  });
 }
 
 function setSelectedMapCell(row, col) {
-  appState.editor.selectedCell = { row, col };
-  appState.editor.selectionAnchor = { row, col };
-  appState.editor.selectionFocus = { row, col };
-  appState.editor.selectedAtlasCell = null;
-  const region = regionForCell(row, col);
-  if (region) {
-    appState.editor.regionKind = region.kind;
-    appState.editor.regionId = region.id;
-    appState.editor.regionLabel = region.label;
-  }
-  drawRoom(appState.renderer);
-  renderVisualEditor();
+  return setSelectedMapCellHelper(appState, row, col, {
+    drawRoom,
+    regionForCell,
+    renderVisualEditor,
+  });
 }
 
 function setHoveredMapCell(row, col) {
-  const next = row == null || col == null ? null : { row, col };
-  const prev = appState.editor.hoveredCell;
-  if (prev?.row === next?.row && prev?.col === next?.col) return;
-  appState.editor.hoveredCell = next;
-  drawRoom(appState.renderer);
+  return setHoveredMapCellHelper(appState, row, col, {
+    drawRoom,
+  });
 }
 
 function createStashBox() {
@@ -2496,28 +2421,23 @@ function createStashBox() {
 }
 
 function assignStashSelection() {
-  const selected = appState.editor.selectedCell;
-  if (!selected) {
-    setTilemapStatus("Select a cell before placing the stash box.", true);
-    return;
-  }
-  const stash = normalizeStashPoint(selected);
-  appState.renderer.assets.layout.stash = stash;
-  if (appState.tilemap) appState.tilemap.layout.stash = stash;
-  setStoredJson(TILEMAP_STORAGE_KEYS.stash, stash);
-  drawRoom(appState.renderer);
-  renderVisualEditor();
-  setTilemapStatus(`Placed stash at ${stash.col + 1}:${stash.row + 1}.`);
+  return assignStashSelectionHelper(appState, {
+    drawRoom,
+    normalizeStashPoint,
+    renderVisualEditor,
+    setStoredJson,
+    setTilemapStatus,
+  });
 }
 
 function clearStashSelection() {
-  const stash = normalizeStashPoint({ col: 15, row: 14 });
-  appState.renderer.assets.layout.stash = stash;
-  if (appState.tilemap) appState.tilemap.layout.stash = stash;
-  setStoredJson(TILEMAP_STORAGE_KEYS.stash, stash);
-  drawRoom(appState.renderer);
-  renderVisualEditor();
-  setTilemapStatus(`Reset stash to ${stash.col + 1}:${stash.row + 1}.`);
+  return clearStashSelectionHelper(appState, {
+    drawRoom,
+    normalizeStashPoint,
+    renderVisualEditor,
+    setStoredJson,
+    setTilemapStatus,
+  });
 }
 
 function drawRoom(renderer) {
@@ -3478,33 +3398,18 @@ async function moveSelectedAgentToAnchor() {
 }
 
 function applyEditorState() {
-  const floorInput = document.getElementById("floor-map-input");
-  const wallInput = document.getElementById("wall-map-input");
-  const furnitureInput = document.getElementById("furniture-map-input");
-  const propInput = document.getElementById("prop-map-input");
-  appState.editor.draftFloorText = normalizeMapText(floorInput?.value || "");
-  appState.editor.draftWallText = normalizeMapText(wallInput?.value || "");
-  appState.editor.draftFurnitureText = normalizeMapText(furnitureInput?.value || "");
-  appState.editor.draftPropText = normalizeMapText(propInput?.value || "");
-  commitDraftTilemap("Applied draft tilemap.");
+  return applyEditorStateHelper(appState, {
+    commitDraftTilemap,
+    documentRef: document,
+  });
 }
 
 function resetEditorState() {
-  appState.editor.draftFloorText = appState.editor.baseFloorText;
-  appState.editor.draftWallText = appState.editor.baseWallText;
-  appState.editor.draftFurnitureText = appState.editor.baseFurnitureText;
-  appState.editor.draftPropText = appState.editor.basePropText;
-  appState.renderer.assets.layout.cols = appState.editor.baseCols;
-  appState.renderer.assets.layout.rows = appState.editor.baseRows;
-  document.getElementById("floor-map-input").value = appState.editor.baseFloorText;
-  document.getElementById("wall-map-input").value = appState.editor.baseWallText;
-  document.getElementById("furniture-map-input").value = appState.editor.baseFurnitureText;
-  document.getElementById("prop-map-input").value = appState.editor.basePropText;
-  setStoredMap(TILEMAP_STORAGE_KEYS.floor, appState.editor.baseFloorText);
-  setStoredMap(TILEMAP_STORAGE_KEYS.wall, appState.editor.baseWallText);
-  setStoredMap(TILEMAP_STORAGE_KEYS.furniture, appState.editor.baseFurnitureText);
-  setStoredMap(TILEMAP_STORAGE_KEYS.prop, appState.editor.basePropText);
-  applyEditorState();
+  return resetEditorStateHelper(appState, {
+    applyEditorState,
+    documentRef: document,
+    setStoredMap,
+  });
 }
 
 function toggleEditMode() {
@@ -3515,27 +3420,19 @@ function toggleEditMode() {
 }
 
 function getAtlasPointerCell(event) {
-  const image = document.getElementById("atlas-picker-image");
-  const config = getVisualLayerConfig();
-  if (!image) return null;
-  const rect = image.getBoundingClientRect();
-  const x = event.clientX - rect.left;
-  const y = event.clientY - rect.top;
-  if (x < 0 || y < 0 || x >= rect.width || y >= rect.height) return null;
-  const col = Math.floor((x / rect.width) * config.cols) + 1;
-  const row = Math.floor((y / rect.height) * config.rows) + 1;
-  if (col < 1 || row < 1 || col > config.cols || row > config.rows) return null;
-  return { x: col, y: row };
+  return getAtlasPointerCellHelper(event, {
+    documentRef: document,
+    getVisualLayerConfig,
+  });
 }
 
 function getCanvasCellFromEvent(event, view) {
-  const rect = view.getBoundingClientRect();
-  const x = ((event.clientX - rect.left) / rect.width) * getWorldWidth();
-  const y = ((event.clientY - rect.top) / rect.height) * getWorldHeight();
-  const col = Math.floor(x / TILE_SIZE);
-  const row = Math.floor(y / TILE_SIZE);
-  if (col < 0 || row < 0 || col >= getWorldCols() || row >= getWorldRows()) return null;
-  return { row, col };
+  return getCanvasCellFromEventHelper(event, view, {
+    getWorldCols,
+    getWorldHeight,
+    getWorldRows,
+    getWorldWidth,
+  });
 }
 
 async function load() {
