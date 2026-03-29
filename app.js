@@ -234,6 +234,13 @@ import {
   updateVoiceUi as updateVoiceUiHelper,
 } from "./src/features/voice/voiceController.js";
 import { initDomEvents, startApp } from "./src/bootstrap/domEvents.js";
+import {
+  applyStructuredGameState as applyStructuredGameStateHelper,
+  loadApp as loadAppHelper,
+  moveSelectedAgentToAnchor as moveSelectedAgentToAnchorHelper,
+  saveGameState as saveGameStateHelper,
+  submitCommand as submitCommandHelper,
+} from "./src/app/runtime.js";
 import { appState } from "./src/state/appState.js";
 const chatBubbleThemeState = { atlasImagePromise: null };
 
@@ -1131,44 +1138,18 @@ function syncEditorInputs() {
 }
 
 function applyStructuredGameState(snapshot, successMessage = "Loaded game state.") {
-  if (!snapshot || !appState.renderer?.assets?.tileManifest) return;
-  const normalized = normalizePersistenceSnapshot(snapshot, snapshot.layout || appState.renderer.assets.layout || {});
-  const nextLayout = {
-    ...defaultLayoutConfig(appState.renderer.assets.layout || {}),
-    ...(snapshot.layout || {}),
-    stash: normalized.stash,
-    roomRegions: normalized.roomRegions,
-  };
-  const nextTilemap = buildTilemapState(
-    normalized.floorText,
-    normalized.wallText,
-    normalized.furnitureText,
-    normalized.propText,
-    appState.renderer.assets.tileManifest,
-    nextLayout,
-    normalized.roomRegions,
-  );
-  appState.tilemap = nextTilemap;
-  appState.roomRegions = nextTilemap.layout.roomRegions || [];
-  appState.chatBubbleThemes = normalized.chatBubbleThemes;
-  appState.renderer.assets.layout = nextTilemap.layout;
-  appState.editor.baseFloorText = nextTilemap.floorText;
-  appState.editor.baseWallText = nextTilemap.wallText;
-  appState.editor.baseFurnitureText = nextTilemap.furnitureText;
-  appState.editor.basePropText = nextTilemap.propText;
-  appState.editor.baseCols = nextTilemap.layout.cols || DEFAULT_WORLD_COLS;
-  appState.editor.baseRows = nextTilemap.layout.rows || DEFAULT_WORLD_ROWS;
-  appState.editor.draftFloorText = nextTilemap.floorText;
-  appState.editor.draftWallText = nextTilemap.wallText;
-  appState.editor.draftFurnitureText = nextTilemap.furnitureText;
-  appState.editor.draftPropText = nextTilemap.propText;
-  appState.gameStateRaw = snapshot.raw || buildCurrentGameStatePayload();
-  applyChatBubbleFrameStyles();
-  resizeRendererViewport();
-  drawRoom(appState.renderer);
-  if (appState.world) renderWorld(appState.world);
-  syncEditorInputs();
-  setTilemapStatus(successMessage);
+  return applyStructuredGameStateHelper(appState, snapshot, successMessage, {
+    applyChatBubbleFrameStyles,
+    buildCurrentGameStatePayload,
+    buildTilemapState,
+    defaultLayoutConfig,
+    drawRoom,
+    normalizePersistenceSnapshot,
+    renderWorld,
+    resizeRendererViewport,
+    setTilemapStatus,
+    syncEditorInputs,
+  });
 }
 
 function renderVisualSelectionPreview() {
@@ -1725,70 +1706,28 @@ function closeWorldDetails() {
 }
 
 async function saveGameState() {
-  const payload = buildCurrentGameStatePayload();
-  writeGameStateToLocalStorage(payload);
-  const response = await postJson("/api/agent-world/game-state", payload);
-  const snapshot = structuredSnapshotFromGameState(response, appState.renderer?.assets?.layout || {});
-  writeGameStateToLocalStorage(snapshot.raw);
-  applyStructuredGameState(snapshot, "Saved game state to game_state.json.");
+  return saveGameStateHelper(appState, {
+    applyStructuredGameState,
+    buildCurrentGameStatePayload,
+    postJson,
+    structuredSnapshotFromGameState,
+    writeGameStateToLocalStorage,
+  });
 }
 
 async function moveSelectedAgentToAnchor() {
-  const result = document.getElementById("command-result");
-  if (!appState.selectedAgentId) {
-    result.textContent = "No agent selected.";
-    return;
-  }
-  const select = document.getElementById("move-anchor-select");
-  const anchorId = select?.value;
-  if (!anchorId) {
-    result.textContent = "No destination selected.";
-    return;
-  }
-  const response = await postJson(`/api/agent-world/agents/${encodeURIComponent(appState.selectedAgentId)}/move`, {
-    anchorId,
-    source: "world-ui",
+  return moveSelectedAgentToAnchorHelper(appState, {
+    currentTileForAgent,
+    documentRef: document,
+    findPath,
+    formatTime,
+    goalTileForAgent,
+    isWalkable,
+    load,
+    postJson,
+    renderInspector,
+    renderWorld,
   });
-  let debugSuffix = "";
-  if (response.status === "accepted") {
-    if (appState.world?.agents?.length) {
-      appState.world = {
-        ...appState.world,
-        agents: appState.world.agents.map((agent) => agent.id === appState.selectedAgentId ? {
-          ...agent,
-          targetAnchor: anchorId,
-        } : agent),
-      };
-      renderWorld(appState.world);
-    }
-    if (appState.detail?.agent?.id === appState.selectedAgentId) {
-      appState.detail = {
-        ...appState.detail,
-        agent: {
-          ...appState.detail.agent,
-          targetAnchor: anchorId,
-        },
-      };
-      renderInspector(appState.detail);
-    }
-    const sprite = appState.renderer?.agents?.get(appState.selectedAgentId);
-    const agent = appState.world?.agents?.find((item) => item.id === appState.selectedAgentId);
-    if (sprite && agent) {
-      const currentTile = sprite._state?.currentTile && isWalkable(sprite._state.currentTile.row, sprite._state.currentTile.col)
-        ? sprite._state.currentTile
-        : currentTileForAgent(agent);
-      const goalTile = goalTileForAgent(agent, currentTile);
-      const path = findPath(currentTile, goalTile);
-      sprite._state.currentAnchorKey = agent.currentAnchor || "";
-      sprite._state.targetAnchorKey = agent.targetAnchor || "";
-      sprite._state.currentTile = currentTile;
-      sprite._state.goalKey = `${goalTile.row}:${goalTile.col}`;
-      sprite._state.path = path.length ? path : [currentTile];
-      debugSuffix = ` · path ${sprite._state.path.length} step${sprite._state.path.length === 1 ? "" : "s"} from ${currentTile.col + 1}:${currentTile.row + 1} to ${goalTile.col + 1}:${goalTile.row + 1}`;
-    }
-  }
-  result.textContent = `${response.status === "accepted" ? "Move set" : "Move rejected"} at ${formatTime(response.acceptedAt)}: ${anchorId}${response.reason ? ` (${response.reason})` : ""}${debugSuffix}`;
-  await load();
 }
 
 function applyEditorState() {
@@ -1830,32 +1769,25 @@ function getCanvasCellFromEvent(event, view) {
 }
 
 async function load() {
-  await initRenderer();
-  await fetchSettingsData();
-  const worldState = await getJson("/api/agent-world/state");
-  renderWorld(worldState);
-  if (!appState.selectedAgentId) {
-    const defaultAgent = worldState?.agents?.find((agent) => agent.id === DEFAULT_SELECTED_AGENT_ID) || worldState?.agents?.[0];
-    if (defaultAgent?.id) appState.selectedAgentId = defaultAgent.id;
-  }
-  if (appState.selectedAgentId) {
-    await selectAgent(appState.selectedAgentId);
-  } else {
-    renderHistory([]);
-    renderSchedule(null);
-    renderStash([]);
-    connectStream();
-    syncWorldDetailVisibility();
-  }
+  return loadAppHelper(appState, {
+    connectStream,
+    fetchSettingsData,
+    getJson,
+    initRenderer,
+    renderHistory,
+    renderSchedule,
+    renderStash,
+    renderWorld,
+    selectAgent,
+    syncWorldDetailVisibility,
+  });
 }
 
 async function submitCommand(event) {
-  event.preventDefault();
-  const input = document.getElementById("command-input");
-  const text = input.value.trim();
-  if (!text) return;
-  await sendCommandText(text);
-  input.value = "";
+  return submitCommandHelper(event, {
+    documentRef: document,
+    sendCommandText,
+  });
 }
 
 initDomEvents(appState, {
