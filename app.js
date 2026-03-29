@@ -49,13 +49,13 @@ import {
   validateObjectGrid,
 } from "./src/features/tilemap/mapText.js";
 import {
-  applyImportedAgentWorldStorageState as applyImportedAgentWorldStorageStateHelper,
+  applyImportedAgentWorldStorageState,
   buildCurrentGameStatePayload as buildCurrentGameStatePayloadHelper,
   currentLayoutConfigPayload as currentLayoutConfigPayloadHelper,
-  defaultLayoutConfig as defaultLayoutConfigHelper,
+  defaultLayoutConfig,
   normalizePersistenceSnapshot as normalizePersistenceSnapshotHelper,
-  parseImportedAgentWorldStorageState as parseImportedAgentWorldStorageStateHelper,
-  peekParsedValue as peekParsedValueHelper,
+  parseImportedAgentWorldStorageState,
+  peekParsedValue,
   structuredSnapshotFromGameState as structuredSnapshotFromGameStateHelper,
   syncGameStateTextarea as syncGameStateTextareaHelper,
   writeGameStateToLocalStorage as writeGameStateToLocalStorageHelper,
@@ -72,14 +72,13 @@ import {
   syncSettingsJsonEditor as syncSettingsJsonEditorHelper,
 } from "./src/features/settings/settingsPanel.js";
 import {
-  classifyPath as classifyPathHelper,
-  cleanPath as cleanPathHelper,
+  classifyPath,
   displayActionText as displayActionTextHelper,
-  extractPaths as extractPathsHelper,
-  fileUrl as fileUrlHelper,
+  extractPaths,
+  fileUrl,
   formatInlineRichText as formatInlineRichTextHelper,
   formatRichTextHtml as formatRichTextHtmlHelper,
-  historyRoleClass as historyRoleClassHelper,
+  historyRoleClass,
   historyRoleMeta as historyRoleMetaHelper,
   renderChat as renderChatHelper,
   renderHistory as renderHistoryHelper,
@@ -89,7 +88,7 @@ import {
   setMessageSelection as setMessageSelectionHelper,
   showRichMessage as showRichMessageHelper,
   showStashItem as showStashItemHelper,
-  stripControlTags as stripControlTagsHelper,
+  stripControlTags,
 } from "./src/features/chat/messageView.js";
 import {
   closeWorldDetails as closeWorldDetailsHelper,
@@ -101,18 +100,18 @@ import {
 } from "./src/features/world/agentDetails.js";
 import {
   chooseDisplayFrames as chooseDisplayFramesHelper,
-  collectFrameSequence as collectFrameSequenceHelper,
+  collectFrameSequence,
   createAgentSprite as createAgentSpriteHelper,
   createBenchmarkSprite as createBenchmarkSpriteHelper,
   directionalIdleFrames as directionalIdleFramesHelper,
   directionalWalkFrames as directionalWalkFramesHelper,
   getAnimationFrames as getAnimationFramesHelper,
-  positionAgentLabel as positionAgentLabelHelper,
-  positionBubble as positionBubbleHelper,
+  positionAgentLabel,
+  positionBubble,
   shouldMirrorSpriteForFacing as shouldMirrorSpriteForFacingHelper,
-  spriteFramesForAgent as spriteFramesForAgentHelper,
+  spriteFramesForAgent,
   updateActivityCue as updateActivityCueHelper,
-  updateAgentLabel as updateAgentLabelHelper,
+  updateAgentLabel,
   updateBubble as updateBubbleHelper,
 } from "./src/features/world/agentSprites.js";
 import {
@@ -128,7 +127,7 @@ import {
   roomIdForAgent as roomIdForAgentHelper,
   roomWaypointTiles as roomWaypointTilesHelper,
   tileFromWorldPoint as tileFromWorldPointHelper,
-  tilePoint as tilePointHelper,
+  tilePoint,
 } from "./src/features/world/pathing.js";
 import {
   buildPrimitiveTexture as buildPrimitiveTextureHelper,
@@ -174,9 +173,9 @@ import {
 } from "./src/features/editor/editorState.js";
 import {
   previewSpriteFrame as previewSpriteFrameHelper,
-  previewSpriteFrameName as previewSpriteFrameNameHelper,
+  previewSpriteFrameName,
   renderAgentEditorPanel as renderAgentEditorPanelHelper,
-  shouldMirrorPreviewSprite as shouldMirrorPreviewSpriteHelper,
+  shouldMirrorPreviewSprite,
 } from "./src/features/editor/agentEditor.js";
 import {
   assignRegionSelection as assignRegionSelectionHelper,
@@ -198,7 +197,7 @@ import {
   fetchVoiceConfig as fetchVoiceConfigHelper,
   initVoiceControls as initVoiceControlsHelper,
   maybeSpeakReply as maybeSpeakReplyHelper,
-  normalizeSpeechText as normalizeSpeechTextHelper,
+  normalizeSpeechText,
   pushVoiceEvent as pushVoiceEventHelper,
   refreshVoiceInputDevices as refreshVoiceInputDevicesHelper,
   renderVoiceDebugUi as renderVoiceDebugUiHelper,
@@ -348,10 +347,6 @@ function updateVoiceUi() {
 
 function appendVoiceTranscript(text) {
   return appendVoiceTranscriptHelper(text, { documentRef: document });
-}
-
-function normalizeSpeechText(text) {
-  return normalizeSpeechTextHelper(text);
 }
 
 function stopSpeechPlayback() {
@@ -753,28 +748,8 @@ function setMessageSelection(kind, title, body, path = null, locked = true) {
   return setMessageSelectionHelper(appState, kind, title, body, path, locked);
 }
 
-function fileUrl(path) {
-  return fileUrlHelper(path);
-}
-
-function cleanPath(text) {
-  return cleanPathHelper(text);
-}
-
-function extractPaths(...parts) {
-  return extractPathsHelper(...parts);
-}
-
-function classifyPath(path) {
-  return classifyPathHelper(path);
-}
-
 function createText(text, style) {
   return new PIXI.Text(text, style);
-}
-
-function stripControlTags(text) {
-  return stripControlTagsHelper(text);
 }
 
 function displayActionText(text) {
@@ -833,28 +808,12 @@ function normalizePersistenceSnapshot(rawValue = {}, layout = {}) {
   });
 }
 
-function defaultLayoutConfig(layout = {}) {
-  return defaultLayoutConfigHelper(layout);
-}
-
 function structuredSnapshotFromGameState(rawGameState = {}, fallbackLayout = {}) {
   return structuredSnapshotFromGameStateHelper(rawGameState, fallbackLayout, {
     normalizeRoomRegions,
     normalizeStashPoint,
     normalizeChatBubbleThemes,
   });
-}
-
-function peekParsedValue(rawValue, fallback) {
-  return peekParsedValueHelper(rawValue, fallback);
-}
-
-function parseImportedAgentWorldStorageState(rawValue) {
-  return parseImportedAgentWorldStorageStateHelper(rawValue);
-}
-
-function applyImportedAgentWorldStorageState(payload) {
-  return applyImportedAgentWorldStorageStateHelper(payload);
 }
 
 function currentLayoutConfigPayload() {
@@ -1057,10 +1016,6 @@ function isBenchmarkAgent(agent) {
   const id = String(agent?.id || "").toLowerCase();
   const name = String(agent?.name || "").toLowerCase();
   return id.startsWith("bench-") || name.startsWith("bench-");
-}
-
-function tilePoint(row, col) {
-  return tilePointHelper(row, col);
 }
 
 function tileFromWorldPoint(x, y) {
@@ -1291,18 +1246,10 @@ function createRegionLabel(region) {
   });
 }
 
-function spriteFramesForAgent(renderer, agent) {
-  return spriteFramesForAgentHelper(renderer, agent);
-}
-
 function getAnimationFrames(renderer, agent, visualState) {
   return getAnimationFramesHelper(renderer, agent, visualState, {
     spriteFramesForAgent,
   });
-}
-
-function collectFrameSequence(frames, prefix) {
-  return collectFrameSequenceHelper(frames, prefix);
 }
 
 function directionalIdleFrames(renderer, agent, facing) {
@@ -1543,14 +1490,6 @@ function previewSpriteFrame(agent) {
     previewSpriteFrameName,
     shouldMirrorPreviewSprite,
   });
-}
-
-function previewSpriteFrameName(agent, frames) {
-  return previewSpriteFrameNameHelper(agent, frames);
-}
-
-function shouldMirrorPreviewSprite(agent, frames) {
-  return shouldMirrorPreviewSpriteHelper(agent, frames);
 }
 
 function renderEditorSelectionOverlay(renderer) {
@@ -1814,18 +1753,6 @@ function updateBubble(container, text) {
   });
 }
 
-function updateAgentLabel(container, selected = false) {
-  return updateAgentLabelHelper(container, selected);
-}
-
-function positionBubble(container) {
-  return positionBubbleHelper(container);
-}
-
-function positionAgentLabel(container) {
-  return positionAgentLabelHelper(container);
-}
-
 function updateActivityCue(container, agent, moving) {
   return updateActivityCueHelper(container, agent, moving, {
     activityCue,
@@ -1955,10 +1882,6 @@ async function showRichMessage(kind, title, text, path = null) {
     setText,
     windowRef: window,
   });
-}
-
-function historyRoleClass(type) {
-  return historyRoleClassHelper(type);
 }
 
 function historyRoleMeta(type) {
