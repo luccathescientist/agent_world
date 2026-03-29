@@ -102,19 +102,6 @@ export function roomWaypointTiles(anchorId, startTile = null, helpers = {}) {
   return points;
 }
 
-export function anchorPoint(agent, helpers = {}) {
-  const { getAnchorTile = () => ({ col: 0, row: 0 }) } = helpers;
-  const anchor = agent.targetAnchor || agent.currentAnchor || "lounge";
-  const base = getAnchorTile(anchor);
-  const slot = agent.slotIndex || 0;
-  const columnOffset = ((slot % 3) - 1) * 18;
-  const rowOffset = Math.floor(slot / 3) * 16;
-  return {
-    x: base.col * TILE_SIZE + TILE_SIZE / 2 + columnOffset,
-    y: base.row * TILE_SIZE + TILE_SIZE - 4 + rowOffset,
-  };
-}
-
 export function tilePoint(row, col) {
   return {
     x: col * TILE_SIZE + TILE_SIZE / 2,

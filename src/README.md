@@ -1,20 +1,13 @@
-# Frontend Refactor Tree
+# Frontend Modules
 
-Current low-risk extractions:
+This directory now holds the extracted frontend modules that were previously embedded in `app.js`.
 
-- `core/constants.js`
-- `core/dom.js`
-- `core/format.js`
-- `core/http.js`
-- `core/storage.js`
-
-Target layout:
+## Current structure
 
 ```text
 src/
-  main.js
-  state/
-    appState.js
+  bootstrap/
+    domEvents.js
   core/
     constants.js
     dom.js
@@ -22,42 +15,39 @@ src/
     http.js
     storage.js
   features/
+    chat/
+      messageView.js
+    editor/
+      agentEditor.js
+      editorState.js
+      roomMappingEditor.js
+      visualEditor.js
     settings/
       settingsPanel.js
-    voice/
-      voiceController.js
-    chat/
-      chatBubbles.js
-      messageView.js
-    world/
-      worldPanel.js
-      worldStream.js
-      agentDetails.js
     tilemap/
       mapText.js
       tilemapState.js
-      regions.js
-      pathfinding.js
-    editor/
-      editorState.js
-      visualEditor.js
-      roomMappingEditor.js
-      chatBubbleEditor.js
-      agentEditor.js
+    voice/
+      voiceController.js
+    world/
+      agentDetails.js
+      agentSprites.js
+      pathing.js
   render/
-    pixiApp.js
     assets.js
+    pixiApp.js
     scene.js
-    agents.js
-    labels.js
-  bootstrap/
-    domEvents.js
+    worldRenderer.js
+  state/
+    appState.js
 ```
 
-Refactor order:
+## Notes
 
-1. Keep extracting pure helpers and shared state access first.
-2. Move settings and voice next.
-3. Extract tilemap parsing, regions, and pathfinding.
-4. Split PIXI rendering and world UI.
-5. Finish by shrinking `app.js` into `main.js` plus event bootstrap.
+- `app.js` is still the page entrypoint and orchestrates these modules.
+- Most modules use dependency injection for DOM, window, PIXI, and state-adjacent helpers so they can be tested in isolation.
+- Renderer code is split by responsibility:
+  - `assets.js`: asset and texture bootstrap
+  - `scene.js`: static room composition
+  - `worldRenderer.js`: live world render loop and viewport helpers
+  - `pixiApp.js`: PIXI app initialization and view event wiring

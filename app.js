@@ -116,7 +116,6 @@ import {
   updateBubble as updateBubbleHelper,
 } from "./src/features/world/agentSprites.js";
 import {
-  anchorPoint as anchorPointHelper,
   applyPathing as applyPathingHelper,
   currentTileForAgent as currentTileForAgentHelper,
   effectiveGoalTileForAgent as effectiveGoalTileForAgentHelper,
@@ -1054,28 +1053,10 @@ function getRenderHeight() {
   return getWorldHeight() + getSceneTopPadding();
 }
 
-function anchorPoint(agent) {
-  return anchorPointHelper(agent, {
-    getAnchorTile,
-  });
-}
-
 function isBenchmarkAgent(agent) {
   const id = String(agent?.id || "").toLowerCase();
   const name = String(agent?.name || "").toLowerCase();
   return id.startsWith("bench-") || name.startsWith("bench-");
-}
-
-function benchmarkPoint(agent, benchIndex = 0) {
-  const anchor = agent.targetAnchor || agent.currentAnchor || "terminal";
-  const base = getAnchorTile(anchor);
-  const cols = [-1.4, 0, 1.4, -1.4, 0, 1.4];
-  const rows = [0.5, 0.5, 0.5, 1.7, 1.7, 1.7];
-  const offsetIndex = benchIndex % cols.length;
-  return tilePoint(
-    Math.max(0, Math.min(getWorldRows() - 1, Math.round(base.row + rows[offsetIndex]))),
-    Math.max(0, Math.min(getWorldCols() - 1, Math.round(base.col + cols[offsetIndex]))),
-  );
 }
 
 function tilePoint(row, col) {

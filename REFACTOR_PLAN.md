@@ -1,22 +1,13 @@
-# Frontend Refactor Plan
+# Frontend Refactor Status
 
-This refactor breaks the current frontend out of `app.js` in low-risk stages. The rule for each stage is to move cohesive code without changing behavior or reshaping state unless that is the explicit goal of the step.
+The frontend refactor is now mostly complete. The original goal was to break `app.js` into smaller, cohesive modules without changing behavior; that goal has been met for the major feature and renderer boundaries.
 
-## Current extracted core
-
-- `src/core/constants.js`
-- `src/core/dom.js`
-- `src/core/format.js`
-- `src/core/http.js`
-- `src/core/storage.js`
-
-## Target tree
+## Final module layout
 
 ```text
 src/
-  main.js
-  state/
-    appState.js
+  bootstrap/
+    domEvents.js
   core/
     constants.js
     dom.js
@@ -24,150 +15,58 @@ src/
     http.js
     storage.js
   features/
+    chat/
+      messageView.js
+    editor/
+      agentEditor.js
+      editorState.js
+      roomMappingEditor.js
+      visualEditor.js
     settings/
       settingsPanel.js
-    voice/
-      voiceController.js
-    chat/
-      chatBubbles.js
-      messageView.js
-    world/
-      worldPanel.js
-      worldStream.js
-      agentDetails.js
     tilemap/
       mapText.js
       tilemapState.js
-      regions.js
-      pathfinding.js
-    editor/
-      editorState.js
-      visualEditor.js
-      roomMappingEditor.js
-      chatBubbleEditor.js
-      agentEditor.js
+    voice/
+      voiceController.js
+    world/
+      agentDetails.js
+      agentSprites.js
+      pathing.js
   render/
-    pixiApp.js
     assets.js
+    pixiApp.js
     scene.js
-    agents.js
-    labels.js
-  bootstrap/
-    domEvents.js
+    worldRenderer.js
+  state/
+    appState.js
 ```
 
-## Low-risk sequence
+## What was extracted
 
-### 1. Extract shared app state
+- Shared state and storage/http/format/DOM helpers
+- Tilemap parsing and game-state persistence helpers
+- Settings and voice UI/controller logic
+- Chat rendering and world detail/stream handling
+- Editor state, room mapping, agent editor, and visual editor logic
+- World pathing and agent sprite helpers
+- Renderer asset loading, scene drawing, world render loop, and PIXI bootstrap
+- DOM event bootstrap
 
-Move the full `appState` object into `src/state/appState.js` with no schema changes.
+## What still remains in `app.js`
 
-Why first:
-- It is the main shared dependency for all later extractions.
-- Exporting the existing object preserves behavior.
+`app.js` is now primarily an orchestration layer:
 
-Do not:
-- Rename fields.
-- Introduce setters or a store abstraction.
-- Split nested state yet.
+- imports and dependency wiring
+- thin wrapper functions that adapt app-specific globals like `document`, `window`, `PIXI`, and `appState`
+- a smaller set of shared domain helpers that are still cross-cutting enough to keep local for now
 
-### 2. Extract pure tilemap text helpers
+The remaining wrappers are intentional in most cases. They keep module APIs dependency-injected and testable while preserving the current page entrypoint and existing DOM wiring.
 
-Move map parsing and token helpers into `src/features/tilemap/mapText.js`.
+## Cleanup follow-up
 
-Expected contents:
-- `normalizeMapText`
-- `parseMapText`
-- `parseObjectRow`
-- `parseFloorRow`
-- `parseObjectToken`
-- `parseFloorToken`
-- `serializeFloorLines`
-- `serializeObjectLines`
-- `tokenLabel`
-- `floorTokenLabel`
-- `validateGrid`
-- `validateObjectGrid`
-- `getGridShape`
-- `resolveGridShape`
+The next cleanup pass, if needed, should focus on:
 
-Why next:
-- These functions are mostly pure.
-- They already cluster together.
-- They support both tilemap state and editor behavior.
-
-### 3. Extract tilemap persistence and game-state helpers
-
-Move persistence and snapshot helpers into `src/features/tilemap/tilemapState.js`.
-
-Expected contents:
-- `normalizePersistenceSnapshot`
-- `defaultLayoutConfig`
-- `structuredSnapshotFromGameState`
-- `peekParsedValue`
-- `parseImportedAgentWorldStorageState`
-- `applyImportedAgentWorldStorageState`
-- `currentLayoutConfigPayload`
-- `buildCurrentGameStatePayload`
-- `syncGameStateTextarea`
-- `writeGameStateToLocalStorage`
-
-Notes:
-- Keep function signatures stable.
-- It is acceptable for this module to import `appState` during the first pass.
-
-### 4. Extract settings UI
-
-Move settings code into `src/features/settings/settingsPanel.js`.
-
-Expected contents:
-- settings form sync
-- diagnostics rendering
-- payload collection
-- fetch/save/reload handlers
-
-Why before voice:
-- It is more deterministic.
-- It has fewer browser API edge cases.
-
-### 5. Extract voice controls
-
-Move voice code into `src/features/voice/voiceController.js`.
-
-Expected contents:
-- voice UI rendering
-- input device refresh
-- mic meter lifecycle
-- recording/transcription/playback
-- `initVoiceControls`
-
-Guardrails:
-- Keep the existing `appState.voice` shape.
-- Keep the current DOM IDs.
-- Avoid changing event behavior in the same pass.
-
-### 6. Extract DOM event bootstrap
-
-Move the bottom event-wiring block into `src/bootstrap/domEvents.js`.
-
-Expected contents:
-- all `addEventListener(...)` setup
-- editor subtab loops
-- layer toggle loops
-- startup calls such as `setActiveTab("world")`, `load()`, and `initVoiceControls()`
-
-Why here:
-- By this point, settings and voice handlers will already be importable.
-- It reduces `app.js` to orchestration rather than wiring.
-
-## Defer until later
-
-These areas are not part of the low-risk pass:
-
-- PIXI scene setup
-- room drawing
-- agent sprite animation
-- world rendering
-- event stream handling
-
-Those surfaces are more coupled and should be split only after helpers, state, settings, voice, and bootstrap are already separated.
+1. Converting more wrapper-only helpers in `app.js` into direct helper calls where that does not make DOM/bootstrap wiring harder to follow.
+2. Moving any remaining cross-cutting utility clusters only if they form a clear module boundary.
+3. Renaming `app.js` to a dedicated entrypoint such as `src/main.js` only when the HTML/bootstrap swap is worth the churn.
