@@ -6,6 +6,8 @@ The frontend refactor is now mostly complete. The original goal was to break `ap
 
 ```text
 src/
+  app/
+    runtime.js
   bootstrap/
     domEvents.js
   core/
@@ -40,6 +42,7 @@ src/
     worldRenderer.js
   state/
     appState.js
+  main.js
 ```
 
 ## What was extracted
@@ -53,20 +56,22 @@ src/
 - Renderer asset loading, scene drawing, world render loop, and PIXI bootstrap
 - DOM event bootstrap
 
-## What still remains in `app.js`
+## What still remains in the entrypoint layer
 
-`app.js` is now primarily an orchestration layer:
+`src/main.js` is now primarily an orchestration layer:
 
 - imports and dependency wiring
 - thin wrapper functions that adapt app-specific globals like `document`, `window`, `PIXI`, and `appState`
 - a smaller set of shared domain helpers that are still cross-cutting enough to keep local for now
 
-The remaining wrappers are intentional in most cases. They keep module APIs dependency-injected and testable while preserving the current page entrypoint and existing DOM wiring.
+The remaining wrappers are intentional in most cases. They keep module APIs dependency-injected and testable while preserving the current DOM wiring.
+
+Root `app.js` is now only a compatibility stub that imports `src/main.js`.
 
 ## Cleanup follow-up
 
 The next cleanup pass, if needed, should focus on:
 
-1. Converting more wrapper-only helpers in `app.js` into direct helper calls where that does not make DOM/bootstrap wiring harder to follow.
+1. Converting more wrapper-only helpers in `src/main.js` into direct helper calls where that does not make DOM/bootstrap wiring harder to follow.
 2. Moving any remaining cross-cutting utility clusters only if they form a clear module boundary.
-3. Renaming `app.js` to a dedicated entrypoint such as `src/main.js` only when the HTML/bootstrap swap is worth the churn.
+3. Deciding whether the root `app.js` compatibility stub should remain once the new `src/main.js` entrypoint has settled.

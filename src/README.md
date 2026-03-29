@@ -1,11 +1,13 @@
 # Frontend Modules
 
-This directory now holds the extracted frontend modules that were previously embedded in `app.js`.
+This directory now holds the extracted frontend modules and the main frontend entrypoint that were previously embedded in `app.js`.
 
 ## Current structure
 
 ```text
 src/
+  app/
+    runtime.js
   bootstrap/
     domEvents.js
   core/
@@ -40,11 +42,13 @@ src/
     worldRenderer.js
   state/
     appState.js
+  main.js
 ```
 
 ## Notes
 
-- `app.js` is still the page entrypoint and orchestrates these modules.
+- `src/main.js` is now the page entrypoint and orchestration layer.
+- Root `app.js` is only a compatibility stub that imports `src/main.js`.
 - Most modules use dependency injection for DOM, window, PIXI, and state-adjacent helpers so they can be tested in isolation.
 - Renderer code is split by responsibility:
   - `assets.js`: asset and texture bootstrap
