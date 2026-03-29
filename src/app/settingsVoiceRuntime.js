@@ -325,6 +325,7 @@ export function createSettingsVoiceRuntime(state, deps = {}) {
         fullDetail: "Queued from UI",
         ts: response.acceptedAt || new Date().toISOString(),
       };
+      state.pendingHistoryEvents = [...(state.pendingHistoryEvents || []), optimisticEvent];
       const nextHistory = [...(state.detail.history || []), optimisticEvent];
       state.detail = {
         ...state.detail,

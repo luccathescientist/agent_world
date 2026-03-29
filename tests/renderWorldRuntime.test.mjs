@@ -199,3 +199,34 @@ test("renderWorldRuntime forwards chat bubble markup into chat rendering", () =>
   assert.ok(calls.some((entry) => Array.isArray(entry) && entry[0] === "renderChat"));
   assert.ok(calls.includes("applyChatRoleTheme"));
 });
+
+test("renderWorldRuntime merges pending history events into rendered history", () => {
+  const seen = [];
+  const state = {
+    pendingHistoryEvents: [{
+      type: "operator_command",
+      label: "hello",
+      fullLabel: "hello",
+      ts: "2026-03-29T12:00:00Z",
+    }],
+  };
+  const runtime = createRenderWorldRuntime(state, {
+    documentRef: {
+      createElement(tag) {
+        return { tag };
+      },
+    },
+    renderHistoryShell: (events) => {
+      seen.push(events);
+    },
+  });
+
+  runtime.renderHistory([]);
+  assert.equal(seen[0].length, 1);
+  assert.equal(seen[0][0].label, "hello");
+  assert.equal(state.pendingHistoryEvents.length, 1);
+
+  runtime.renderHistory([{ type: "operator_command", label: "hello", fullLabel: "hello", ts: "2026-03-29T12:00:01Z" }]);
+  assert.equal(seen[1].length, 1);
+  assert.equal(state.pendingHistoryEvents.length, 0);
+});
