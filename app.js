@@ -91,6 +91,7 @@ import {
   transcribeRecordedAudio as transcribeRecordedAudioHelper,
   updateVoiceUi as updateVoiceUiHelper,
 } from "./src/features/voice/voiceController.js";
+import { initDomEvents, startApp } from "./src/bootstrap/domEvents.js";
 import { appState } from "./src/state/appState.js";
 let chatBubbleAtlasImagePromise = null;
 
@@ -3734,277 +3735,61 @@ async function submitCommand(event) {
   input.value = "";
 }
 
-document.getElementById("command-form").addEventListener("submit", submitCommand);
-document.getElementById("voice-toggle").addEventListener("click", async () => {
-  if (appState.voice.listening) stopVoiceCapture();
-  else await startVoiceCapture();
-});
-document.getElementById("voice-stop").addEventListener("click", stopVoiceCapture);
-document.getElementById("voice-speak-current").addEventListener("click", () => {
-  speakText(appState.messageSelection.body || appState.messageSelection.title, "selected-message");
-});
-document.getElementById("voice-auto-send").addEventListener("change", (event) => {
-  appState.voice.autoSend = !!event.target.checked;
-  setVoiceStatus(appState.voice.autoSend ? "Auto-send is on." : "Auto-send is off.");
-});
-document.getElementById("voice-speak-replies").addEventListener("change", (event) => {
-  appState.voice.speakReplies = !!event.target.checked;
-  if (!appState.voice.speakReplies) stopSpeechPlayback();
-  setVoiceStatus(appState.voice.speakReplies ? "Reply speech is on." : "Reply speech is off.");
-});
-document.getElementById("voice-input-select").addEventListener("change", (event) => {
-  appState.voice.selectedInputDeviceId = event.target.value || "";
-  setStoredMap(TILEMAP_STORAGE_KEYS.voiceInputDeviceId, appState.voice.selectedInputDeviceId);
-  pushVoiceEvent(appState.voice.selectedInputDeviceId ? "Preferred mic input updated." : "Preferred mic input cleared.");
-  if (appState.voice.listening) {
-    stopVoiceCapture();
-    setVoiceStatus("Microphone changed. Press Start Mic to reconnect.", false);
-  } else {
-    updateVoiceUi();
-  }
-});
-document.getElementById("agent-select").addEventListener("change", async (event) => {
-  const agentId = event.target.value;
-  if (!agentId) {
-    closeWorldDetails();
-    return;
-  }
-  await selectAgent(agentId);
-});
-document.getElementById("close-world-details").addEventListener("click", closeWorldDetails);
-document.getElementById("refresh-button").addEventListener("click", load);
-document.getElementById("tab-world").addEventListener("click", () => setActiveTab("world"));
-document.getElementById("tab-editor").addEventListener("click", () => setActiveTab("editor"));
-document.getElementById("tab-settings").addEventListener("click", () => setActiveTab("settings"));
-for (const button of document.querySelectorAll(".editor-subtab-btn")) {
-  button.addEventListener("click", () => setActiveEditorSubview(button.dataset.editorView || "tilemap"));
-}
-document.getElementById("settings-form").addEventListener("submit", async (event) => {
-  event.preventDefault();
-  await saveSettings();
-});
-document.getElementById("settings-refresh").addEventListener("click", async () => {
-  await fetchSettingsData();
-  setSettingsResult("Diagnostics refreshed.");
-});
-document.getElementById("settings-save-json").addEventListener("click", async () => {
-  await saveSettingsFromJsonEditor();
-});
-document.getElementById("settings-reload-json").addEventListener("click", async () => {
-  await fetchSettingsData();
-  setSettingsResult("Settings JSON reloaded from disk.");
-});
-document.getElementById("editor-shared-toggle").addEventListener("click", () => {
-  const panel = document.getElementById("editor-shared-panel");
-  if (!panel) return;
-  panel.open = !panel.open;
-});
-document.getElementById("apply-tilemap").addEventListener("click", () => {
-  try {
-    applyEditorState();
-  } catch (err) {
-    setTilemapStatus(err.message, true);
-  }
-});
-document.getElementById("save-game-state").addEventListener("click", async () => {
-  try {
-    applyEditorState();
-    await saveGameState();
-  } catch (err) {
-    setTilemapStatus(err.message, true);
-  }
-});
-document.getElementById("apply-game-state-json").addEventListener("click", () => {
-  try {
-    const textarea = document.getElementById("tilemap-state-json");
-    const payload = parseImportedAgentWorldStorageState(textarea?.value || "");
-    applyImportedAgentWorldStorageState(payload);
-    writeGameStateToLocalStorage(payload);
-    const snapshot = structuredSnapshotFromGameState(payload, appState.renderer?.assets?.layout || {});
-    applyStructuredGameState(snapshot, "Applied game state JSON.");
-    if (textarea) textarea.value = JSON.stringify(payload, null, 2);
-    if (!snapshot.floorText && !snapshot.wallText && !snapshot.furnitureText && !snapshot.propText) {
-      setTilemapStatus("Imported JSON did not contain usable game-state map data.", true);
-      return;
-    }
-    setTilemapStatus(`Imported ${Object.keys(payload).length} keys into local storage.`);
-  } catch (err) {
-    setTilemapStatus(err.message, true);
-  }
-});
-document.getElementById("download-game-state-json").addEventListener("click", () => {
-  try {
-    syncGameStateTextarea();
-    const textarea = document.getElementById("tilemap-state-json");
-    const content = textarea?.value || "{}";
-    const blob = new Blob([content], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const anchor = document.createElement("a");
-    anchor.href = url;
-    anchor.download = "agent_world_game_state.json";
-    document.body.appendChild(anchor);
-    anchor.click();
-    anchor.remove();
-    URL.revokeObjectURL(url);
-    setTilemapStatus("Downloaded current game state JSON.");
-  } catch (err) {
-    setTilemapStatus(err.message, true);
-  }
-});
-document.getElementById("reset-tilemap").addEventListener("click", () => {
-  try {
-    resetEditorState();
-  } catch (err) {
-    setTilemapStatus(err.message, true);
-  }
-});
-document.getElementById("floor-map-input").addEventListener("input", (event) => {
-  appState.editor.draftFloorText = event.target.value;
-  renderVisualEditor();
-});
-document.getElementById("wall-map-input").addEventListener("input", (event) => {
-  appState.editor.draftWallText = event.target.value;
-  renderVisualEditor();
-});
-document.getElementById("furniture-map-input").addEventListener("input", (event) => {
-  appState.editor.draftFurnitureText = event.target.value;
-  renderVisualEditor();
-});
-document.getElementById("prop-map-input").addEventListener("input", (event) => {
-  appState.editor.draftPropText = event.target.value;
-  renderVisualEditor();
-});
-document.getElementById("visual-token-empty").addEventListener("click", () => {
-  try {
-    applyVisualToken(".");
-  } catch (err) {
-    setTilemapStatus(err.message, true);
-  }
-});
-document.getElementById("assign-chat-bubble-tile").addEventListener("click", () => {
-  try {
-    assignChatBubbleTile();
-  } catch (err) {
-    setTilemapStatus(err.message, true);
-  }
-});
-document.getElementById("reset-chat-bubble-frame").addEventListener("click", () => {
-  try {
-    resetChatBubbleFrame();
-  } catch (err) {
-    setTilemapStatus(err.message, true);
-  }
-});
-for (const button of document.querySelectorAll(".chat-bubble-role-btn")) {
-  button.addEventListener("click", () => {
-    appState.editor.selectedChatBubbleRole = ["assistant", "tool", "user"].includes(button.dataset.role) ? button.dataset.role : "assistant";
-    const frame = selectedChatBubbleTheme()?.frame?.[appState.editor.selectedChatBubbleSlot || "mm"] || null;
-    if (frame?.layer && ["floor", "wall"].includes(frame.layer)) {
-      appState.editor.selectedLayer = frame.layer;
-    }
-    renderVisualEditor();
-  });
-}
-document.getElementById("chat-bubble-text-color").addEventListener("input", (event) => {
-  setChatBubbleTextColor(event.target.value);
-});
-document.getElementById("toggle-editor-agents").addEventListener("change", (event) => {
-  appState.editor.showAgents = Boolean(event.target.checked);
-  if (appState.world) renderWorld(appState.world);
-});
-document.getElementById("region-kind-input").addEventListener("change", (event) => {
-  appState.editor.regionKind = event.target.value === "door" ? "door" : "room";
-});
-document.getElementById("region-id-input").addEventListener("change", (event) => {
-  appState.editor.regionId = event.target.value;
-});
-document.getElementById("region-label-input").addEventListener("input", (event) => {
-  appState.editor.regionLabel = event.target.value;
-});
-document.getElementById("assign-region").addEventListener("click", () => {
-  try {
-    assignRegionSelection();
-  } catch (err) {
-    setTilemapStatus(err.message, true);
-  }
-});
-document.getElementById("clear-region").addEventListener("click", () => {
-  try {
-    clearRegionSelection();
-  } catch (err) {
-    setTilemapStatus(err.message, true);
-  }
-});
-document.getElementById("set-region-label-position").addEventListener("click", () => {
-  try {
-    setRegionLabelPosition();
-  } catch (err) {
-    setTilemapStatus(err.message, true);
-  }
-});
-document.getElementById("assign-stash").addEventListener("click", () => {
-  try {
-    assignStashSelection();
-  } catch (err) {
-    setTilemapStatus(err.message, true);
-  }
-});
-document.getElementById("clear-stash").addEventListener("click", () => {
-  try {
-    clearStashSelection();
-  } catch (err) {
-    setTilemapStatus(err.message, true);
-  }
-});
-document.getElementById("editor-zoom-select").addEventListener("change", (event) => {
-  appState.editor.zoom = Number(event.target.value) || 2;
-  renderVisualEditor();
-});
-document.getElementById("resize-grid").addEventListener("click", () => {
-  try {
-    resizeTilemapGrid(
-      document.getElementById("grid-cols-input").value,
-      document.getElementById("grid-rows-input").value,
-    );
-  } catch (err) {
-    setTilemapStatus(err.message, true);
-  }
-});
-for (const button of document.querySelectorAll("#visual-layer-toggle [data-layer]")) {
-  button.addEventListener("click", () => setVisualLayer(button.dataset.layer));
-}
-const atlasBoard = document.getElementById("atlas-picker-board");
-document.getElementById("atlas-picker-image").addEventListener("load", () => renderVisualEditor());
-atlasBoard.addEventListener("mousemove", (event) => {
-  const cell = getAtlasPointerCell(event);
-  appState.editor.hoveredAtlasCell = cell;
-  renderVisualEditor();
-});
-atlasBoard.addEventListener("mouseleave", () => {
-  appState.editor.hoveredAtlasCell = null;
-  renderVisualEditor();
-});
-atlasBoard.addEventListener("click", (event) => {
-  try {
-    const cell = getAtlasPointerCell(event);
-    if (!cell) return;
-    applyVisualAtlasCell(cell);
-  } catch (err) {
-    setTilemapStatus(err.message, true);
-  }
-});
-document.getElementById("move-agent-button").addEventListener("click", async () => {
-  try {
-    await moveSelectedAgentToAnchor();
-  } catch (err) {
-    document.getElementById("command-result").textContent = `Move error: ${err.message}`;
-  }
+initDomEvents(appState, {
+  applyEditorState,
+  applyImportedAgentWorldStorageState,
+  applyStructuredGameState,
+  applyVisualAtlasCell,
+  applyVisualToken,
+  assignChatBubbleTile,
+  assignRegionSelection,
+  assignStashSelection,
+  clearRegionSelection,
+  clearStashSelection,
+  closeWorldDetails,
+  documentRef: document,
+  fetchSettingsData,
+  getAtlasPointerCell,
+  initVoiceControls,
+  load,
+  moveSelectedAgentToAnchor,
+  parseImportedAgentWorldStorageState,
+  pushVoiceEvent,
+  renderVisualEditor,
+  renderWorld,
+  resetChatBubbleFrame,
+  resetEditorState,
+  resizeTilemapGrid,
+  saveGameState,
+  saveSettings,
+  saveSettingsFromJsonEditor,
+  selectedChatBubbleTheme,
+  selectAgent,
+  setActiveEditorSubview,
+  setActiveTab,
+  setChatBubbleTextColor,
+  setRegionLabelPosition,
+  setSettingsResult,
+  setStoredMap,
+  setTilemapStatus,
+  setVisualLayer,
+  setVoiceStatus,
+  speakText,
+  startVoiceCapture,
+  stopSpeechPlayback,
+  stopVoiceCapture,
+  structuredSnapshotFromGameState,
+  submitCommand,
+  syncGameStateTextarea,
+  TILEMAP_STORAGE_KEYS,
+  updateVoiceUi,
+  writeGameStateToLocalStorage,
 });
 
-setActiveTab("world");
-
-load().catch((err) => {
-  setTilemapStatus(err.message, true);
-  document.getElementById("command-result").textContent = `Load error: ${err.message}`;
+startApp({
+  documentRef: document,
+  initVoiceControls,
+  load,
+  setActiveTab,
+  setTilemapStatus,
 });
-initVoiceControls();
