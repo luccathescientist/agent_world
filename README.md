@@ -22,13 +22,16 @@ python server.py --port 8890
 
 Then open `http://localhost:8890/`.
 
+If you want Agent World's backend voice features enabled, set `OPENAI_API_KEY`
+in the environment before starting the server.
+
 The checked-in [game_state.json](/home/rocketegg/clawd/agent_world/assets/tiles/office_world/game_state.json)
 is the default world/layout for a fresh clone. A clean installation should boot
 directly into that baseline office configuration without any extra setup.
 
 The global install settings live in [agent_world.json](/home/rocketegg/clawd/agent_world/agent_world.json).
-This is where Agent World now reads the configured OpenClaw home/workspace and
-its default server bind settings.
+This is where Agent World reads the configured OpenClaw runtime paths, its own
+voice backend settings, and its default server bind settings.
 
 ## Fresh Install Smoke Test
 
@@ -51,7 +54,8 @@ The system has three major pieces:
 
 1. `server.py` serves the UI, static assets, and `/api/agent-world/*` routes.
 2. `backend/*.py` derives world state from OpenClaw session data, routes operator
-   commands, persists layout changes, and streams live snapshots.
+   commands, persists layout changes, streams live snapshots, and handles the
+   optional Agent World-owned voice backend.
 3. `index.html`, `styles.css`, and `app.js` render the world, chat, inspector,
    voice controls, and tilemap editor in the browser.
 
@@ -72,7 +76,7 @@ The system has three major pieces:
 - `server.py`
   Standalone FastAPI server for local development and deployment.
 - `agent_world.json`
-  Global install settings for OpenClaw paths and server defaults.
+  Global install settings for OpenClaw runtime paths, Agent World voice config, and server defaults.
 - `backend/`
   Backend adapter layer intended to be imported by a host server.
 - `assets/sprites/`
@@ -104,8 +108,7 @@ The system has three major pieces:
 - Command delivery: `backend/command_router.py`
 - Live stream: `backend/stream.py`
 - Layout persistence: `backend/world_layout.py`
-- Voice bridge: set `OPENCLAW_WORKSPACE` or place an OpenClaw checkout at
-  `../openclaw` or `vendor/openclaw`
+- Voice backend: Agent World uses its own configured provider and API key env var rather than an OpenClaw repo checkout
 
 ## Notes For Future Agents
 

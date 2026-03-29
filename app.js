@@ -466,20 +466,31 @@ function syncSettingsJsonEditor() {
 function syncSettingsForm() {
   const cfg = appState.settings.data || {};
   const openclaw = cfg.openclaw || {};
+  const voice = cfg.voice || {};
   const server = cfg.server || {};
   const allowedRoots = Array.isArray(openclaw.allowedFileRoots) ? openclaw.allowedFileRoots.join("\n") : "";
   const homeInput = document.getElementById("settings-openclaw-home");
-  const workspaceInput = document.getElementById("settings-openclaw-workspace");
   const mediaInput = document.getElementById("settings-openclaw-media-dir");
   const hostInput = document.getElementById("settings-server-host");
   const portInput = document.getElementById("settings-server-port");
   const allowedRootsInput = document.getElementById("settings-allowed-file-roots");
+  const voiceProviderInput = document.getElementById("settings-voice-provider");
+  const voiceApiKeyEnvInput = document.getElementById("settings-voice-api-key-env");
+  const voiceTranscribeModelInput = document.getElementById("settings-voice-transcribe-model");
+  const voiceSpeechModelInput = document.getElementById("settings-voice-speech-model");
+  const voiceDefaultVoiceInput = document.getElementById("settings-voice-default-voice");
+  const voiceSpeechFormatInput = document.getElementById("settings-voice-speech-format");
   if (homeInput) homeInput.value = openclaw.home || "";
-  if (workspaceInput) workspaceInput.value = openclaw.workspace || "";
   if (mediaInput) mediaInput.value = openclaw.mediaDir || "";
   if (hostInput) hostInput.value = server.host || "";
   if (portInput) portInput.value = server.port ?? "";
   if (allowedRootsInput) allowedRootsInput.value = allowedRoots;
+  if (voiceProviderInput) voiceProviderInput.value = voice.provider || "openai";
+  if (voiceApiKeyEnvInput) voiceApiKeyEnvInput.value = voice.apiKeyEnv || "OPENAI_API_KEY";
+  if (voiceTranscribeModelInput) voiceTranscribeModelInput.value = voice.transcribeModel || "gpt-4o-mini-transcribe";
+  if (voiceSpeechModelInput) voiceSpeechModelInput.value = voice.speechModel || "gpt-4o-mini-tts";
+  if (voiceDefaultVoiceInput) voiceDefaultVoiceInput.value = voice.defaultVoice || "nova";
+  if (voiceSpeechFormatInput) voiceSpeechFormatInput.value = voice.speechFormat || "mp3";
 }
 
 function renderSettingsSummary() {
@@ -503,8 +514,6 @@ function renderSettingsSummary() {
   setText("resolved-openclaw-config", diagnostics?.resolvedPaths?.openclawConfig || "--");
   setText("resolved-main-sessions", diagnostics?.resolvedPaths?.mainSessionsIndex || "--");
   setText("resolved-openclaw-media", diagnostics?.resolvedPaths?.openclawMediaDir || "--");
-  setText("resolved-openclaw-workspace", diagnostics?.resolvedPaths?.openclawWorkspace || "--");
-  setText("resolved-tsx-loader", diagnostics?.resolvedPaths?.tsxLoader || "--");
   renderSettingsChecks();
 }
 
@@ -513,12 +522,19 @@ function collectSettingsPayload() {
   return {
     openclaw: {
       home: document.getElementById("settings-openclaw-home")?.value.trim() || "",
-      workspace: document.getElementById("settings-openclaw-workspace")?.value.trim() || "",
       mediaDir: document.getElementById("settings-openclaw-media-dir")?.value.trim() || "",
       allowedFileRoots: allowedRootsText
         .split("\n")
         .map((value) => value.trim())
         .filter(Boolean),
+    },
+    voice: {
+      provider: document.getElementById("settings-voice-provider")?.value.trim() || "openai",
+      apiKeyEnv: document.getElementById("settings-voice-api-key-env")?.value.trim() || "OPENAI_API_KEY",
+      transcribeModel: document.getElementById("settings-voice-transcribe-model")?.value.trim() || "gpt-4o-mini-transcribe",
+      speechModel: document.getElementById("settings-voice-speech-model")?.value.trim() || "gpt-4o-mini-tts",
+      defaultVoice: document.getElementById("settings-voice-default-voice")?.value.trim() || "nova",
+      speechFormat: document.getElementById("settings-voice-speech-format")?.value.trim() || "mp3",
     },
     server: {
       host: document.getElementById("settings-server-host")?.value.trim() || "0.0.0.0",
@@ -557,6 +573,7 @@ async function saveSettings() {
     const saved = await postJson("/api/agent-world/settings", payload);
     appState.settings.data = saved;
     await fetchSettingsData();
+    await fetchVoiceConfig();
     setSettingsResult("Settings saved. Server host/port changes apply on the next restart.");
   } catch (error) {
     setSettingsResult(`Settings save error: ${error?.message || String(error)}`, true);
@@ -582,6 +599,7 @@ async function saveSettingsFromJsonEditor() {
     syncSettingsForm();
     syncSettingsJsonEditor();
     await fetchSettingsData();
+    await fetchVoiceConfig();
     setSettingsResult("Raw settings JSON saved.");
   } catch (error) {
     setSettingsResult(`Raw settings save error: ${error?.message || String(error)}`, true);

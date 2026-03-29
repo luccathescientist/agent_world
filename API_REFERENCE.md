@@ -38,7 +38,8 @@ Persists the global Agent World install settings to `agent_world.json`.
 ### `GET /api/agent-world/settings/diagnostics`
 
 Returns diagnostics for the configured OpenClaw home, config, agents, media,
-workspace, and voice-loader readiness.
+command routing, and Agent World voice checks for provider config, SDK
+availability, and credentials.
 
 ### `GET /api/agent-world/state`
 

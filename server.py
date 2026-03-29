@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import os
 from pathlib import Path
 
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
@@ -30,8 +31,32 @@ from backend.world_layout import load_world_game_state, save_world_game_state, s
 
 DEFAULT_PORT = 8890
 ROOT_DIR = Path(__file__).resolve().parent
+ENV_PATH = ROOT_DIR / ".env"
 
 app = FastAPI(title="Agent World")
+
+
+def _load_repo_env(path: Path) -> None:
+    if not path.exists():
+        return
+    try:
+        for raw_line in path.read_text().splitlines():
+            line = raw_line.strip()
+            if not line or line.startswith("#") or "=" not in line:
+                continue
+            key, value = line.split("=", 1)
+            key = key.strip()
+            value = value.strip()
+            if not key:
+                continue
+            if value and value[0] == value[-1] and value[0] in {"'", '"'}:
+                value = value[1:-1]
+            os.environ.setdefault(key, value)
+    except OSError:
+        return
+
+
+_load_repo_env(ENV_PATH)
 
 
 class AgentWorldCommand(BaseModel):

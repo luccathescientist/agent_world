@@ -1,9 +1,16 @@
 {
   "openclaw": {
     "home": "~/.openclaw",
-    "workspace": "~/clawd/",
     "mediaDir": "",
     "allowedFileRoots": []
+  },
+  "voice": {
+    "provider": "openai",
+    "apiKeyEnv": "OPENAI_API_KEY",
+    "transcribeModel": "gpt-4o-mini-transcribe",
+    "speechModel": "gpt-4o-mini-tts",
+    "defaultVoice": "nova",
+    "speechFormat": "mp3"
   },
   "server": {
     "host": "0.0.0.0",

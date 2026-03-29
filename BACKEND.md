@@ -109,6 +109,17 @@ Snapshot payload includes:
 
 Thin compatibility wrapper around `derive_agent_world_events()`.
 
+### `backend/voice_gateway.py`
+
+Handles optional Agent World-owned speech-to-text and text-to-speech requests.
+
+Current behavior:
+
+- reads provider settings from `agent_world.json`
+- currently supports the `openai` provider
+- calls the Python `openai` SDK directly
+- does not require an OpenClaw source checkout
+
 ## Heuristic Mapping
 
 The core semantic mapping table is `TOOL_TO_ANCHOR` in `state_mapper.py`.

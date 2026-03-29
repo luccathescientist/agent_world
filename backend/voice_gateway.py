@@ -1,97 +1,72 @@
-"""Agent World voice gateway helpers backed by OpenClaw runtime."""
+"""Agent World voice helpers backed directly by the configured provider."""
 
 from __future__ import annotations
 
-import base64
-import json
 import mimetypes
-import os
 from pathlib import Path
-import subprocess
 import tempfile
 from typing import Any, Dict, Optional
 
-from .settings import get_openclaw_workspace
+from .settings import (
+    get_voice_api_key,
+    get_voice_api_key_env_name,
+    get_voice_openai_version,
+    get_voice_provider,
+    get_voice_settings,
+)
 
 
-VOICE_BRIDGE_PATH = Path(__file__).resolve().parents[1] / "tools" / "openclaw_voice_bridge.mjs"
 DEFAULT_TRANSCRIBE_MODEL = "gpt-4o-mini-transcribe"
 DEFAULT_TTS_MODEL = "gpt-4o-mini-tts"
 DEFAULT_TTS_VOICE = "nova"
 
 
-def _bridge_payload(payload: Dict[str, Any], timeout: float = 120.0) -> Dict[str, Any]:
-    openclaw_workspace = get_openclaw_workspace()
-    openclaw_tsx_loader = (
-        openclaw_workspace / "node_modules" / "tsx" / "dist" / "loader.mjs"
-        if openclaw_workspace
-        else None
-    )
-    if not openclaw_workspace:
-        return {
+def _openai_client():
+    api_key = get_voice_api_key()
+    if not api_key:
+        return None, {
             "ok": False,
-            "reason": "openclaw_workspace_not_configured",
-            "detail": "Set OPENCLAW_WORKSPACE to an OpenClaw checkout before using voice features.",
-        }
-    if not openclaw_tsx_loader or not openclaw_tsx_loader.exists():
-        return {
-            "ok": False,
-            "reason": "openclaw_tsx_loader_missing",
-            "detail": f"Expected tsx loader at {openclaw_tsx_loader}",
-        }
-    proc = subprocess.run(
-        [
-            "node",
-            "--import",
-            str(openclaw_tsx_loader),
-            str(VOICE_BRIDGE_PATH),
-        ],
-        input=json.dumps(payload),
-        capture_output=True,
-        text=True,
-        cwd=str(openclaw_workspace),
-        timeout=timeout,
-    )
-    stdout = (proc.stdout or "").strip()
-    stderr = (proc.stderr or "").strip()
-    if not stdout:
-        return {
-            "ok": False,
-            "reason": "openclaw_voice_bridge_no_output",
-            "detail": stderr[:1000],
+            "reason": "voice_api_key_missing",
+            "detail": f"Set the {get_voice_api_key_env_name()} environment variable before using voice features.",
         }
     try:
-        result = json.loads(stdout.splitlines()[-1])
-    except Exception:
-        return {
+        from openai import OpenAI
+    except Exception as error:
+        return None, {
             "ok": False,
-            "reason": "openclaw_voice_bridge_invalid_output",
-            "detail": stdout[:1000] or stderr[:1000],
+            "reason": "openai_package_missing",
+            "detail": f"Install the openai Python package to enable voice features: {error}",
         }
-    if not result.get("ok"):
-        return {
-            "ok": False,
-            "reason": result.get("error") or result.get("reason") or "openclaw_voice_bridge_failed",
-            "detail": stderr[:1000] if stderr else None,
-        }
-    return result
+    return OpenAI(api_key=api_key), None
 
 
 def voice_config_payload() -> Dict[str, Any]:
-    result = _bridge_payload({"action": "status"}, timeout=30.0)
-    if not result.get("ok"):
-        return {
-            "ok": True,
-            "provider": "openclaw",
-            "configured": False,
-            "transcribeModel": DEFAULT_TRANSCRIBE_MODEL,
-            "speechModel": DEFAULT_TTS_MODEL,
-            "voices": ["nova"],
-            "defaultVoice": DEFAULT_TTS_VOICE,
-            "speechFormat": "mp3",
-            "detail": result.get("reason"),
-        }
-    return result
+    voice_settings = get_voice_settings()
+    provider = get_voice_provider()
+    api_key_env = get_voice_api_key_env_name()
+    openai_version = get_voice_openai_version()
+    configured = bool(provider == "openai" and openai_version and get_voice_api_key())
+    detail = None
+    if not configured:
+        if provider != "openai":
+            detail = f"Unsupported voice provider: {provider}"
+        elif not openai_version:
+            detail = "Install the openai Python package to enable Agent World voice."
+        else:
+            detail = f"Set the {api_key_env} environment variable to enable Agent World voice."
+    return {
+        "ok": True,
+        "provider": provider,
+        "configured": configured,
+        "transcribeModel": str(voice_settings.get("transcribeModel") or DEFAULT_TRANSCRIBE_MODEL),
+        "speechModel": str(voice_settings.get("speechModel") or DEFAULT_TTS_MODEL),
+        "voices": ["alloy", "ash", "ballad", "coral", "echo", "sage", "shimmer", "verse", "marin", "cedar"],
+        "defaultVoice": str(voice_settings.get("defaultVoice") or DEFAULT_TTS_VOICE),
+        "speechFormat": str(voice_settings.get("speechFormat") or "mp3"),
+        "apiKeyEnv": api_key_env,
+        "sdkVersion": openai_version,
+        "detail": detail,
+    }
 
 
 def transcribe_audio_bytes(
@@ -106,38 +81,33 @@ def transcribe_audio_bytes(
 ) -> Dict[str, Any]:
     if not audio_bytes:
         return {"ok": False, "reason": "empty_audio"}
+    provider = get_voice_provider()
+    if provider != "openai":
+        return {"ok": False, "reason": "unsupported_voice_provider", "detail": f"Unsupported provider: {provider}"}
+    client, error = _openai_client()
+    if error:
+        return error
 
     suffix = Path(filename or "voice.webm").suffix or mimetypes.guess_extension(content_type or "") or ".webm"
-    with tempfile.NamedTemporaryFile(prefix="agent-world-voice-", suffix=suffix, delete=False) as handle:
+    with tempfile.NamedTemporaryFile(prefix="agent-world-voice-", suffix=suffix, delete=True) as handle:
         handle.write(audio_bytes)
-        temp_path = handle.name
-
-    try:
-        result = _bridge_payload(
-            {
-                "action": "transcribe",
-                "filePath": temp_path,
-                "mimeType": content_type,
-                "model": model,
-                "language": language,
-                "prompt": prompt,
-            },
-            timeout=timeout,
-        )
-        if not result.get("ok"):
-            return result
-        return {
-            "ok": True,
-            "provider": "openclaw",
-            "upstreamProvider": result.get("upstreamProvider"),
-            "model": result.get("model") or model,
-            "text": str(result.get("text") or "").strip(),
-        }
-    finally:
-        try:
-            os.unlink(temp_path)
-        except OSError:
-            pass
+        handle.flush()
+        with open(handle.name, "rb") as audio_file:
+            response = client.audio.transcriptions.create(
+                file=audio_file,
+                model=model,
+                language=language or None,
+                prompt=prompt or None,
+                timeout=timeout,
+            )
+    text = response if isinstance(response, str) else getattr(response, "text", "")
+    return {
+        "ok": True,
+        "provider": "agent_world",
+        "upstreamProvider": "openai",
+        "model": model,
+        "text": str(text or "").strip(),
+    }
 
 
 def synthesize_speech_bytes(
@@ -151,39 +121,37 @@ def synthesize_speech_bytes(
     spoken = str(text or "").strip()
     if not spoken:
         return {"ok": False, "reason": "empty_text"}
+    provider = get_voice_provider()
+    if provider != "openai":
+        return {"ok": False, "reason": "unsupported_voice_provider", "detail": f"Unsupported provider: {provider}"}
+    client, error = _openai_client()
+    if error:
+        return error
 
-    result = _bridge_payload(
-        {
-            "action": "speech",
-            "text": spoken,
-            "model": model,
-            "voice": voice,
-            "format": response_format,
-        },
+    response = client.audio.speech.create(
+        input=spoken,
+        model=model,
+        voice=voice,
+        response_format=response_format,
         timeout=timeout,
     )
-    if not result.get("ok"):
-        return result
-    audio_b64 = str(result.get("audioBase64") or "").strip()
-    if not audio_b64:
-        return {"ok": False, "reason": "missing_audio_data"}
-    try:
-        audio = base64.b64decode(audio_b64)
-    except Exception:
-        return {"ok": False, "reason": "invalid_audio_data"}
-    output_format = str(result.get("outputFormat") or response_format or "mp3").strip().lower()
+    audio = response.read()
+    output_format = str(response_format or "mp3").strip().lower()
     mime_type = {
         "mp3": "audio/mpeg",
         "wav": "audio/wav",
         "opus": "audio/ogg",
         "ogg": "audio/ogg",
+        "aac": "audio/aac",
+        "flac": "audio/flac",
+        "pcm": "audio/L16",
     }.get(output_format, f"audio/{output_format}")
     return {
         "ok": True,
-        "provider": "openclaw",
-        "upstreamProvider": result.get("upstreamProvider"),
-        "model": result.get("model") or model,
-        "voice": result.get("voice") or voice,
+        "provider": "agent_world",
+        "upstreamProvider": "openai",
+        "model": model,
+        "voice": voice,
         "format": output_format,
         "audio": audio,
         "mimeType": mime_type,

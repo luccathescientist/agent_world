@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Agent World</title>
-  <link rel="stylesheet" href="/agent-world-static/styles.css?v=0.2.0-settings-5" />
+  <link rel="stylesheet" href="/agent-world-static/styles.css?v=0.2.0-settings-6" />
 </head>
 <body>
   <div class="app-shell">
@@ -22,7 +22,7 @@
         <div class="pill-row">
           <span class="pill" id="server-time">--</span>
           <span class="pill" id="openclaw-runtime-pill">OpenClaw --</span>
-          <span class="pill accent">build v0.2.0-dev5</span>
+          <span class="pill accent">build v0.2.0-dev6</span>
         </div>
       </div>
     </header>
@@ -410,10 +410,6 @@
               <input id="settings-openclaw-home" type="text" placeholder="~/.openclaw" />
             </label>
             <label class="editor-field">
-              <span>OpenClaw Workspace</span>
-              <input id="settings-openclaw-workspace" type="text" placeholder="~/workspace/openclaw" />
-            </label>
-            <label class="editor-field">
               <span>OpenClaw Media Dir</span>
               <input id="settings-openclaw-media-dir" type="text" placeholder="~/.openclaw/media" />
             </label>
@@ -425,6 +421,30 @@
               <span>Server Port</span>
               <input id="settings-server-port" type="number" min="1" max="65535" placeholder="8890" />
             </label>
+            <label class="editor-field">
+              <span>Voice Provider</span>
+              <input id="settings-voice-provider" type="text" placeholder="openai" />
+            </label>
+            <label class="editor-field">
+              <span>Voice API Key Env</span>
+              <input id="settings-voice-api-key-env" type="text" placeholder="OPENAI_API_KEY" />
+            </label>
+            <label class="editor-field">
+              <span>Transcribe Model</span>
+              <input id="settings-voice-transcribe-model" type="text" placeholder="gpt-4o-mini-transcribe" />
+            </label>
+            <label class="editor-field">
+              <span>Speech Model</span>
+              <input id="settings-voice-speech-model" type="text" placeholder="gpt-4o-mini-tts" />
+            </label>
+            <label class="editor-field">
+              <span>Default Voice</span>
+              <input id="settings-voice-default-voice" type="text" placeholder="nova" />
+            </label>
+            <label class="editor-field">
+              <span>Speech Format</span>
+              <input id="settings-voice-speech-format" type="text" placeholder="mp3" />
+            </label>
           </div>
           <label class="tile-editor-block">
             <span>Extra Allowed File Roots</span>
@@ -434,7 +454,7 @@
             <button id="settings-save" type="submit">Save Settings</button>
             <button id="settings-refresh" class="secondary-btn" type="button">Refresh Diagnostics</button>
           </div>
-          <p class="editor-copy">Settings are global to this Agent World install. Changes to the server bind host/port apply on the next server start.</p>
+          <p class="editor-copy">Settings are global to this Agent World install. OpenClaw paths are only for runtime state discovery, while voice settings belong to Agent World directly. Changes to the server bind host/port apply on the next server start.</p>
           <p id="settings-result" class="command-result"></p>
         </form>
       </section>
@@ -450,8 +470,6 @@
           <div><dt>OpenClaw Config</dt><dd id="resolved-openclaw-config">--</dd></div>
           <div><dt>Main Sessions</dt><dd id="resolved-main-sessions">--</dd></div>
           <div><dt>OpenClaw Media</dt><dd id="resolved-openclaw-media">--</dd></div>
-          <div><dt>OpenClaw Workspace</dt><dd id="resolved-openclaw-workspace">--</dd></div>
-          <div><dt>TSX Loader</dt><dd id="resolved-tsx-loader">--</dd></div>
         </dl>
       </section>
 
@@ -482,6 +500,6 @@
   </div>
 
   <script src="/agent-world-static/vendor/pixi.min.js"></script>
-  <script src="/agent-world-static/app.js?v=0.2.0-settings-5"></script>
+  <script src="/agent-world-static/app.js?v=0.2.0-settings-6"></script>
 </body>
 </html>
