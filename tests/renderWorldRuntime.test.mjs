@@ -166,3 +166,36 @@ test("renderWorldRuntime forwards renderer bootstrap and rich-message dependenci
   assert.ok(calls.includes("chooseDisplayFrames"));
   assert.ok(calls.some((entry) => Array.isArray(entry) && entry[0] === "showRichMessage"));
 });
+
+test("renderWorldRuntime forwards chat bubble markup into chat rendering", () => {
+  const calls = [];
+  const runtime = createRenderWorldRuntime({}, {
+    documentRef: {
+      createElement(tag) {
+        return { tag };
+      },
+    },
+    renderChatShell: (_state, history, deps) => {
+      calls.push(["renderChat", history]);
+      const markup = deps.chatBubbleMarkup("assistant", "AI", "event", "now", "<p>body</p>");
+      assert.equal(markup, "<article>bubble</article>");
+      deps.applyChatRoleTheme({}, "assistant");
+    },
+    chatBubbleMarkup: () => "<article>bubble</article>",
+    applyChatRoleTheme: () => calls.push("applyChatRoleTheme"),
+    setText: () => {},
+    formatRichTextHtml: (value) => value,
+    formatTime: (value) => value,
+    historyRoleClass: () => "assistant",
+    historyRoleMetaHelper: () => ({ label: "Lucca", icon: "AI" }),
+    classifyPath: () => "file",
+    extractPaths: () => [],
+    fileUrl: (value) => value,
+    maybeSpeakReply: () => {},
+  });
+
+  runtime.renderChat([{ type: "assistant_reply", label: "Hello", ts: "now" }]);
+
+  assert.ok(calls.some((entry) => Array.isArray(entry) && entry[0] === "renderChat"));
+  assert.ok(calls.includes("applyChatRoleTheme"));
+});
