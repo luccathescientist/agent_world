@@ -264,6 +264,20 @@ import {
   syncEditorInputs as syncEditorInputsShell,
 } from "./app/editorShell.js";
 import {
+  closeWorldDetails as closeWorldDetailsShell,
+  connectStream as connectStreamShell,
+  handleStreamSnapshot as handleStreamSnapshotShell,
+  renderChat as renderChatShell,
+  renderHistory as renderHistoryShell,
+  renderInspector as renderInspectorShell,
+  renderSchedule as renderScheduleShell,
+  renderStash as renderStashShell,
+  renderWorld as renderWorldShell,
+  showRichMessage as showRichMessageShell,
+  showStashItem as showStashItemShell,
+  syncSelectedAgentDetailFromWorld as syncSelectedAgentDetailFromWorldShell,
+} from "./app/worldShell.js";
+import {
   populateAgentSelect as populateAgentSelectHelper,
   populateRegionIdSelect as populateRegionIdSelectHelper,
   setActiveTab as setActiveTabHelper,
@@ -1566,13 +1580,14 @@ window.addEventListener("resize", () => {
 });
 
 function renderWorld(worldState) {
-  return renderWorldHelper(appState, worldState, {
+  return renderWorldShell(appState, worldState, {
     bubblePaletteForAgent,
     createAgentSprite,
     createBenchmarkSprite,
     formatDate,
     isBenchmarkAgent,
     populateAgentSelect,
+    renderWorldHelper,
     setText,
     shouldShowAgentSprite,
     syncSelectedAgentDetailFromWorld,
@@ -1583,16 +1598,18 @@ function renderWorld(worldState) {
 }
 
 function syncSelectedAgentDetailFromWorld(worldState) {
-  return syncSelectedAgentDetailFromWorldHelper(appState, worldState, {
+  return syncSelectedAgentDetailFromWorldShell(appState, worldState, {
     renderInspector,
+    syncSelectedAgentDetailFromWorldHelper,
   });
 }
 
 function renderInspector(detailPayload) {
-  return renderInspectorHelper(appState, detailPayload, {
+  return renderInspectorShell(appState, detailPayload, {
     displayedLocationLabel,
     documentRef: document,
     formatDate,
+    renderInspectorHelper,
     setText,
     showRichMessage,
     statusClass,
@@ -1600,7 +1617,7 @@ function renderInspector(detailPayload) {
 }
 
 async function showRichMessage(kind, title, text, path = null) {
-  return showRichMessageHelper(appState, kind, title, text, path, {
+  return showRichMessageShell(appState, kind, title, text, path, {
     classifyPath,
     createElement: (tag) => document.createElement(tag),
     documentRef: document,
@@ -1613,6 +1630,7 @@ async function showRichMessage(kind, title, text, path = null) {
     renderRichText,
     setMessageSelection,
     setText,
+    showRichMessageHelper,
     windowRef: window,
   });
 }
@@ -1622,7 +1640,7 @@ function historyRoleMeta(type) {
 }
 
 function renderChat(history) {
-  return renderChatHelper(appState, history, {
+  return renderChatShell(appState, history, {
     applyChatRoleTheme,
     chatBubbleMarkup,
     classifyPath,
@@ -1635,6 +1653,7 @@ function renderChat(history) {
     historyRoleClass,
     historyRoleMeta,
     maybeSpeakReply,
+    renderChatHelper,
     setText,
     showRichMessage,
     windowRef: window,
@@ -1642,45 +1661,50 @@ function renderChat(history) {
 }
 
 function renderHistory(events) {
-  return renderHistoryHelper(events, {
+  return renderHistoryShell(events, {
     createElement: (tag) => document.createElement(tag),
     documentRef: document,
     extractPaths,
     formatTime,
     renderChat,
+    renderHistoryHelper,
     showRichMessage,
   });
 }
 
 function renderSchedule(detailPayload) {
-  return renderScheduleHelper(detailPayload, {
+  return renderScheduleShell(detailPayload, {
     createElement: (tag) => document.createElement(tag),
     documentRef: document,
     formatDate,
+    renderScheduleHelper,
     setText,
     showRichMessage,
   });
 }
 
 function showStashItem(item) {
-  return showStashItemHelper(item, {
+  return showStashItemShell(item, {
     formatDate,
     showRichMessage,
+    showStashItemHelper,
   });
 }
 
 function renderStash(stash) {
-  return renderStashHelper(appState, stash, {
+  return renderStashShell(appState, stash, {
     createElement: (tag) => document.createElement(tag),
     documentRef: document,
     formatDate,
+    renderStashHelper,
     setText,
     showStashItem,
   });
 }
 
 function handleStreamSnapshot(payload) {
-  return handleStreamSnapshotHelper(payload, {
+  return handleStreamSnapshotShell(payload, {
+    handleStreamSnapshotHelper,
     renderHistory,
     renderInspector,
     renderSchedule,
@@ -1690,9 +1714,10 @@ function handleStreamSnapshot(payload) {
 }
 
 function connectStream() {
-  return connectStreamHelper(appState, {
+  return connectStreamShell(appState, {
     EventSourceCtor: EventSource,
     URLSearchParamsCtor: URLSearchParams,
+    connectStreamHelper,
     consoleRef: console,
     handleStreamSnapshot,
     setText,
@@ -1714,7 +1739,8 @@ async function selectAgent(agentId) {
 }
 
 function closeWorldDetails() {
-  return closeWorldDetailsHelper(appState, {
+  return closeWorldDetailsShell(appState, {
+    closeWorldDetailsHelper,
     connectStream,
     documentRef: document,
     renderHistory,
