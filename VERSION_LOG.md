@@ -64,7 +64,7 @@ Uncommitted working tree changes currently include:
 
 ## Release 0.2.0: Settings and OpenClaw diagnostics
 
-Status: `planned`
+Status: `in progress`
 
 Expected focus:
 
@@ -73,9 +73,17 @@ Expected focus:
 - diagnostics for required OpenClaw files and voice readiness
 - clearer documentation of OpenClaw state dependencies
 
-Commits:
+### Committed
 
-- none yet
+#### `c576e28` - `Add settings UI, raw config editing, and OpenClaw diagnostics`
+
+Added the standalone settings model, settings UI, raw config editor, and feature-oriented OpenClaw diagnostics for runtime visibility and debugging.
+
+### In Progress
+
+Uncommitted working tree changes currently include:
+
+- version-log maintenance for the `0.2.0` settings checkpoint
 
 ---
 
