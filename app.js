@@ -6,7 +6,6 @@ import {
   CHAT_BUBBLE_SLOT_LAYOUT,
   DEFAULT_ANCHOR_TILES,
   DEFAULT_CHAT_BUBBLE_FRAME,
-  DEFAULT_CHAT_TEXT_COLORS,
   DEFAULT_FLOOR_ATLAS_PATH,
   DEFAULT_OFFICE_ATLAS_PATH,
   DEFAULT_SELECTED_AGENT_ID,
@@ -71,6 +70,15 @@ import {
   syncSettingsForm as syncSettingsFormHelper,
   syncSettingsJsonEditor as syncSettingsJsonEditorHelper,
 } from "./src/features/settings/settingsPanel.js";
+import {
+  applyChatBubbleFrameStyles as applyChatBubbleFrameStylesHelper,
+  applyChatRoleTheme as applyChatRoleThemeHelper,
+  chatBubbleMarkup,
+  chatBubbleSlotOverlayMarkup as chatBubbleSlotOverlayMarkupHelper,
+  normalizeChatBubbleTheme,
+  normalizeChatBubbleThemes,
+  selectedChatBubbleTheme as selectedChatBubbleThemeHelper,
+} from "./src/features/chat/chatBubbleThemes.js";
 import {
   classifyPath,
   displayActionText as displayActionTextHelper,
@@ -213,7 +221,7 @@ import {
 } from "./src/features/voice/voiceController.js";
 import { initDomEvents, startApp } from "./src/bootstrap/domEvents.js";
 import { appState } from "./src/state/appState.js";
-let chatBubbleAtlasImagePromise = null;
+const chatBubbleThemeState = { atlasImagePromise: null };
 
 function setVoiceStatus(text, isError = false) {
   const el = document.getElementById("voice-status");
@@ -511,184 +519,24 @@ function populateRegionIdSelect(select) {
   select.value = appState.editor.regionId || "";
 }
 
-function normalizeChatBubbleFrame(rawFrame) {
-  const frame = Object.fromEntries(
-    Object.entries(DEFAULT_CHAT_BUBBLE_FRAME).map(([key, value]) => [key, { ...value }]),
-  );
-  for (const key of Object.keys(frame)) {
-    const rawValue = rawFrame?.[key];
-    if (rawValue && typeof rawValue === "object") {
-      const token = String(rawValue.token || "").trim();
-      const layer = rawValue.layer === "floor" ? "floor" : "wall";
-      if (/^\d+:\d+$/.test(token)) frame[key] = { layer, token };
-      continue;
-    }
-    const legacyToken = String(rawValue || "").trim();
-    if (/^\d+:\d+$/.test(legacyToken)) frame[key] = { layer: "wall", token: legacyToken };
-  }
-  return frame;
-}
-
-function normalizeChatBubbleTheme(rawTheme, role) {
-  return {
-    frame: normalizeChatBubbleFrame(rawTheme?.frame || rawTheme),
-    textColor: /^#[0-9a-f]{6}$/i.test(String(rawTheme?.textColor || "").trim())
-      ? String(rawTheme.textColor).trim()
-      : DEFAULT_CHAT_TEXT_COLORS[role] || "#fff4d7",
-  };
-}
-
-function normalizeChatBubbleThemes(rawValue) {
-  if (rawValue?.assistant || rawValue?.tool || rawValue?.user) {
-    return {
-      assistant: normalizeChatBubbleTheme(rawValue.assistant, "assistant"),
-      tool: normalizeChatBubbleTheme(rawValue.tool, "tool"),
-      user: normalizeChatBubbleTheme(rawValue.user, "user"),
-    };
-  }
-  const sharedFrame = normalizeChatBubbleFrame(rawValue);
-  return {
-    assistant: { frame: sharedFrame, textColor: DEFAULT_CHAT_TEXT_COLORS.assistant },
-    tool: { frame: sharedFrame, textColor: DEFAULT_CHAT_TEXT_COLORS.tool },
-    user: { frame: sharedFrame, textColor: DEFAULT_CHAT_TEXT_COLORS.user },
-  };
-}
-
 function selectedChatBubbleTheme() {
-  return appState.chatBubbleThemes[appState.editor.selectedChatBubbleRole] || appState.chatBubbleThemes.assistant;
-}
-
-function chatBubbleTokenToBackgroundPosition(token) {
-  const match = String(token || "").match(/^(\d+):(\d+)$/);
-  if (!match) return "0px 0px";
-  const x = Number(match[1]);
-  const y = Number(match[2]);
-  return `${-(x - 1) * TILE_SIZE}px ${-(y - 1) * TILE_SIZE}px`;
-}
-
-function chatBubbleAtlasPathForLayer(layer) {
-  return layer === "floor"
-    ? (appState.renderer?.assets?.layout?.floorAtlasPath || DEFAULT_FLOOR_ATLAS_PATH)
-    : (appState.renderer?.assets?.layout?.wallAtlasPath || DEFAULT_WALL_ATLAS_PATH);
+  return selectedChatBubbleThemeHelper(appState);
 }
 
 function applyChatBubbleFrameStyles() {
-  const root = document.documentElement;
-  if (!root) return;
-  for (const role of ["assistant", "tool", "user"]) {
-    const theme = appState.chatBubbleThemes[role];
-    root.style.setProperty(`--chat-${role}-text-color`, theme?.textColor || DEFAULT_CHAT_TEXT_COLORS[role]);
-    for (const slot of Object.keys(DEFAULT_CHAT_BUBBLE_FRAME)) {
-      root.style.setProperty(`--chat-${role}-${slot}`, chatBubbleTokenToBackgroundPosition(theme?.frame?.[slot]?.token));
-    }
-  }
-  void applyChatBubbleFrameImages();
-}
-
-function loadChatBubbleAtlasImage(atlasPath) {
-  const key = atlasPath || DEFAULT_WALL_ATLAS_PATH;
-  if (!chatBubbleAtlasImagePromise) chatBubbleAtlasImagePromise = new Map();
-  if (chatBubbleAtlasImagePromise.has(key)) return chatBubbleAtlasImagePromise.get(key);
-  const promise = new Promise((resolve, reject) => {
-    const image = new Image();
-    image.onload = () => resolve(image);
-    image.onerror = () => reject(new Error("Failed to load wall atlas for chat bubbles."));
-    image.src = key;
+  return applyChatBubbleFrameStylesHelper(appState, chatBubbleThemeState, {
+    consoleRef: console,
+    documentRef: document,
+    ImageCtor: Image,
   });
-  chatBubbleAtlasImagePromise.set(key, promise);
-  return promise;
-}
-
-function buildChatBubbleTileDataUrl(image, token) {
-  const match = String(token || "").match(/^(\d+):(\d+)$/);
-  if (!match) return "";
-  const x = Number(match[1]);
-  const y = Number(match[2]);
-  const canvas = document.createElement("canvas");
-  canvas.width = TILE_SIZE;
-  canvas.height = TILE_SIZE;
-  const context = canvas.getContext("2d");
-  if (!context) return "";
-  context.imageSmoothingEnabled = false;
-  context.drawImage(
-    image,
-    (x - 1) * TILE_SIZE,
-    (y - 1) * TILE_SIZE,
-    TILE_SIZE,
-    TILE_SIZE,
-    0,
-    0,
-    TILE_SIZE,
-    TILE_SIZE,
-  );
-  return canvas.toDataURL("image/png");
-}
-
-async function applyChatBubbleFrameImages() {
-  const root = document.documentElement;
-  if (!root) return;
-  try {
-    for (const role of ["assistant", "tool", "user"]) {
-      const theme = appState.chatBubbleThemes[role];
-      for (const slot of Object.keys(DEFAULT_CHAT_BUBBLE_FRAME)) {
-        const slotDef = theme?.frame?.[slot];
-        const atlasPath = chatBubbleAtlasPathForLayer(slotDef?.layer);
-        const atlasImage = await loadChatBubbleAtlasImage(atlasPath);
-        const dataUrl = buildChatBubbleTileDataUrl(atlasImage, slotDef?.token);
-        root.style.setProperty(`--chat-${role}-${slot}-image`, dataUrl ? `url("${dataUrl}")` : "none");
-      }
-    }
-  } catch (error) {
-    console.warn(error);
-  }
-}
-
-function chatBubbleMarkup(role, metaLabel, eventType, time, bodyHtml) {
-  return `
-    <div class="chat-bubble-frame">
-      <span class="chat-bubble-tile tl" aria-hidden="true"></span>
-      <span class="chat-bubble-tile tm" aria-hidden="true"></span>
-      <span class="chat-bubble-tile tr" aria-hidden="true"></span>
-      <span class="chat-bubble-tile ml" aria-hidden="true"></span>
-      <div class="chat-bubble-content">
-        <div class="chat-meta">
-          <span class="chat-role-badge">${metaLabel}</span>
-          <span class="chat-event-type">${eventType}</span>
-          <span class="chat-time">${time}</span>
-        </div>
-        <div class="chat-body">${bodyHtml}</div>
-      </div>
-      <span class="chat-bubble-tile mr" aria-hidden="true"></span>
-      <span class="chat-bubble-tile bl" aria-hidden="true"></span>
-      <span class="chat-bubble-tile bm" aria-hidden="true"></span>
-      <span class="chat-bubble-tile br" aria-hidden="true"></span>
-    </div>
-  `;
 }
 
 function chatBubbleSlotOverlayMarkup(role) {
-  return `
-    <div class="chat-bubble-slot-overlay" data-role="${escapeHtml(role)}">
-      ${["tl", "tm", "tr", "ml", "mm", "mr", "bl", "bm", "br"].map((slot) => `
-        <button
-          class="chat-bubble-slot-hotspot ${slot}${appState.editor.selectedChatBubbleRole === role && appState.editor.selectedChatBubbleSlot === slot ? " active" : ""}"
-          type="button"
-          data-role="${escapeHtml(role)}"
-          data-slot="${slot}"
-          aria-label="${escapeHtml(role)} ${escapeHtml(slot)}"
-          title="${escapeHtml(role)} ${escapeHtml(slot)}"
-        ></button>
-      `).join("")}
-    </div>
-  `;
+  return chatBubbleSlotOverlayMarkupHelper(role, appState, { escapeHtml });
 }
 
 function applyChatRoleTheme(element, role) {
-  if (!element) return;
-  for (const slot of Object.keys(DEFAULT_CHAT_BUBBLE_FRAME)) {
-    element.style.setProperty(`--chat-role-${slot}-image`, `var(--chat-${role}-${slot}-image)`);
-  }
-  element.style.setProperty("--chat-role-text-color", `var(--chat-${role}-text-color)`);
+  return applyChatRoleThemeHelper(element, role);
 }
 
 function statusClass(runtimeStatus) {
