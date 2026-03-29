@@ -92,6 +92,14 @@ import {
   stripControlTags as stripControlTagsHelper,
 } from "./src/features/chat/messageView.js";
 import {
+  closeWorldDetails as closeWorldDetailsHelper,
+  connectStream as connectStreamHelper,
+  handleStreamSnapshot as handleStreamSnapshotHelper,
+  renderInspector as renderInspectorHelper,
+  selectAgent as selectAgentHelper,
+  syncSelectedAgentDetailFromWorld as syncSelectedAgentDetailFromWorldHelper,
+} from "./src/features/world/agentDetails.js";
+import {
   appendVoiceTranscript as appendVoiceTranscriptHelper,
   ensureMicMeter as ensureMicMeterHelper,
   fetchVoiceConfig as fetchVoiceConfigHelper,
@@ -3255,47 +3263,20 @@ function renderWorld(worldState) {
 }
 
 function syncSelectedAgentDetailFromWorld(worldState) {
-  if (!appState.selectedAgentId || !worldState?.agents?.length) return;
-  const liveAgent = worldState.agents.find((agent) => agent.id === appState.selectedAgentId);
-  if (!liveAgent) return;
-  if (!appState.detail?.agent || appState.detail.agent.id !== liveAgent.id) {
-    renderInspector({ agent: liveAgent, session: appState.detail?.session || {} });
-    return;
-  }
-  appState.detail = {
-    ...appState.detail,
-    agent: {
-      ...appState.detail.agent,
-      ...liveAgent,
-    },
-  };
-  renderInspector(appState.detail);
+  return syncSelectedAgentDetailFromWorldHelper(appState, worldState, {
+    renderInspector,
+  });
 }
 
 function renderInspector(detailPayload) {
-  const detail = detailPayload?.agent;
-  const session = detailPayload?.session || {};
-  appState.detail = detailPayload;
-  if (!detail) return;
-  setText("selected-agent-id", detail.id);
-  setText("agent-name", detail.name);
-  setText("agent-model", detail.model);
-  setText("agent-runtime-status", detail.runtimeStatus);
-  setText("agent-location", displayedLocationLabel(detail));
-  setText("agent-action", detail.currentActionFull || detail.currentAction);
-  setText("agent-visual-state", detail.visualState);
-  setText("agent-tool", detail.lastTool || "none");
-  setText("agent-queue-depth", String(detail.queueDepth ?? 0));
-  setText("agent-session-label", detail.sessionLabel || session.sessionKey || "--");
-  setText("agent-last-channel", session.lastChannel || "--");
-  setText("agent-waiting-reason", detail.waitingReason || "none");
-  setText("agent-updated", formatDate(detail.lastUpdatedAt));
-  const badge = document.getElementById("agent-status-badge");
-  badge.textContent = detail.runtimeStatus || "--";
-  badge.className = `status-badge ${statusClass(detail.runtimeStatus)}`;
-  if (!appState.messageSelection.locked || appState.messageSelection.kind === "current") {
-    showRichMessage("current", `${detail.name} current action`, detail.currentActionFull || detail.currentAction);
-  }
+  return renderInspectorHelper(appState, detailPayload, {
+    displayedLocationLabel,
+    documentRef: document,
+    formatDate,
+    setText,
+    showRichMessage,
+    statusClass,
+  });
 }
 
 async function showRichMessage(kind, title, text, path = null) {
@@ -3383,61 +3364,50 @@ function renderStash(stash) {
 }
 
 function handleStreamSnapshot(payload) {
-  if (payload.world) renderWorld(payload.world);
-  if (payload.detail?.ok) {
-    renderInspector(payload.detail);
-    renderHistory(payload.detail.history || []);
-    renderSchedule(payload.detail);
-    renderStash(payload.detail.stash || []);
-    return;
-  }
-  if (payload.events?.events) renderHistory(payload.events.events);
+  return handleStreamSnapshotHelper(payload, {
+    renderHistory,
+    renderInspector,
+    renderSchedule,
+    renderStash,
+    renderWorld,
+  });
 }
 
 function connectStream() {
-  if (appState.stream) {
-    appState.stream.close();
-    appState.stream = null;
-  }
-  const params = new URLSearchParams();
-  if (appState.selectedAgentId) params.set("agent_id", appState.selectedAgentId);
-  const stream = new EventSource(`/api/agent-world/stream?${params.toString()}`);
-  stream.onmessage = (event) => {
-    try {
-      handleStreamSnapshot(JSON.parse(event.data));
-    } catch (err) {
-      console.error("stream parse error", err);
-    }
-  };
-  stream.onerror = () => setText("command-result", "Live stream disconnected. Retrying...");
-  appState.stream = stream;
+  return connectStreamHelper(appState, {
+    EventSourceCtor: EventSource,
+    URLSearchParamsCtor: URLSearchParams,
+    consoleRef: console,
+    handleStreamSnapshot,
+    setText,
+  });
 }
 
 async function selectAgent(agentId) {
-  appState.selectedAgentId = agentId;
-  syncWorldDetailVisibility();
-  setMessageSelection("current", "--", "Loading agent detail...", null, false);
-  if (appState.world) renderWorld(appState.world);
-  const detail = await getJson(`/api/agent-world/agents/${encodeURIComponent(agentId)}`);
-  renderInspector(detail);
-  renderHistory(detail.history || []);
-  renderSchedule(detail);
-  renderStash(detail.stash || []);
-  connectStream();
+  return selectAgentHelper(appState, agentId, {
+    connectStream,
+    getJson,
+    renderHistory,
+    renderInspector,
+    renderSchedule,
+    renderStash,
+    renderWorld,
+    setMessageSelection,
+    syncWorldDetailVisibility,
+  });
 }
 
 function closeWorldDetails() {
-  appState.selectedAgentId = null;
-  appState.detail = null;
-  syncWorldDetailVisibility();
-  setText("agent-status-badge", "--");
-  const badge = document.getElementById("agent-status-badge");
-  if (badge) badge.className = "status-badge";
-  if (appState.world) renderWorld(appState.world);
-  renderHistory([]);
-  renderSchedule(null);
-  renderStash([]);
-  connectStream();
+  return closeWorldDetailsHelper(appState, {
+    connectStream,
+    documentRef: document,
+    renderHistory,
+    renderSchedule,
+    renderStash,
+    renderWorld,
+    setText,
+    syncWorldDetailVisibility,
+  });
 }
 
 async function saveGameState() {
