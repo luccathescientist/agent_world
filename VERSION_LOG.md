@@ -83,7 +83,7 @@ Added the standalone settings model, settings UI, raw config editor, and feature
 
 Moved voice to an Agent World-owned backend with direct OpenAI SDK calls, split voice diagnostics into clearer checks, and added repo-local `.env` loading.
 
-#### `<pending>` - `Refine the editor workspace layout and preview behavior`
+#### `2473018` - `Refine editor workspace previews and subviews`
 
 Reworked the editor into clearer subviews with responsive world previews, room-mapping preview parity, and a consolidated chat-bubble palette workflow.
 
@@ -91,7 +91,7 @@ Reworked the editor into clearer subviews with responsive world previews, room-m
 
 Uncommitted working tree changes currently include:
 
-- none after the next checkpoint commit
+- none
 
 ---
 
