@@ -89,6 +89,17 @@ import {
   updateBubble as updateBubbleHelper,
 } from "./features/world/agentSprites.js";
 import {
+  activityCue as activityCueHelper,
+  bubblePaletteForAgent as bubblePaletteForAgentHelper,
+  displayedLocationLabel as displayedLocationLabelHelper,
+  hashString,
+  isInactiveAgent as isInactiveAgentHelper,
+  isMainAgent,
+  parseTimestampMs,
+  shouldShowAgentSprite as shouldShowAgentSpriteHelper,
+  statusClass,
+} from "./features/world/presentation.js";
+import {
   applyPathing as applyPathingHelper,
   currentTileForAgent as currentTileForAgentHelper,
   effectiveGoalTileForAgent as effectiveGoalTileForAgentHelper,
@@ -244,52 +255,6 @@ const chatBubbleSlotOverlayMarkup = (role) => chatBubbleSlotOverlayMarkupHelper(
 
 const applyChatRoleTheme = (element, role) => applyChatRoleThemeHelper(element, role);
 
-function statusClass(runtimeStatus) {
-  if (runtimeStatus === "blocked") return "blocked";
-  if (runtimeStatus === "waiting_user") return "waiting";
-  if (runtimeStatus === "offline") return "offline";
-  return "active";
-}
-
-function hashString(text) {
-  let hash = 0;
-  for (let index = 0; index < text.length; index += 1) {
-    hash = ((hash << 5) - hash) + text.charCodeAt(index);
-    hash |= 0;
-  }
-  return Math.abs(hash);
-}
-
-function bubblePaletteForAgent(agent) {
-  if (agent?.id === "lucca-main") return { fill: 0x111111, stroke: 0xf6e8bf, text: 0xf6ebc7 };
-  const seed = `${agent?.id || "agent"}:${agent?.name || ""}`;
-  return AGENT_BUBBLE_PALETTES[hashString(seed) % AGENT_BUBBLE_PALETTES.length];
-}
-
-function isMainAgent(agent) {
-  return agent?.id === "lucca-main";
-}
-
-function parseTimestampMs(value) {
-  if (!value || typeof value !== "string") return 0;
-  const ms = Date.parse(value);
-  return Number.isFinite(ms) ? ms : 0;
-}
-
-function isInactiveAgent(agent, nowMs = Date.now()) {
-  if (!agent || isMainAgent(agent)) return false;
-  if (agent.runtimeStatus === "active" || agent.runtimeStatus === "blocked" || agent.runtimeStatus === "waiting_user") {
-    return false;
-  }
-  const updatedMs = parseTimestampMs(agent.lastUpdatedAt);
-  return updatedMs > 0 && (nowMs - updatedMs) >= AGENT_INACTIVE_HIDE_MS;
-}
-
-function shouldShowAgentSprite(agent) {
-  if (!agent) return true;
-  return !isInactiveAgent(agent);
-}
-
 function nextAmbientRandom(state) {
   const current = Number.isFinite(state?.ambientSeed) ? state.ambientSeed >>> 0 : 1;
   const next = ((current * 1664525) + 1013904223) >>> 0;
@@ -323,26 +288,9 @@ function roomLabelForAnchor(anchorId) {
   return anchor?.label || String(anchorId || "room");
 }
 
-function activityCue(agent, sprite, moving) {
-  if (moving) return "🚶";
-  if (agent.visualState === "messaging") return "✉️";
-  if (agent.visualState === "reading") return "📚";
-  if (agent.visualState === "working" || agent.visualState === "writing") return "🛠️";
-  if (agent.visualState === "blocked") return "⚠️";
-  if (isIdleLikeAgent(agent)) return "😴";
-  return "💭";
-}
-
-function displayedLocationLabel(agent) {
-  const renderedRoomId = roomIdForAgent(agent);
-  const renderedRoom = roomLabelForAnchor(renderedRoomId);
-  const backendRoomId = agent.currentAnchor || agent.targetAnchor || renderedRoomId;
-  const backendRoom = roomLabelForAnchor(backendRoomId);
-  if (renderedRoomId !== backendRoomId) {
-    return `${renderedRoom} (rendered)`;
-  }
-  return backendRoom;
-}
+const bubblePaletteForAgent = (agent) => bubblePaletteForAgentHelper(agent, { hashString });
+const isInactiveAgent = (agent, nowMs = Date.now()) => isInactiveAgentHelper(agent, nowMs, { isMainAgent, parseTimestampMs });
+const shouldShowAgentSprite = (agent) => shouldShowAgentSpriteHelper(agent, { isInactiveAgent });
 
 function normalizePersistenceSnapshot(rawValue = {}, layout = {}) {
   return normalizePersistenceSnapshotHelper(rawValue, layout, {
@@ -407,6 +355,9 @@ function roomIdForAgent(agent) {
     isIdleLikeAgent,
   });
 }
+
+const activityCue = (agent, sprite, moving) => activityCueHelper(agent, sprite, moving, { isIdleLikeAgent });
+const displayedLocationLabel = (agent) => displayedLocationLabelHelper(agent, { roomIdForAgent, roomLabelForAnchor });
 
 function roomGoalTile(anchorId, startTile = null) {
   return roomGoalTileHelper(anchorId, startTile, {
