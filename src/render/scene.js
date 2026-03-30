@@ -1,3 +1,8 @@
+/*
+ * Static room-scene drawing helpers.
+ * This file renders floor/object layers, room/anchor labels, stash markers,
+ * and editor overlays for the PIXI scene graph.
+ */
 import { TILE_SIZE } from "../core/constants.js";
 
 export function getFloorTexture(renderer, floorToken, helpers = {}) {

@@ -1,3 +1,8 @@
+/*
+ * Thin renderer-shell adapters.
+ * This layer binds app-owned state and PIXI globals to renderer modules without
+ * moving renderer ownership or browser glue into the feature modules.
+ */
 export function getFloorTexture(renderer, floorToken, deps = {}) {
   const {
     getFloorTextureHelper = () => null,

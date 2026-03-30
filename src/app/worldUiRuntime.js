@@ -1,3 +1,8 @@
+/*
+ * Composed world/chat/detail runtime.
+ * This module owns agent selection, live stream wiring, inspector/chat/stash
+ * rendering, and the app-facing runtime for world detail views.
+ */
 import { setText as setTextDefault } from "../core/dom.js";
 import { formatDate as formatDateDefault, formatTime as formatTimeDefault } from "../core/format.js";
 import { getJson as getJsonDefault } from "../core/http.js";

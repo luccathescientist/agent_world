@@ -1,3 +1,8 @@
+/*
+ * Frontend entrypoint and top-level composition layer.
+ * This file wires together shared app state, browser globals, renderer
+ * ownership, and the composed runtimes that drive the frontend.
+ */
 import {
   AGENT_BUBBLE_PALETTES,
   AGENT_INACTIVE_HIDE_MS,

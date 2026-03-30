@@ -1,3 +1,8 @@
+/*
+ * Thin world/chat/detail shell adapters.
+ * These wrappers expose app-oriented entrypoints for the extracted world and
+ * message-view modules while preserving dependency injection.
+ */
 export function renderWorld(state, worldState, deps = {}) {
   const {
     bubblePaletteForAgent = () => ({}),

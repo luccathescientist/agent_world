@@ -1,3 +1,8 @@
+/*
+ * DOM event registration for the frontend.
+ * This file wires the static page controls to the composed app/runtime APIs but
+ * deliberately avoids owning the underlying feature logic itself.
+ */
 export function initDomEvents(state, deps = {}) {
   const {
     applyEditorState = () => {},

@@ -1,3 +1,8 @@
+/*
+ * Shared local-storage helpers.
+ * This file centralizes JSON/text persistence helpers so feature modules can
+ * read and write browser storage through a small common surface.
+ */
 export function getStoredMap(key, fallback) {
   try {
     return localStorage.getItem(key) || fallback;

@@ -1,3 +1,8 @@
+/*
+ * Shared frontend constants.
+ * This file centralizes stable IDs, defaults, storage keys, tile sizes, and
+ * visual/editor configuration values used across the frontend modules.
+ */
 export const TILE_SIZE = 32;
 export const WORLD_TOP_PADDING = 48;
 export const DEFAULT_WORLD_COLS = 30;

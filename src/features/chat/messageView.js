@@ -1,3 +1,8 @@
+/*
+ * Message and chat presentation helpers.
+ * This file owns rich-text rendering, message selection, chat/history/schedule
+ * rendering, and stash-item presentation for the detail UI.
+ */
 import { PATH_RE } from "../../core/constants.js";
 
 export function setMessageSelection(state, kind, title, body, path = null, locked = true) {

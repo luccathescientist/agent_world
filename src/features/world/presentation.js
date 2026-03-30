@@ -1,3 +1,8 @@
+/*
+ * World presentation helpers.
+ * This module owns small, reusable display decisions such as status classes,
+ * activity cues, visibility rules, palettes, and displayed room labels.
+ */
 import { AGENT_BUBBLE_PALETTES, AGENT_INACTIVE_HIDE_MS } from "../../core/constants.js";
 
 export function statusClass(runtimeStatus) {

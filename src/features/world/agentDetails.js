@@ -1,3 +1,8 @@
+/*
+ * Selected-agent detail and stream helpers.
+ * This file keeps the inspector/detail state in sync with world snapshots and
+ * owns agent-detail selection and SSE stream update flows.
+ */
 export function syncSelectedAgentDetailFromWorld(state, worldState, helpers = {}) {
   const { renderInspector = () => {} } = helpers;
   if (!state.selectedAgentId || !worldState?.agents?.length) return;

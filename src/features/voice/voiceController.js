@@ -1,3 +1,8 @@
+/*
+ * Voice-controller helpers.
+ * This module owns microphone capture, transcript/debug rendering, device
+ * refresh, and speech playback helpers for the voice UI.
+ */
 import { TILEMAP_STORAGE_KEYS } from "../../core/constants.js";
 
 export async function fetchVoiceConfig(state, helpers = {}) {

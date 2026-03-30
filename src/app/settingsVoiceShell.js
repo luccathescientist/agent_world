@@ -1,3 +1,8 @@
+/*
+ * Thin settings/voice shell adapters.
+ * These wrappers keep settings and voice modules testable while exposing an
+ * app-oriented interface for browser-bound dependencies.
+ */
 export function setVoiceStatus(text, isError = false, deps = {}) {
   const { documentRef = document } = deps;
   const el = documentRef.getElementById("voice-status");

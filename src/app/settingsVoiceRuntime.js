@@ -1,3 +1,8 @@
+/*
+ * Composed settings and voice runtime.
+ * This module binds settings diagnostics, voice capture, speech playback, and
+ * related browser APIs into one runtime surface used by the entrypoint.
+ */
 import { setText as setTextDefault } from "../core/dom.js";
 import { escapeHtml as escapeHtmlDefault, formatTime as formatTimeDefault } from "../core/format.js";
 import { getJson as getJsonDefault, postJson as postJsonDefault } from "../core/http.js";

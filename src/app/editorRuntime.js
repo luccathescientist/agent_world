@@ -1,3 +1,8 @@
+/*
+ * Composed editor runtime.
+ * This module binds editor features, draft-state mutations, and editor-facing
+ * world callbacks into the API that the entrypoint and DOM events use.
+ */
 import { setText as setTextDefault } from "../core/dom.js";
 import { escapeHtml as escapeHtmlDefault } from "../core/format.js";
 import { setStoredJson as setStoredJsonDefault, setStoredMap as setStoredMapDefault } from "../core/storage.js";

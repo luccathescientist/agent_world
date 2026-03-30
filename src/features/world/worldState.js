@@ -1,3 +1,8 @@
+/*
+ * Normalized world-state selectors and layout helpers.
+ * This file owns room-region normalization, stash normalization, anchor lookup,
+ * world dimension selectors, and tilemap state derivation.
+ */
 import {
   CANONICAL_ANCHOR_ALIASES,
   DEFAULT_ANCHOR_TILES,

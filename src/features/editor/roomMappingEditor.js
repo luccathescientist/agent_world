@@ -1,3 +1,8 @@
+/*
+ * Room-mapping editor helpers.
+ * This module owns region assignment, region resolution, region deletion, and
+ * label-position updates for editor-managed room metadata.
+ */
 import { TILEMAP_STORAGE_KEYS } from "../../core/constants.js";
 
 export function assignRegionSelection(state, helpers = {}) {

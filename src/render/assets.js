@@ -1,3 +1,8 @@
+/*
+ * Renderer asset bootstrap helpers.
+ * This module loads art assets and builds the texture maps used by the PIXI
+ * renderer without owning scene composition or app startup.
+ */
 import {
   DEFAULT_CHAT_BUBBLE_FRAME,
   TILE_SIZE,

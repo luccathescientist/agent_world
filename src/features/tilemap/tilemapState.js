@@ -1,3 +1,8 @@
+/*
+ * Tilemap and game-state persistence helpers.
+ * This module owns snapshot normalization, game-state payload building, and
+ * local-storage synchronization for imported/exported world state.
+ */
 import {
   DEFAULT_CHAT_BUBBLE_FRAME,
   DEFAULT_FLOOR_ATLAS_PATH,

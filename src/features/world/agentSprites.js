@@ -1,3 +1,8 @@
+/*
+ * Agent-sprite presentation helpers.
+ * This module owns sprite/frame selection, bubble and label positioning, and
+ * small sprite-facing presentation updates used by the live renderer.
+ */
 export function spriteFramesForAgent(renderer, agent) {
   const frames = renderer?.assets?.spriteFrames?.[agent?.spriteSeed];
   return frames || renderer.assets.frames;

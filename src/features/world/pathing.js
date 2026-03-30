@@ -1,3 +1,8 @@
+/*
+ * World pathing and movement helpers.
+ * This file owns tile/point conversion, walkability checks, pathfinding, and
+ * ambient movement goal selection for rendered agents.
+ */
 import {
   ROOM_LANDMARK_TOKENS,
   SEAT_FURNITURE_TILES,

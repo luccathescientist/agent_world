@@ -1,3 +1,8 @@
+/*
+ * Live world renderer helpers.
+ * This module owns viewport sizing, scene offset syncing, agent ticking, and
+ * world-state rendering on top of the PIXI scene and sprite layers.
+ */
 export function mountRendererView(state, helpers = {}) {
   const {
     documentRef = document,

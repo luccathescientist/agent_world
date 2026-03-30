@@ -1,3 +1,8 @@
+/*
+ * PIXI app bootstrap helpers.
+ * This module initializes the PIXI application, installs pointer handlers, and
+ * connects renderer startup behavior to the app-facing callbacks it needs.
+ */
 import {
   DEFAULT_FLOOR_ATLAS_PATH,
   DEFAULT_OFFICE_ATLAS_PATH,

@@ -1,3 +1,8 @@
+/*
+ * Settings-panel UI helpers.
+ * This module owns settings form synchronization, diagnostics rendering, and
+ * settings JSON editor presentation for the frontend settings tab.
+ */
 export function renderCodeWithLineNumbers(text, helpers = {}) {
   const { escapeHtml = (value) => value } = helpers;
   const lines = String(text || "").split("\n");

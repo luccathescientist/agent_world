@@ -1,3 +1,8 @@
+/*
+ * Shared formatting helpers.
+ * This file holds safe HTML escaping and lightweight date/time formatting used
+ * throughout the frontend presentation layer.
+ */
 export function escapeHtml(value) {
   return String(value ?? "")
     .replaceAll("&", "&amp;")

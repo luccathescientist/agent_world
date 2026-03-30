@@ -1,3 +1,8 @@
+/*
+ * Tilemap text parsing and serialization helpers.
+ * This file owns floor/object token parsing, row normalization, grid shape
+ * validation, and text serialization for tilemap drafts and persistence.
+ */
 import {
   DEFAULT_WORLD_COLS,
   DEFAULT_WORLD_ROWS,

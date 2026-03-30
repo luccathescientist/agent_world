@@ -1,3 +1,8 @@
+/*
+ * Thin editor-shell adapters.
+ * These helpers keep editor feature modules dependency-injected while exposing
+ * app-friendly wrappers for the entrypoint and composed runtimes.
+ */
 export function setActiveEditorSubview(state, viewName, deps = {}) {
   const {
     drawRoom = () => {},

@@ -1,3 +1,8 @@
+/*
+ * Chat-bubble theme and frame helpers.
+ * This module owns normalization, theme selection, CSS variable updates, and
+ * atlas-frame handling for the chat bubble presentation layer.
+ */
 import {
   DEFAULT_CHAT_BUBBLE_FRAME,
   DEFAULT_CHAT_TEXT_COLORS,

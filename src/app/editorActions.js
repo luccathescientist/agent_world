@@ -1,3 +1,8 @@
+/*
+ * Editor draft-state and mutation helpers.
+ * These functions update editor-owned tilemap drafts and selection-driven edits
+ * without taking ownership of DOM wiring or renderer lifecycle concerns.
+ */
 import {
   DEFAULT_FLOOR_ATLAS_PATH,
   DEFAULT_OFFICE_ATLAS_PATH,

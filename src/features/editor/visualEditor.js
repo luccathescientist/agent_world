@@ -1,3 +1,8 @@
+/*
+ * Visual editor rendering helpers.
+ * This module renders the atlas-driven editor UI, selection preview, and
+ * editor subviews without owning higher-level app/runtime wiring.
+ */
 import {
   CHAT_BUBBLE_PREVIEW_SAMPLES,
   DEFAULT_CHAT_TEXT_COLORS,

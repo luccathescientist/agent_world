@@ -1,3 +1,8 @@
+/*
+ * Core editor-state mutation helpers.
+ * This file owns editor apply/reset behavior, grid-resize helpers, and pointer
+ * coordinate helpers that update editor-facing state.
+ */
 import {
   DEFAULT_CHAT_BUBBLE_FRAME,
   TILE_SIZE,

@@ -1,3 +1,8 @@
+/*
+ * Small app-shell UI helpers.
+ * This file owns lightweight app-level DOM updates such as tabs, selectors,
+ * status labels, and world-detail visibility toggles.
+ */
 export function setTilemapStatus(text, isError = false, deps = {}) {
   const { documentRef = document } = deps;
   const el = documentRef.getElementById("tilemap-status");

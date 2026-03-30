@@ -1,3 +1,8 @@
+/*
+ * Agent-editor presentation helpers.
+ * This module renders the agent preview panel and computes sprite-preview data
+ * for the visual editor without owning broader editor orchestration.
+ */
 export function previewSpriteFrame(state, agent, helpers = {}) {
   const {
     previewSpriteFrameName = () => "idle_0",

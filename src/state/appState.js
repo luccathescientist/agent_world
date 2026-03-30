@@ -1,3 +1,8 @@
+/*
+ * Shared mutable frontend state.
+ * This plain object remains the main in-memory state container for the app,
+ * but it is now centralized so modules can depend on one stable state shape.
+ */
 import { DEFAULT_WORLD_COLS, DEFAULT_WORLD_ROWS } from "../core/constants.js";
 
 export const appState = {

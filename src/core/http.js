@@ -1,3 +1,8 @@
+/*
+ * Shared HTTP helpers.
+ * These wrappers provide consistent JSON/text request handling for frontend API
+ * calls without baking fetch behavior into feature modules.
+ */
 export async function getJson(url, options) {
   const res = await fetch(url, options);
   if (!res.ok) throw new Error(`Request failed: ${res.status}`);

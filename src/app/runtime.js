@@ -1,3 +1,8 @@
+/*
+ * App runtime flows for save/load, movement, and command submission.
+ * These helpers coordinate stateful app actions that span persistence, HTTP,
+ * renderer refreshes, and world selection state.
+ */
 import { DEFAULT_SELECTED_AGENT_ID, DEFAULT_WORLD_COLS, DEFAULT_WORLD_ROWS } from "../core/constants.js";
 
 export function applyStructuredGameState(state, snapshot, successMessage = "Loaded game state.", deps = {}) {
