@@ -146,44 +146,8 @@ import {
 } from "./render/worldRenderer.js";
 import { initRenderer as initRendererHelper } from "./render/pixiApp.js";
 import {
-  applyEditorState as applyEditorStateHelper,
-  applyVisualAtlasCell as applyVisualAtlasCellHelper,
-  applyVisualToken as applyVisualTokenHelper,
-  assignChatBubbleTile as assignChatBubbleTileHelper,
-  assignStashSelection as assignStashSelectionHelper,
-  clearStashSelection as clearStashSelectionHelper,
-  commitDraftTilemap as commitDraftTilemapHelper,
-  getAtlasPointerCell as getAtlasPointerCellHelper,
   getCanvasCellFromEvent as getCanvasCellFromEventHelper,
-  resetChatBubbleFrame as resetChatBubbleFrameHelper,
-  resetEditorState as resetEditorStateHelper,
-  resizeGridText as resizeGridTextHelper,
-  resizeTilemapGrid as resizeTilemapGridHelper,
-  setChatBubbleTextColor as setChatBubbleTextColorHelper,
-  setHoveredMapCell as setHoveredMapCellHelper,
-  setSelectedMapCell as setSelectedMapCellHelper,
-  setVisualLayer as setVisualLayerHelper,
 } from "./features/editor/editorState.js";
-import {
-  previewSpriteFrame as previewSpriteFrameHelper,
-  previewSpriteFrameName,
-  renderAgentEditorPanel as renderAgentEditorPanelHelper,
-  shouldMirrorPreviewSprite,
-} from "./features/editor/agentEditor.js";
-import {
-  assignRegionSelection as assignRegionSelectionHelper,
-  clearRegionSelection as clearRegionSelectionHelper,
-  deleteRoomRegion as deleteRoomRegionHelper,
-  resolveRoomRegion as resolveRoomRegionHelper,
-  setRegionLabelPosition as setRegionLabelPositionHelper,
-} from "./features/editor/roomMappingEditor.js";
-import {
-  renderVisualEditor as renderVisualEditorHelper,
-  renderVisualSelectionPreview as renderVisualSelectionPreviewHelper,
-  renderEditorSubviews as renderEditorSubviewsHelper,
-  setActiveEditorSubview as setActiveEditorSubviewHelper,
-  syncEditorInputs as syncEditorInputsHelper,
-} from "./features/editor/visualEditor.js";
 import {
   maybeSpeakReply as maybeSpeakReplyHelper,
   normalizeSpeechText,
@@ -209,45 +173,7 @@ import {
   syncRendererCanvasSize as syncRendererCanvasSizeShell,
   syncSceneOffset as syncSceneOffsetShell,
 } from "./app/renderShell.js";
-import {
-  applyVisualAtlasCell as applyVisualAtlasCellAction,
-  applyVisualToken as applyVisualTokenAction,
-  assignChatBubbleTile as assignChatBubbleTileAction,
-  assignRegionSelection as assignRegionSelectionAction,
-  assignStashSelection as assignStashSelectionAction,
-  clearRegionSelection as clearRegionSelectionAction,
-  clearStashSelection as clearStashSelectionAction,
-  commitDraftTilemap as commitDraftTilemapAction,
-  deleteRoomRegion as deleteRoomRegionAction,
-  getAssignedAtlasCell as getAssignedAtlasCellAction,
-  getAssignedPreviewToken as getAssignedPreviewTokenAction,
-  getAtlasPathForLayer as getAtlasPathForLayerAction,
-  getDraftCellValue as getDraftCellValueAction,
-  getDraftFloorLines as getDraftFloorLinesAction,
-  getDraftObjectLines as getDraftObjectLinesAction,
-  getSelectedCells as getSelectedCellsAction,
-  getSelectionBounds as getSelectionBoundsAction,
-  getVisualLayerConfig as getVisualLayerConfigAction,
-  resetChatBubbleFrame as resetChatBubbleFrameAction,
-  resolveRoomRegion as resolveRoomRegionAction,
-  resizeGridText as resizeGridTextAction,
-  resizeTilemapGrid as resizeTilemapGridAction,
-  setChatBubbleTextColor as setChatBubbleTextColorAction,
-  setHoveredMapCell as setHoveredMapCellAction,
-  setRegionLabelPosition as setRegionLabelPositionAction,
-  setSelectedMapCell as setSelectedMapCellAction,
-  setVisualLayer as setVisualLayerAction,
-  updateDraftCell as updateDraftCellAction,
-} from "./app/editorActions.js";
-import {
-  previewSpriteFrame as previewSpriteFrameShell,
-  renderAgentEditorPanel as renderAgentEditorPanelShell,
-  renderEditorSubviews as renderEditorSubviewsShell,
-  renderVisualEditor as renderVisualEditorShell,
-  renderVisualSelectionPreview as renderVisualSelectionPreviewShell,
-  setActiveEditorSubview as setActiveEditorSubviewShell,
-  syncEditorInputs as syncEditorInputsShell,
-} from "./app/editorShell.js";
+import { createEditorRuntime } from "./app/editorRuntime.js";
 import { createSettingsVoiceRuntime } from "./app/settingsVoiceRuntime.js";
 import { createWorldUiRuntime } from "./app/worldUiRuntime.js";
 import {
@@ -764,37 +690,6 @@ function setActiveTab(tabName) {
   });
 }
 
-function setActiveEditorSubview(viewName) {
-  return setActiveEditorSubviewShell(appState, viewName, {
-    drawRoom,
-    mountRendererView,
-    renderEditorSubviews,
-    renderVisualEditor,
-    resizeRendererViewport,
-    setActiveEditorSubviewHelper,
-  });
-}
-
-function renderEditorSubviews() {
-  return renderEditorSubviewsShell(appState, {
-    documentRef: document,
-    renderEditorSubviewsHelper,
-    setText,
-  });
-}
-
-function syncEditorInputs() {
-  return syncEditorInputsShell(appState, {
-    documentRef: document,
-    getWorldCols,
-    getWorldRows,
-    renderVisualEditor,
-    syncEditorInputsHelper,
-    setText,
-    syncGameStateTextarea,
-  });
-}
-
 function applyStructuredGameState(snapshot, successMessage = "Loaded game state.") {
   return applyStructuredGameStateHelper(appState, snapshot, successMessage, {
     applyChatBubbleFrameStyles,
@@ -810,239 +705,10 @@ function applyStructuredGameState(snapshot, successMessage = "Loaded game state.
   });
 }
 
-function renderVisualSelectionPreview() {
-  return renderVisualSelectionPreviewShell(appState, {
-    documentRef: document,
-    getAssignedAtlasCell,
-    getAssignedPreviewToken,
-    getDraftCellValue,
-    getVisualLayerConfig,
-    renderVisualSelectionPreviewHelper,
-    selectedChatBubbleTheme,
-  });
-}
-
-function renderVisualEditor() {
-  return renderVisualEditorShell(appState, {
-    applyChatRoleTheme,
-    chatBubbleMarkup,
-    chatBubbleSlotOverlayMarkup,
-    deleteRoomRegion,
-    documentRef: document,
-    drawRoom,
-    formatRichTextHtml,
-    getAtlasPathForLayer,
-    getDraftCellValue,
-    getSelectedCells,
-    getVisualLayerConfig,
-    getWorldCols,
-    getWorldRows,
-    normalizeStashPoint,
-    populateRegionIdSelect,
-    renderAgentEditorPanel,
-    renderVisualEditorHelper,
-    renderVisualSelectionPreview,
-    selectedChatBubbleTheme,
-    syncRendererCanvasSize,
-  });
-}
-
-function renderAgentEditorPanel() {
-  return renderAgentEditorPanelShell(appState, {
-    documentRef: document,
-    escapeHtml,
-    previewSpriteFrame,
-    renderAgentEditorPanelHelper,
-    setText,
-    shouldShowAgentSprite,
-  });
-}
-
-function previewSpriteFrame(agent) {
-  return previewSpriteFrameShell(appState, agent, {
-    previewSpriteFrameHelper,
-    previewSpriteFrameName,
-    shouldMirrorPreviewSprite,
-  });
-}
-
 function renderEditorSelectionOverlay(renderer) {
   return renderEditorSelectionOverlayHelper(appState, renderer, {
     getSelectedCells,
     PIXIRef: PIXI,
-  });
-}
-
-function assignRegionSelection() {
-  return assignRegionSelectionAction(appState, {
-    assignRegionSelectionHelper,
-    canonicalizeAnchorId,
-    cellsKeySet,
-    commitDraftTilemap,
-    getSelectedCells,
-    normalizeRoomRegions,
-    setStoredJson,
-    setTilemapStatus,
-  });
-}
-
-function resolveRoomRegion(rawId, selectedCell = null) {
-  return resolveRoomRegionAction(appState, rawId, selectedCell, {
-    canonicalizeAnchorId,
-    regionForCell,
-    resolveRoomRegionHelper,
-  });
-}
-
-function deleteRoomRegion(regionId) {
-  return deleteRoomRegionAction(appState, regionId, {
-    canonicalizeAnchorId,
-    commitDraftTilemap,
-    deleteRoomRegionHelper,
-    normalizeRoomRegions,
-    setStoredJson,
-    setTilemapStatus,
-  });
-}
-
-function setRegionLabelPosition() {
-  return setRegionLabelPositionAction(appState, {
-    drawRoom,
-    normalizeRoomRegions,
-    renderVisualEditor,
-    resolveRoomRegion,
-    setRegionLabelPositionHelper,
-    setStoredJson,
-    setTilemapStatus,
-  });
-}
-
-function clearRegionSelection() {
-  return clearRegionSelectionAction(appState, {
-    cellsKeySet,
-    clearRegionSelectionHelper,
-    commitDraftTilemap,
-    getSelectedCells,
-    normalizeRoomRegions,
-    setStoredJson,
-    setTilemapStatus,
-  });
-}
-
-function commitDraftTilemap(successMessage = "Applied draft tilemap.") {
-  return commitDraftTilemapAction(appState, successMessage, {
-    buildTilemapState,
-    commitDraftTilemapHelper,
-    drawRoom,
-    renderWorld,
-    resizeRendererViewport,
-    setStoredJson,
-    setStoredMap,
-    setTilemapStatus,
-    syncEditorInputs,
-  });
-}
-
-function resizeGridText(text, cols, rows, fillToken, parser, serializer) {
-  return resizeGridTextAction(text, cols, rows, fillToken, parser, serializer, {
-    parseMapText,
-    resizeGridTextHelper,
-  });
-}
-
-function resizeTilemapGrid(cols, rows) {
-  return resizeTilemapGridAction(appState, cols, rows, {
-    buildTilemapState,
-    drawRoom,
-    getWorldCols,
-    getWorldRows,
-    parseFloorRow,
-    parseObjectRow,
-    renderWorld,
-    resizeGridText,
-    resizeRendererViewport,
-    resizeTilemapGridHelper,
-    serializeFloorLines,
-    serializeObjectLines,
-    setStoredJson,
-    setStoredMap,
-    setTilemapStatus,
-    syncEditorInputs,
-  });
-}
-
-function applyVisualToken(rawValue) {
-  return applyVisualTokenAction(appState, rawValue, {
-    applyVisualTokenHelper,
-    commitDraftTilemap,
-    getSelectedCells,
-    setTilemapStatus,
-    updateDraftCell,
-  });
-}
-
-function applyVisualAtlasCell(atlasCell) {
-  return applyVisualAtlasCellAction(appState, atlasCell, {
-    applyVisualAtlasCellHelper,
-    applyVisualToken,
-  });
-}
-
-function assignChatBubbleTile() {
-  return assignChatBubbleTileAction(appState, {
-    applyChatBubbleFrameStyles,
-    assignChatBubbleTileHelper,
-    renderChat,
-    renderVisualEditor,
-    selectedChatBubbleTheme,
-    setStoredJson,
-    setTilemapStatus,
-  });
-}
-
-function resetChatBubbleFrame() {
-  return resetChatBubbleFrameAction(appState, {
-    applyChatBubbleFrameStyles,
-    normalizeChatBubbleTheme,
-    renderChat,
-    renderVisualEditor,
-    resetChatBubbleFrameHelper,
-    setStoredJson,
-    setTilemapStatus,
-  });
-}
-
-function setChatBubbleTextColor(color) {
-  return setChatBubbleTextColorAction(appState, color, {
-    applyChatBubbleFrameStyles,
-    renderChat,
-    renderVisualEditor,
-    selectedChatBubbleTheme,
-    setChatBubbleTextColorHelper,
-    setStoredJson,
-  });
-}
-
-function setVisualLayer(layerName) {
-  return setVisualLayerAction(appState, layerName, {
-    renderVisualEditor,
-    setVisualLayerHelper,
-  });
-}
-
-function setSelectedMapCell(row, col) {
-  return setSelectedMapCellAction(appState, row, col, {
-    drawRoom,
-    regionForCell,
-    renderVisualEditor,
-    setSelectedMapCellHelper,
-  });
-}
-
-function setHoveredMapCell(row, col) {
-  return setHoveredMapCellAction(appState, row, col, {
-    drawRoom,
-    setHoveredMapCellHelper,
   });
 }
 
@@ -1053,28 +719,6 @@ function createStashBox() {
     normalizeStashPoint,
     PIXIRef: PIXI,
     showStashItem,
-  });
-}
-
-function assignStashSelection() {
-  return assignStashSelectionAction(appState, {
-    assignStashSelectionHelper,
-    drawRoom,
-    normalizeStashPoint,
-    renderVisualEditor,
-    setStoredJson,
-    setTilemapStatus,
-  });
-}
-
-function clearStashSelection() {
-  return clearStashSelectionAction(appState, {
-    clearStashSelectionHelper,
-    drawRoom,
-    normalizeStashPoint,
-    renderVisualEditor,
-    setStoredJson,
-    setTilemapStatus,
   });
 }
 
@@ -1264,6 +908,86 @@ const {
   windowRef: window,
 });
 
+const {
+  applyEditorState,
+  applyVisualAtlasCell,
+  applyVisualToken,
+  assignChatBubbleTile,
+  assignRegionSelection,
+  assignStashSelection,
+  clearRegionSelection,
+  clearStashSelection,
+  commitDraftTilemap,
+  deleteRoomRegion,
+  getAssignedAtlasCell,
+  getAssignedPreviewToken,
+  getAtlasPathForLayer,
+  getAtlasPointerCell,
+  getDraftCellValue,
+  getDraftFloorLines,
+  getDraftObjectLines,
+  getSelectedCells,
+  getSelectionBounds,
+  getVisualLayerConfig,
+  previewSpriteFrame,
+  renderAgentEditorPanel,
+  renderEditorSubviews,
+  renderVisualEditor,
+  renderVisualSelectionPreview,
+  resetChatBubbleFrame,
+  resetEditorState,
+  resolveRoomRegion,
+  resizeGridText,
+  resizeTilemapGrid,
+  setActiveEditorSubview,
+  setChatBubbleTextColor,
+  setHoveredMapCell,
+  setRegionLabelPosition,
+  setSelectedMapCell,
+  setVisualLayer,
+  syncEditorInputs,
+  toggleEditMode,
+} = createEditorRuntime(appState, {
+  PIXIRef: PIXI,
+  applyChatBubbleFrameStyles,
+  applyChatRoleTheme,
+  buildTilemapState,
+  canonicalizeAnchorId,
+  cellsKeySet,
+  chatBubbleMarkup,
+  chatBubbleSlotOverlayMarkup,
+  documentRef: document,
+  drawRoom,
+  escapeHtml,
+  formatRichTextHtml,
+  getWorldCols,
+  getWorldRows,
+  mountRendererView,
+  normalizeChatBubbleTheme,
+  normalizeRoomRegions,
+  normalizeStashPoint,
+  parseFloorRow,
+  parseFloorToken,
+  parseMapText,
+  parseObjectRow,
+  parseObjectToken,
+  populateRegionIdSelect,
+  regionForCell,
+  renderChat,
+  renderWorld,
+  resizeRendererViewport,
+  selectedChatBubbleTheme,
+  serializeFloorLines,
+  serializeObjectLines,
+  setStoredJson,
+  setStoredMap,
+  setText,
+  setTilemapStatus,
+  shouldShowAgentSprite,
+  syncGameStateTextarea,
+  syncRendererCanvasSize,
+});
+
 async function saveGameState() {
   return saveGameStateHelper(appState, {
     applyStructuredGameState,
@@ -1286,35 +1010,6 @@ async function moveSelectedAgentToAnchor() {
     postJson,
     renderInspector,
     renderWorld,
-  });
-}
-
-function applyEditorState() {
-  return applyEditorStateHelper(appState, {
-    commitDraftTilemap,
-    documentRef: document,
-  });
-}
-
-function resetEditorState() {
-  return resetEditorStateHelper(appState, {
-    applyEditorState,
-    documentRef: document,
-    setStoredMap,
-  });
-}
-
-function toggleEditMode() {
-  appState.editor.enabled = !appState.editor.enabled;
-  syncEditorInputs();
-  drawRoom(appState.renderer);
-  if (appState.world) renderWorld(appState.world);
-}
-
-function getAtlasPointerCell(event) {
-  return getAtlasPointerCellHelper(event, {
-    documentRef: document,
-    getVisualLayerConfig,
   });
 }
 
