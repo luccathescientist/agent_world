@@ -64,32 +64,14 @@ import {
   selectedChatBubbleTheme as selectedChatBubbleThemeHelper,
 } from "./features/chat/chatBubbleThemes.js";
 import {
-  classifyPath,
   displayActionText as displayActionTextHelper,
-  extractPaths,
-  fileUrl,
   formatInlineRichText as formatInlineRichTextHelper,
   formatRichTextHtml as formatRichTextHtmlHelper,
   historyRoleClass,
-  historyRoleMeta as historyRoleMetaHelper,
-  renderChat as renderChatHelper,
-  renderHistory as renderHistoryHelper,
   renderRichText as renderRichTextHelper,
-  renderSchedule as renderScheduleHelper,
-  renderStash as renderStashHelper,
   setMessageSelection as setMessageSelectionHelper,
-  showRichMessage as showRichMessageHelper,
-  showStashItem as showStashItemHelper,
   stripControlTags,
 } from "./features/chat/messageView.js";
-import {
-  closeWorldDetails as closeWorldDetailsHelper,
-  connectStream as connectStreamHelper,
-  handleStreamSnapshot as handleStreamSnapshotHelper,
-  renderInspector as renderInspectorHelper,
-  selectAgent as selectAgentHelper,
-  syncSelectedAgentDetailFromWorld as syncSelectedAgentDetailFromWorldHelper,
-} from "./features/world/agentDetails.js";
 import {
   chooseDisplayFrames as chooseDisplayFramesHelper,
   collectFrameSequence,
@@ -267,20 +249,7 @@ import {
   syncEditorInputs as syncEditorInputsShell,
 } from "./app/editorShell.js";
 import { createSettingsVoiceRuntime } from "./app/settingsVoiceRuntime.js";
-import {
-  closeWorldDetails as closeWorldDetailsShell,
-  connectStream as connectStreamShell,
-  handleStreamSnapshot as handleStreamSnapshotShell,
-  renderChat as renderChatShell,
-  renderHistory as renderHistoryShell,
-  renderInspector as renderInspectorShell,
-  renderSchedule as renderScheduleShell,
-  renderStash as renderStashShell,
-  renderWorld as renderWorldShell,
-  showRichMessage as showRichMessageShell,
-  showStashItem as showStashItemShell,
-  syncSelectedAgentDetailFromWorld as syncSelectedAgentDetailFromWorldShell,
-} from "./app/worldShell.js";
+import { createWorldUiRuntime } from "./app/worldUiRuntime.js";
 import {
   populateAgentSelect as populateAgentSelectHelper,
   populateRegionIdSelect as populateRegionIdSelectHelper,
@@ -1255,176 +1224,49 @@ window.addEventListener("resize", () => {
   resizeRendererViewport();
 });
 
-function renderWorld(worldState) {
-  return renderWorldShell(appState, worldState, {
-    bubblePaletteForAgent,
-    createAgentSprite,
-    createBenchmarkSprite,
-    formatDate,
-    isBenchmarkAgent,
-    populateAgentSelect,
-    renderWorldHelper,
-    setText,
-    shouldShowAgentSprite,
-    syncSelectedAgentDetailFromWorld,
-    updateActivityCue,
-    updateAgentLabel,
-    updateBubble,
-  });
-}
-
-function syncSelectedAgentDetailFromWorld(worldState) {
-  return syncSelectedAgentDetailFromWorldShell(appState, worldState, {
-    renderInspector,
-    syncSelectedAgentDetailFromWorldHelper,
-  });
-}
-
-function renderInspector(detailPayload) {
-  return renderInspectorShell(appState, detailPayload, {
-    displayedLocationLabel,
-    documentRef: document,
-    formatDate,
-    renderInspectorHelper,
-    setText,
-    showRichMessage,
-    statusClass,
-  });
-}
-
-async function showRichMessage(kind, title, text, path = null) {
-  return showRichMessageShell(appState, kind, title, text, path, {
-    classifyPath,
-    createElement: (tag) => document.createElement(tag),
-    documentRef: document,
-    extractPaths,
-    fetchText: async (url) => {
-      const res = await fetch(url);
-      return res.text();
-    },
-    fileUrl,
-    renderRichText,
-    setMessageSelection,
-    setText,
-    showRichMessageHelper,
-    windowRef: window,
-  });
-}
-
-const historyRoleMeta = (type) => historyRoleMetaHelper(type, { historyRoleClass });
-
-function renderChat(history) {
-  return renderChatShell(appState, history, {
-    applyChatRoleTheme,
-    chatBubbleMarkup,
-    classifyPath,
-    createElement: (tag) => document.createElement(tag),
-    documentRef: document,
-    extractPaths,
-    fileUrl,
-    formatRichTextHtml,
-    formatTime,
-    historyRoleClass,
-    historyRoleMeta,
-    maybeSpeakReply,
-    renderChatHelper,
-    setText,
-    showRichMessage,
-    windowRef: window,
-  });
-}
-
-function renderHistory(events) {
-  return renderHistoryShell(events, {
-    createElement: (tag) => document.createElement(tag),
-    documentRef: document,
-    extractPaths,
-    formatTime,
-    renderChat,
-    renderHistoryHelper,
-    showRichMessage,
-  });
-}
-
-function renderSchedule(detailPayload) {
-  return renderScheduleShell(detailPayload, {
-    createElement: (tag) => document.createElement(tag),
-    documentRef: document,
-    formatDate,
-    renderScheduleHelper,
-    setText,
-    showRichMessage,
-  });
-}
-
-function showStashItem(item) {
-  return showStashItemShell(item, {
-    formatDate,
-    showRichMessage,
-    showStashItemHelper,
-  });
-}
-
-function renderStash(stash) {
-  return renderStashShell(appState, stash, {
-    createElement: (tag) => document.createElement(tag),
-    documentRef: document,
-    formatDate,
-    renderStashHelper,
-    setText,
-    showStashItem,
-  });
-}
-
-function handleStreamSnapshot(payload) {
-  return handleStreamSnapshotShell(payload, {
-    handleStreamSnapshotHelper,
-    renderHistory,
-    renderInspector,
-    renderSchedule,
-    renderStash,
-    renderWorld,
-  });
-}
-
-function connectStream() {
-  return connectStreamShell(appState, {
-    EventSourceCtor: EventSource,
-    URLSearchParamsCtor: URLSearchParams,
-    connectStreamHelper,
-    consoleRef: console,
-    handleStreamSnapshot,
-    setText,
-  });
-}
-
-async function selectAgent(agentId) {
-  return selectAgentHelper(appState, agentId, {
-    connectStream,
-    getJson,
-    renderHistory,
-    renderInspector,
-    renderSchedule,
-    renderStash,
-    renderWorld,
-    setMessageSelection,
-    syncWorldDetailVisibility,
-  });
-}
-
-function closeWorldDetails() {
-  return closeWorldDetailsShell(appState, {
-    closeWorldDetailsHelper,
-    connectStream,
-    documentRef: document,
-    renderHistory,
-    renderSchedule,
-    renderStash,
-    renderWorld,
-    setText,
-    syncWorldDetailVisibility,
-  });
-}
+const {
+  closeWorldDetails,
+  connectStream,
+  handleStreamSnapshot,
+  renderChat,
+  renderHistory,
+  renderInspector,
+  renderSchedule,
+  renderStash,
+  renderWorld,
+  selectAgent,
+  showRichMessage,
+  showStashItem,
+  syncSelectedAgentDetailFromWorld,
+} = createWorldUiRuntime(appState, {
+  applyChatRoleTheme,
+  bubblePaletteForAgent,
+  chatBubbleMarkup,
+  createAgentSprite,
+  createBenchmarkSprite,
+  displayedLocationLabel,
+  documentRef: document,
+  EventSourceCtor: EventSource,
+  fetchRef: fetch,
+  formatDate,
+  formatRichTextHtml,
+  formatTime,
+  getJson,
+  isBenchmarkAgent,
+  maybeSpeakReply,
+  populateAgentSelect,
+  renderRichText,
+  setMessageSelection,
+  setText,
+  shouldShowAgentSprite,
+  statusClass,
+  syncWorldDetailVisibility,
+  updateActivityCue,
+  updateAgentLabel,
+  updateBubble,
+  URLSearchParamsCtor: URLSearchParams,
+  windowRef: window,
+});
 
 async function saveGameState() {
   return saveGameStateHelper(appState, {
