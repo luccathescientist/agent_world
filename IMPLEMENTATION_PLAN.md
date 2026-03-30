@@ -119,6 +119,33 @@ Goal: generalize the editor into a reusable world builder rather than a project-
 - let users mark directional animation frames manually
 - map OpenClaw-discovered agents to configured sprites
 - add preview tooling for directional motion and idle behavior
+- define a strict world-bundle contract so the editor produces bundle artifacts and the runtime consumes only that contract
+- include in that contract: schema version, bundle metadata, map layouts, tilemaps, manifests, asset paths, room/anchor mappings, stash metadata, chat bubble themes, agent visual mappings, and runtime-facing layout metadata
+- treat bundle loading as a plugin-like world swap mechanism rather than editor/runtime internal coupling
+- support selecting bundles from the UI and later loading bundles from GitHub repositories
+
+### Track 4.5: Agent creation and activation
+
+Goal: let users create new agents directly from the UI and bring them to life in-world.
+
+- add a `New Agent` flow for name, model, function, and visual identity
+- let users choose or upload the sprite/visual mapping for the new agent
+- support defining basic role/task behavior such as recurring or daily jobs
+- write agent definitions back into backend config such as `openclaw.json`
+- support a controlled gateway reboot/reload path after config mutation
+- make the new agent appear in-world after the backend restart and state refresh
+
+### Track 4.6: Multi-floor and multi-building worlds
+
+Goal: grow the world model from a single layout into a neighborhood-scale environment.
+
+- support multiple maps per bundle
+- add floor/building ids and transitions between them
+- model portals, stairs, elevators, doors, and other travel edges explicitly
+- support per-map asset/layout configuration inside a single bundle
+- extend pathing and world selection so agents can move across map boundaries
+- add UI affordances for editing and navigating multiple floors/buildings
+- keep this layered on top of the bundle contract rather than extending the current single-layout assumptions directly
 
 ### Track 5: Voice interaction
 
@@ -179,6 +206,7 @@ Goal: make setup, configuration, and internal behavior easy to follow for both h
 - support custom tile atlases with configurable tile sizes
 - support full freeform layouts with semantic zones
 - reduce office-specific assumptions in the current editor
+- define the first versioned world-bundle contract between editor output and runtime loading
 
 ### Release 0.5.0: Agent sprite configurator
 
@@ -187,13 +215,27 @@ Goal: make setup, configuration, and internal behavior easy to follow for both h
 - bind discovered OpenClaw agents to sprite definitions
 - add animation preview tooling
 
-### Release 0.6.0: Voice completion
+### Release 0.6.0: Agent creation flow
+
+- add a `New Agent` UI flow
+- let users define model, function, and visual identity
+- write agent definitions into backend config
+- support the required backend reload/restart path
+- make newly created agents appear in-world after activation
+
+### Release 0.7.0: Voice completion
 
 - complete per-agent voice/text interaction
 - expose reply mode selection: text, voice, or both
 - surface OpenClaw-backed voice options clearly in settings
 
-### Release 0.7.0: Hardening and docs
+### Release 0.8.0: Multi-floor and multi-building worlds
+
+- extend the bundle contract to support multiple maps, floors, and buildings
+- add transitions between layouts
+- support neighborhood-scale roaming and editing
+
+### Release 0.9.0: Hardening and docs
 
 - add backend/API regression coverage for the standalone app
 - add focused world-builder and sprite-mapping tests
@@ -220,6 +262,7 @@ Goal: make setup, configuration, and internal behavior easy to follow for both h
 - support custom tile atlases with explicit tile sizes
 - support semantic zone assignment in custom layouts
 - make the current editor operate on generic world config rather than office-specific assumptions
+- define the first strict world-bundle contract between editor output and runtime loading
 
 ### Milestone 4: Agent sprite configurator
 
@@ -228,13 +271,26 @@ Goal: make setup, configuration, and internal behavior easy to follow for both h
 - bind discovered OpenClaw agents to configured sprite definitions
 - add motion preview tooling
 
-### Milestone 5: Voice completion
+### Milestone 5: Agent creation flow
+
+- add UI creation/edit flows for new agents
+- support visual selection and role/model configuration
+- write agent definitions into backend config safely
+- implement reboot/reload activation flow
+
+### Milestone 6: Voice completion
 
 - finish text/voice interaction per agent
 - expose OpenClaw voice readiness and options in settings
 - support reply mode selection: text, voice, or both
 
-### Milestone 6: Hardening pass
+### Milestone 7: Multi-floor and multi-building worlds
+
+- extend the bundle contract to multiple maps/floors/buildings
+- support transitions and cross-map roaming
+- add the required editor/runtime UI support
+
+### Milestone 8: Hardening pass
 
 - expand backend/API test coverage
 - add focused tests around sprite and world builder behavior

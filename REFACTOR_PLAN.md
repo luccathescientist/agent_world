@@ -90,85 +90,11 @@ The next cleanup pass, if needed, should focus on:
 2. Documenting and hardening the editor-to-runtime bundle contract before attempting another large render/world extraction.
 3. Deciding whether the root `app.js` compatibility stub should remain once the new `src/main.js` entrypoint has settled.
 
-## Longer-term roadmap
+## Product follow-up
 
-### 1. World bundle contract
+The longer-term product roadmap now lives in `IMPLEMENTATION_PLAN.md`.
 
-The editor should eventually stop being "part of the runtime" in an implicit way and instead act as a producer of a strict world-bundle contract that the runtime consumes.
+For frontend/refactor purposes, the main architectural takeaway is:
 
-That contract should be the only boundary between editor and world rendering/runtime behavior. The world should not need to know about editor-internal state, and the editor should not need to know about runtime implementation details beyond the bundle schema it produces.
-
-The current likely bundle surface is:
-
-- bundle manifest and schema version
-- bundle id, label, description, author, and mode metadata
-- one or more map layouts
-- floor/wall/furniture/prop tilemaps
-- tile manifests and atlas metadata
-- texture and asset paths, including PNG files and any atlas JSON metadata
-- room regions and room labels
-- anchor mappings and room-to-anchor relationships
-- stash location and stash presentation metadata
-- chat bubble theme/frame configuration
-- agent visual mappings, sprite sheets, frame names, and preview defaults
-- runtime-facing layout configuration such as world size, render padding, and layer defaults
-
-That bundle contract should be versioned and expandable, because future editor features will keep adding data to it.
-
-The end state should support:
-
-- choosing a world bundle from a dropdown in Agent World
-- importing/exporting bundles cleanly
-- loading one or more bundles from a GitHub repository
-- treating bundles as plugin-like drop-ins for different worlds or modes
-
-### 2. In-world agent creation flow
-
-The runtime should eventually let a user create an agent directly from the UI instead of requiring manual config edits first.
-
-The intended flow is:
-
-- click `New Agent`
-- choose or upload the sprite/visual identity
-- fill in core agent metadata such as name, model, and basic function
-- configure tasking/default behavior such as a daily recipe-delivery chef
-- save the agent and have it appear in-world as a live entity
-
-This feature will need a clearer contract between the frontend editor/runtime and backend config management. At minimum it likely needs:
-
-- a frontend form schema for agent definition
-- validation for model choice, visual mapping, and role/task configuration
-- a backend write path into `openclaw.json`
-- a controlled gateway restart/reboot flow after config mutation
-- UI feedback for pending restart, successful activation, and failure cases
-
-This should probably be phased:
-
-1. create/edit agent definitions in the UI
-2. write definitions into backend config
-3. reboot/reload the gateway in a controlled way
-4. rehydrate the world so the new agent appears and becomes active
-
-### 3. Multi-floor and multi-building worlds
-
-The world model should eventually expand beyond a single floor into multiple floors or multiple buildings, effectively becoming a neighborhood-scale world.
-
-That will likely require extending both the runtime and the future world-bundle contract with:
-
-- multiple maps per bundle
-- floor/building ids and transitions between them
-- explicit portals, stairs, doors, elevators, or travel edges
-- per-map asset/layout configuration
-- a higher-level neighborhood or campus graph
-- agent pathing across map boundaries
-- UI affordances for viewing, selecting, and editing multiple floors/buildings
-
-This should not be treated as "just a bigger map". It is a different world model and should probably sit on top of the bundle contract rather than being hacked into the current single-layout assumptions.
-
-### Suggested sequencing
-
-1. define and document the world-bundle contract
-2. make the editor produce that contract explicitly
-3. make the runtime load bundles through that contract only
-4. add agent creation/editing on top of the same contract/config boundary
-5. extend the contract to support multi-floor and multi-building worlds
+- keep `src/main.js` focused on renderer/world lifecycle ownership
+- do not attempt another large renderer/runtime extraction until the editor-to-runtime world bundle contract is documented and enforced
