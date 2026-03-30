@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Agent World</title>
-  <link rel="stylesheet" href="/agent-world-static/styles.css?v=0.2.0-settings-6" />
+  <link rel="stylesheet" href="/agent-world-static/styles.css?v=0.2.0-settings-13" />
 </head>
 <body>
   <div class="app-shell">
@@ -22,7 +22,7 @@
         <div class="pill-row">
           <span class="pill" id="server-time">--</span>
           <span class="pill" id="openclaw-runtime-pill">OpenClaw --</span>
-          <span class="pill accent">build v0.2.0-dev6</span>
+          <span class="pill accent">build v0.2.0-dev13</span>
         </div>
       </div>
     </header>
@@ -204,114 +204,125 @@
     </main>
 
     <main class="editor-layout tab-panel" id="editor-tab-panel" data-panel="editor">
-      <section class="editor-workspace">
-        <div class="main-column">
-          <section class="world-panel card pixel-panel">
-            <div class="panel-header">
-              <h2>Tilemap Preview</h2>
-              <div class="pill-row">
-                <span class="pill" id="tilemap-summary">--</span>
-                <button id="toggle-edit-mode" class="secondary-btn" type="button">Code Overlay Off</button>
-              </div>
+      <section class="editor-shell">
+        <section class="card pixel-panel editor-subnav-panel">
+          <div class="panel-header">
+            <h2>Editor Views</h2>
+            <div class="pill-row">
+              <span class="pill" id="editor-subview-pill">Tilemap</span>
+              <button id="editor-shared-toggle" class="secondary-btn" type="button">Editor Gear</button>
             </div>
+          </div>
+          <div class="editor-subnav" role="tablist" aria-label="Editor Views">
+            <button id="editor-subtab-tilemap" class="editor-subtab-btn active" type="button" data-editor-view="tilemap">Tilemap</button>
+            <button id="editor-subtab-room-mapping" class="editor-subtab-btn" type="button" data-editor-view="room-mapping">Room Mapping</button>
+            <button id="editor-subtab-chat-bubble" class="editor-subtab-btn" type="button" data-editor-view="chat-bubble">Chat Bubble</button>
+            <button id="editor-subtab-agent" class="editor-subtab-btn" type="button" data-editor-view="agent">Agent</button>
+          </div>
+          <details id="editor-shared-panel" class="editor-shared-panel">
+            <summary class="editor-shared-summary">Shared Editor Utilities</summary>
+            <div class="editor-shared-body">
+              <div class="pill-row">
+                <span class="pill" id="tilemap-source-status">Game state JSON is live</span>
+                <button id="apply-game-state-json" class="secondary-btn" type="button">Apply JSON</button>
+                <button id="download-game-state-json" class="secondary-btn" type="button">Download JSON</button>
+                <button id="reset-tilemap" class="secondary-btn" type="button">Reset</button>
+              </div>
+              <label class="tile-editor-block">
+                <span>State Transfer JSON</span>
+                <textarea id="tilemap-state-json" class="tilemap-input" spellcheck="false" placeholder='{"agent-world-floor-map":"..."}'></textarea>
+              </label>
+              <p class="editor-copy">This JSON applies across all editor views. Use it to inspect, apply, download, or reset the current Agent World game state.</p>
+            </div>
+          </details>
+        </section>
+
+        <section class="world-panel card pixel-panel editor-preview-panel">
+          <div class="panel-header">
+            <h2 id="editor-preview-title">Tilemap Preview</h2>
+            <div class="pill-row">
+              <span class="pill" id="tilemap-summary">--</span>
+            </div>
+          </div>
+          <div class="editor-preview-mode active" id="editor-preview-tilemap" data-editor-preview="tilemap">
             <div class="world snes-room">
               <div id="editor-world-canvas" class="world-canvas" aria-label="Tilemap Editor Canvas"></div>
             </div>
-            <div class="world-footer">
-              <div class="pill" id="tilemap-walkability">--</div>
-              <div class="pill" id="tilemap-status">Loading tilemap...</div>
+            <div class="world-footer editor-preview-footer">
+              <div class="pill-row">
+                <div class="pill" id="tilemap-walkability">--</div>
+                <div class="pill" id="tilemap-status">Loading tilemap...</div>
+              </div>
             </div>
-          </section>
+          </div>
+          <div class="editor-preview-mode" id="editor-preview-room-mapping" data-editor-preview="room-mapping">
+            <div class="world snes-room">
+              <div id="editor-room-world-canvas" class="world-canvas" aria-label="Room Mapping Canvas"></div>
+            </div>
+            <div class="world-footer editor-preview-footer">
+              <div class="pill-row">
+                <div class="pill" id="room-mapping-status">Select cells to assign rooms and doors.</div>
+              </div>
+            </div>
+          </div>
+          <div class="editor-preview-mode" id="editor-preview-chat-bubble" data-editor-preview="chat-bubble">
+            <div id="editor-chat-bubble-preview-list" class="chat-bubble-preview-list editor-chat-bubble-preview-list" aria-label="Chat bubble preview"></div>
+          </div>
+          <div class="editor-preview-mode" id="editor-preview-agent" data-editor-preview="agent">
+            <div id="agent-sprite-preview-list" class="agent-sprite-preview-list" aria-label="Agent sprite preview"></div>
+          </div>
+        </section>
 
-          <section class="card pixel-panel chat-bubble-editor-panel">
+        <section class="editor-subview-grid">
+          <section class="card pixel-panel tilemap-panel editor-subview active" data-editor-views="tilemap">
             <div class="panel-header">
-              <h2>Chat Bubble</h2>
-              <span class="pill">Wall atlas</span>
+              <h2>Tilemap Editor</h2>
+              <div class="pill-row">
+                <button id="apply-tilemap" type="button">Apply Map</button>
+                <button id="save-game-state" class="secondary-btn" type="button">Save Game State</button>
+              </div>
             </div>
-            <div class="room-mapper-grid">
+            <p class="editor-copy">Edit the floor and object character grids, apply them live, and use the legend to understand which codes are passable, solid, or doors.</p>
+            <div class="editor-utility-row">
               <label class="editor-field">
-                <span>Role</span>
-                <select id="chat-bubble-role-select">
-                  <option value="assistant">Agent</option>
-                  <option value="tool">Tool</option>
-                  <option value="user">User</option>
-                </select>
+                <span>Cols</span>
+                <input id="grid-cols-input" type="number" min="4" max="80" value="30" />
               </label>
               <label class="editor-field">
-                <span>Text Color</span>
-                <input id="chat-bubble-text-color" type="color" value="#fff4d7" />
+                <span>Rows</span>
+                <input id="grid-rows-input" type="number" min="4" max="80" value="18" />
+              </label>
+              <button id="resize-grid" class="secondary-btn" type="button">Resize Grid</button>
+            </div>
+            <div class="tilemap-editors wide">
+              <label class="tile-editor-block">
+                <span>Wall Map</span>
+                <textarea id="wall-map-input" class="tilemap-input large" spellcheck="false"></textarea>
+              </label>
+              <label class="tile-editor-block">
+                <span>Floor Map</span>
+                <textarea id="floor-map-input" class="tilemap-input large" spellcheck="false"></textarea>
+              </label>
+              <label class="tile-editor-block">
+                <span>Furniture Map</span>
+                <textarea id="furniture-map-input" class="tilemap-input large" spellcheck="false"></textarea>
+              </label>
+              <label class="tile-editor-block">
+                <span>Prop Map</span>
+                <textarea id="prop-map-input" class="tilemap-input large" spellcheck="false"></textarea>
               </label>
             </div>
-            <div id="chat-bubble-slot-grid" class="chat-bubble-slot-grid" aria-label="Chat bubble frame slots"></div>
-            <div id="chat-bubble-preview-list" class="chat-bubble-preview-list" aria-label="Chat bubble previews"></div>
-            <div class="special-token-row">
-              <button id="assign-chat-bubble-tile" class="secondary-btn" type="button">Assign Selected Tile</button>
-              <button id="reset-chat-bubble-frame" class="secondary-btn" type="button">Reset Selected Role</button>
-            </div>
-            <p class="editor-copy">Pick a role, then choose frame cells and a text color for that role. You can use wall or floor atlas tiles for each piece. The preview below shows short, medium, and long messages with the repeatable middle tiles stretched dynamically.</p>
           </section>
-        </div>
 
-        <section class="card pixel-panel tilemap-panel tilemap-page">
-          <div class="panel-header">
-            <h2>Tilemap Editor</h2>
-            <div class="pill-row">
-              <button id="apply-tilemap" type="button">Apply Map</button>
-              <button id="save-game-state" class="secondary-btn" type="button">Save Game State</button>
-              <button id="reset-tilemap" class="secondary-btn" type="button">Reset</button>
+          <section class="card pixel-panel room-mapper-card editor-subview" data-editor-views="room-mapping">
+            <div class="panel-header">
+              <h2>Room Mapping</h2>
+              <span class="pill" id="room-region-summary">0 regions</span>
             </div>
-          </div>
-          <div class="pill-row">
-            <span class="pill" id="tilemap-source-status">Game state JSON is live</span>
-            <button id="apply-game-state-json" class="secondary-btn" type="button">Apply JSON</button>
-          </div>
-          <label class="tile-editor-block">
-            <span>State Transfer JSON</span>
-            <textarea id="tilemap-state-json" class="tilemap-input" spellcheck="false" placeholder='{"agent-world-floor-map":"..."}'></textarea>
-          </label>
-          <p class="editor-copy">Edit the floor and object character grids, apply them live, and use the legend to understand which codes are passable, solid, or doors.</p>
-          <section class="visual-tile-editor">
-            <div class="visual-toolbar">
-              <div class="visual-meta">
-                <div class="pill" id="selected-map-cell">Cell --</div>
-                <div class="pill" id="selected-layer-cell">Layer --</div>
-                <div class="pill" id="hovered-atlas-cell">Atlas --</div>
-              </div>
-              <div class="editor-utility-row">
-                <label class="editor-field">
-                  <span>Cols</span>
-                  <input id="grid-cols-input" type="number" min="4" max="80" value="30" />
-                </label>
-                <label class="editor-field">
-                  <span>Rows</span>
-                  <input id="grid-rows-input" type="number" min="4" max="80" value="18" />
-                </label>
-                <button id="resize-grid" class="secondary-btn" type="button">Resize Grid</button>
-                <label class="editor-field">
-                  <span>Zoom</span>
-                  <select id="editor-zoom-select">
-                    <option value="1" selected>1x</option>
-                    <option value="1.5">1.5x</option>
-                    <option value="2">2x</option>
-                    <option value="3">3x</option>
-                  </select>
-                </label>
-                <label class="passable-toggle">
-                  <input id="toggle-editor-agents" type="checkbox" checked />
-                  <span>Show Lucca</span>
-                </label>
-              </div>
-              <div class="layer-toggle-group" id="visual-layer-toggle">
-                <button class="secondary-btn active" type="button" data-layer="floor">Floor</button>
-                <button class="secondary-btn" type="button" data-layer="wall">Wall</button>
-                <button class="secondary-btn" type="button" data-layer="furniture">Furniture</button>
-                <button class="secondary-btn" type="button" data-layer="prop">Prop</button>
-              </div>
-            </div>
+            <p class="editor-copy">Select cells in the preview, then assign them to a room or door region. This view is dedicated to semantic world mapping rather than tile painting.</p>
             <section class="picker-card room-mapper-card">
               <div class="picker-header">
-                <h3>Room Mapper</h3>
-                <span class="pill" id="room-region-summary">0 regions</span>
+                <h3>Region Controls</h3>
               </div>
               <div class="room-mapper-grid">
                 <label class="editor-field">
@@ -344,52 +355,115 @@
               </div>
               <div id="room-region-list" class="room-region-list"></div>
             </section>
-            <div class="visual-picker-grid">
-              <section class="picker-card">
+          </section>
+
+          <section class="card pixel-panel visual-tool-panel editor-subview" data-editor-views="tilemap chat-bubble">
+            <div class="panel-header">
+              <h2 id="visual-tool-title">Tile Palette</h2>
+              <div class="pill-row" data-editor-only="tilemap">
+                <span class="pill" id="selected-map-cell">Cell --</span>
+                <span class="pill" id="selected-layer-cell">Layer --</span>
+                <span class="pill" id="hovered-atlas-cell">Atlas --</span>
+              </div>
+            </div>
+            <section class="visual-tile-editor">
+              <div class="visual-toolbar" data-editor-only="tilemap">
+                <div class="editor-utility-row">
+                  <label class="editor-field">
+                    <span>Zoom</span>
+                    <select id="editor-zoom-select">
+                      <option value="1" selected>1x</option>
+                      <option value="1.5">1.5x</option>
+                      <option value="2">2x</option>
+                      <option value="3">3x</option>
+                    </select>
+                  </label>
+                </div>
+                <div class="layer-toggle-group" id="visual-layer-toggle">
+                  <button class="secondary-btn active" type="button" data-layer="floor">Floor</button>
+                  <button class="secondary-btn" type="button" data-layer="wall">Wall</button>
+                  <button class="secondary-btn" type="button" data-layer="furniture">Furniture</button>
+                  <button class="secondary-btn" type="button" data-layer="prop">Prop</button>
+                </div>
+              </div>
+              <section class="picker-card chat-bubble-toolbox" data-editor-only="chat-bubble">
                 <div class="picker-header">
-                  <h3>Special Token</h3>
+                  <h3>Bubble Assignment</h3>
+                  <span class="pill" id="chat-bubble-slot-summary">Agent · mm</span>
+                </div>
+                <div class="chat-bubble-role-tabs" role="tablist" aria-label="Chat bubble roles">
+                  <button id="chat-bubble-role-assistant" class="chat-bubble-role-btn active" type="button" data-role="assistant">Agent</button>
+                  <button id="chat-bubble-role-tool" class="chat-bubble-role-btn" type="button" data-role="tool">Tool</button>
+                  <button id="chat-bubble-role-user" class="chat-bubble-role-btn" type="button" data-role="user">User</button>
+                </div>
+                <div class="editor-utility-row">
+                  <label class="editor-field">
+                    <span>Text Color</span>
+                    <input id="chat-bubble-text-color" type="color" value="#fff4d7" />
+                  </label>
                 </div>
                 <div class="special-token-row">
-                  <button id="visual-token-empty" class="secondary-btn" type="button">Set `.`</button>
+                  <button id="assign-chat-bubble-tile" class="secondary-btn" type="button">Assign Selected Tile</button>
+                  <button id="reset-chat-bubble-frame" class="secondary-btn" type="button">Reset Selected Role</button>
                 </div>
-                <div class="selection-preview">
-                  <div class="selection-copy">
-                    <strong id="visual-selection-title">No atlas tile selected</strong>
-                    <span id="visual-selection-detail">Click a map cell, then hover or click a tile in the atlas.</span>
+              </section>
+              <div class="visual-picker-grid compact">
+                <section class="picker-card" data-editor-only="tilemap">
+                  <div class="picker-header">
+                    <h3>Special Token</h3>
                   </div>
-                  <canvas id="visual-selection-preview" width="128" height="128" aria-label="Selected tile preview"></canvas>
-                </div>
-              </section>
-              <section class="picker-card atlas-card">
-                <div class="picker-header">
-                  <h3 id="atlas-picker-title">Floor Atlas</h3>
-                  <span class="pill" id="atlas-picker-mode">Office atlas</span>
-                </div>
-                <div id="atlas-picker-board" class="atlas-picker-board" aria-label="Atlas tile picker">
-                  <img id="atlas-picker-image" alt="Tile atlas picker" />
-                  <div id="atlas-picker-hover" class="atlas-picker-hover"></div>
-                </div>
-              </section>
-            </div>
+                  <div class="special-token-row">
+                    <button id="visual-token-empty" class="secondary-btn" type="button">Set `.`</button>
+                  </div>
+                  <div class="selection-preview">
+                    <div class="selection-copy">
+                      <strong id="visual-selection-title">No atlas tile selected</strong>
+                      <span id="visual-selection-detail">Click a map cell, then hover or click a tile in the atlas.</span>
+                    </div>
+                    <canvas id="visual-selection-preview" width="128" height="128" aria-label="Selected tile preview"></canvas>
+                  </div>
+                </section>
+                <section class="picker-card atlas-card">
+                  <div class="picker-header">
+                    <h3 id="atlas-picker-title">Floor Atlas</h3>
+                    <span class="pill" id="atlas-picker-mode">Office atlas</span>
+                  </div>
+                  <div id="atlas-picker-board" class="atlas-picker-board" aria-label="Atlas tile picker">
+                    <img id="atlas-picker-image" alt="Tile atlas picker" />
+                    <div id="atlas-picker-hover" class="atlas-picker-hover"></div>
+                  </div>
+                </section>
+              </div>
+            </section>
           </section>
-          <div class="tilemap-editors wide">
-            <label class="tile-editor-block">
-              <span>Wall Map</span>
-              <textarea id="wall-map-input" class="tilemap-input large" spellcheck="false"></textarea>
-            </label>
-            <label class="tile-editor-block">
-              <span>Floor Map</span>
-              <textarea id="floor-map-input" class="tilemap-input large" spellcheck="false"></textarea>
-            </label>
-            <label class="tile-editor-block">
-              <span>Furniture Map</span>
-              <textarea id="furniture-map-input" class="tilemap-input large" spellcheck="false"></textarea>
-            </label>
-            <label class="tile-editor-block">
-              <span>Prop Map</span>
-              <textarea id="prop-map-input" class="tilemap-input large" spellcheck="false"></textarea>
-            </label>
-          </div>
+
+          <section class="card pixel-panel agent-editor-panel editor-subview" data-editor-views="agent">
+            <div class="panel-header">
+              <h2>Agent Preview</h2>
+              <span class="pill" id="agent-editor-selected-id">--</span>
+            </div>
+            <div class="editor-utility-row">
+              <label class="editor-field">
+                <span>Zoom</span>
+                <select id="editor-zoom-select-agent-proxy" disabled>
+                  <option>Use shared preview zoom</option>
+                </select>
+              </label>
+              <label class="passable-toggle">
+                <input id="toggle-editor-agents" type="checkbox" checked />
+                <span>Show Lucca</span>
+              </label>
+            </div>
+            <dl class="inspector-grid agent-editor-grid">
+              <div><dt>Name</dt><dd id="agent-editor-name">--</dd></div>
+              <div><dt>Model</dt><dd id="agent-editor-model">--</dd></div>
+              <div><dt>Status</dt><dd id="agent-editor-status">--</dd></div>
+              <div><dt>Anchor</dt><dd id="agent-editor-anchor">--</dd></div>
+              <div><dt>Action</dt><dd id="agent-editor-action">--</dd></div>
+              <div><dt>Visual</dt><dd id="agent-editor-visual">--</dd></div>
+            </dl>
+            <p class="editor-copy">This view keeps the current agent preview controls separate from tile and chat-bubble editing. Future sprite and animation assignment work can land here without crowding the other editor surfaces.</p>
+          </section>
         </section>
       </section>
     </main>
@@ -500,6 +574,6 @@
   </div>
 
   <script src="/agent-world-static/vendor/pixi.min.js"></script>
-  <script src="/agent-world-static/app.js?v=0.2.0-settings-6"></script>
+  <script type="module" src="/agent-world-static/src/main.js?v=0.2.0-settings-14"></script>
 </body>
 </html>

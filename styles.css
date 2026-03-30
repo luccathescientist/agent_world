@@ -394,15 +394,202 @@ body.world-detail-open #world-tab-panel.layout {
   min-height: 1.45em;
 }
 
-.editor-workspace {
+.editor-shell {
   display: grid;
-  grid-template-columns: minmax(980px, 1.25fr) minmax(560px, 0.95fr);
+  grid-template-columns: minmax(0, 1.08fr) minmax(360px, 0.92fr);
   gap: 14px;
   align-items: start;
 }
 
-.editor-layout .main-column {
+.editor-subnav-panel {
+  display: grid;
+  gap: 12px;
+  grid-column: 1 / -1;
+}
+
+.editor-subnav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+}
+
+.editor-shared-panel {
+  display: grid;
+  gap: 10px;
+}
+
+.editor-shared-summary {
+  cursor: pointer;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 12px;
+  list-style: none;
+}
+
+.editor-shared-summary::-webkit-details-marker {
+  display: none;
+}
+
+.editor-shared-body {
+  display: grid;
+  gap: 12px;
+}
+
+.editor-subtab-btn {
+  border: 2px solid #6f5226;
+  padding: 10px 14px;
+  background: linear-gradient(180deg, rgba(16, 22, 43, 0.88), rgba(9, 12, 24, 0.92));
+  color: var(--muted);
+  cursor: pointer;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 700;
+  font-size: 12px;
+}
+
+.editor-subtab-btn.active {
+  background: linear-gradient(180deg, #ecd48a, #c39652);
+  color: #24160a;
+  box-shadow: inset 0 0 0 2px rgba(255,255,255,0.18);
+}
+
+.editor-subview-grid {
+  display: grid;
+  gap: 14px;
+}
+
+.editor-subview-grid > .editor-subview {
+  display: none !important;
+}
+
+.editor-subview-grid > .editor-subview.active {
+  display: grid !important;
+  gap: 12px;
+}
+
+.editor-preview-panel {
   min-width: 0;
+  grid-column: 1;
+  position: sticky;
+  top: 12px;
+}
+
+.editor-preview-mode {
+  display: none;
+}
+
+.editor-preview-mode.active {
+  display: grid;
+  gap: 12px;
+}
+
+.editor-subview-grid {
+  grid-column: 2;
+  align-content: start;
+}
+
+.editor-subview-grid > .visual-tool-panel {
+  order: 0;
+}
+
+.editor-subview-grid > .tilemap-panel,
+.editor-subview-grid > .room-mapper-card.editor-subview,
+.editor-subview-grid > .agent-editor-panel {
+  order: 1;
+}
+
+.editor-preview-footer {
+  flex-wrap: wrap;
+  align-items: flex-start;
+}
+
+.agent-editor-panel {
+  align-content: start;
+}
+
+.agent-editor-grid dd {
+  min-width: 0;
+}
+
+.agent-sprite-preview-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+}
+
+.agent-sprite-preview-card {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  border: 2px solid rgba(228, 201, 122, 0.28);
+  background: linear-gradient(180deg, rgba(12, 16, 30, 0.78), rgba(9, 11, 22, 0.9));
+}
+
+.agent-sprite-preview-figure {
+  display: grid;
+  place-items: center;
+  min-height: 140px;
+  border: 2px solid rgba(228, 201, 122, 0.22);
+  background:
+    linear-gradient(180deg, rgba(17, 22, 40, 0.94), rgba(10, 13, 24, 0.98)),
+    radial-gradient(circle at top, rgba(255, 229, 148, 0.08), transparent 28%);
+}
+
+.agent-sprite-preview-sheet {
+  image-rendering: pixelated;
+  background-repeat: no-repeat;
+  transform-origin: center center;
+}
+
+.agent-sprite-preview-meta {
+  display: grid;
+  gap: 4px;
+}
+
+.agent-sprite-preview-name {
+  color: #fff0bf;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.agent-sprite-preview-copy {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.editor-chat-bubble-preview-list {
+  min-height: 180px;
+}
+
+.chat-bubble-role-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.chat-bubble-role-btn {
+  border: 2px solid rgba(228, 201, 122, 0.28);
+  padding: 8px 12px;
+  background: rgba(8, 12, 24, 0.6);
+  color: var(--muted);
+  cursor: pointer;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.chat-bubble-role-btn.active {
+  border-color: rgba(255, 241, 139, 0.78);
+  background: rgba(53, 49, 14, 0.34);
+  color: #fff0bf;
+}
+
+.chat-bubble-toolbox {
+  display: grid;
+  gap: 12px;
 }
 
 .main-column {
@@ -511,12 +698,11 @@ body.world-detail-open #world-tab-panel .world {
 body.world-detail-open #world-tab-panel .sidebar {
   display: grid;
   width: auto;
-  max-height: calc(100vh - 128px);
-  overflow-y: auto;
-  overflow-x: hidden;
+  overflow: visible;
   align-content: start;
   gap: 14px;
   padding: 0;
+  min-height: 0;
 }
 
 body.world-detail-open #world-tab-panel .sidebar > * {
@@ -639,18 +825,19 @@ body.world-detail-open #world-tab-panel .sidebar textarea {
 }
 
 .editor-layout .world {
-  overflow: auto;
+  overflow: hidden;
   background: #000;
 }
 
 .editor-layout .world-canvas {
-  display: block;
+  display: flex;
   min-width: 100%;
 }
 
 .editor-layout .world-canvas canvas {
-  width: auto;
-  max-width: none;
+  width: 100%;
+  height: auto;
+  max-width: 100%;
 }
 
 .tilemap-panel {
@@ -658,11 +845,6 @@ body.world-detail-open #world-tab-panel .sidebar textarea {
   gap: 12px;
   align-content: start;
   min-width: 0;
-}
-
-.chat-bubble-editor-panel {
-  display: grid;
-  gap: 12px;
 }
 
 .visual-tile-editor {
@@ -900,7 +1082,7 @@ body.world-detail-open #world-tab-panel .sidebar textarea {
 .atlas-picker-board img {
   display: block;
   image-rendering: pixelated;
-  width: 512px;
+  width: min(512px, 100%);
   height: auto;
 }
 
@@ -1220,50 +1402,6 @@ body.world-detail-open #world-tab-panel .sidebar textarea {
   background-repeat: repeat;
 }
 
-.chat-bubble-slot-grid {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 8px;
-}
-
-.chat-bubble-slot {
-  display: grid;
-  gap: 4px;
-  padding: 8px;
-  border: 2px solid rgba(228, 201, 122, 0.28);
-  background: rgba(8, 12, 24, 0.6);
-  color: var(--text);
-  justify-items: start;
-  text-align: left;
-}
-
-.chat-bubble-slot.active {
-  border-color: rgba(255, 241, 139, 0.78);
-  background: rgba(53, 49, 14, 0.34);
-}
-
-.chat-bubble-slot-label {
-  color: #fff0bf;
-  font-size: 11px;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-}
-
-.chat-bubble-slot-swatch {
-  width: 32px;
-  height: 32px;
-  border: 2px solid rgba(228, 201, 122, 0.22);
-  background-image: var(--chat-bubble-slot-image);
-  background-size: var(--chat-wall-atlas-width) var(--chat-wall-atlas-height);
-  background-position: var(--chat-bubble-slot-tile);
-  image-rendering: pixelated;
-}
-
-.chat-bubble-slot-token {
-  font-family: "Courier New", monospace;
-  font-size: 12px;
-}
-
 .chat-bubble-preview-list {
   display: grid;
   gap: 10px;
@@ -1283,6 +1421,7 @@ body.world-detail-open #world-tab-panel .sidebar textarea {
 
 .chat-bubble-preview-card .chat-item {
   width: min(100%, 440px);
+  position: relative;
 }
 
 .chat-bubble-preview-card.user .chat-item {
@@ -1296,6 +1435,68 @@ body.world-detail-open #world-tab-panel .sidebar textarea {
 
 .chat-item.user .chat-bubble-content {
   transform: scaleX(-1);
+}
+
+.chat-bubble-slot-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.chat-bubble-slot-hotspot {
+  position: absolute;
+  pointer-events: auto;
+  border: 1px solid transparent;
+  background: transparent;
+  cursor: pointer;
+}
+
+.chat-bubble-slot-hotspot.tl,
+.chat-bubble-slot-hotspot.ml,
+.chat-bubble-slot-hotspot.bl {
+  left: 0;
+  width: 32px;
+}
+
+.chat-bubble-slot-hotspot.tr,
+.chat-bubble-slot-hotspot.mr,
+.chat-bubble-slot-hotspot.br {
+  right: 0;
+  width: 32px;
+}
+
+.chat-bubble-slot-hotspot.tm,
+.chat-bubble-slot-hotspot.mm,
+.chat-bubble-slot-hotspot.bm {
+  left: 48px;
+  right: 48px;
+}
+
+.chat-bubble-slot-hotspot.tl,
+.chat-bubble-slot-hotspot.tm,
+.chat-bubble-slot-hotspot.tr {
+  top: 0;
+  height: 32px;
+}
+
+.chat-bubble-slot-hotspot.ml,
+.chat-bubble-slot-hotspot.mm,
+.chat-bubble-slot-hotspot.mr {
+  top: 32px;
+  bottom: 32px;
+}
+
+.chat-bubble-slot-hotspot.bl,
+.chat-bubble-slot-hotspot.bm,
+.chat-bubble-slot-hotspot.br {
+  bottom: 0;
+  height: 32px;
+}
+
+.chat-bubble-slot-hotspot:hover,
+.chat-bubble-slot-hotspot.active {
+  border-color: rgba(255, 241, 139, 0.9);
+  background: rgba(255, 241, 139, 0.16);
 }
 
 .chat-meta {
@@ -1527,14 +1728,17 @@ button, .secondary-btn {
 
 @media (max-width: 1100px) {
   .layout { grid-template-columns: 1fr; }
-  .editor-workspace { grid-template-columns: 1fr; }
+  .editor-shell { grid-template-columns: 1fr; }
+  .editor-subnav-panel,
+  .editor-preview-panel,
+  .editor-subview-grid { grid-column: auto; }
+  .editor-preview-panel { position: static; }
   .visual-picker-grid { grid-template-columns: 1fr; }
   .settings-grid,
   .settings-grid-compact { grid-template-columns: 1fr; }
   body.world-detail-open #world-tab-panel.layout { grid-template-columns: 1fr; }
   body.world-detail-open #world-tab-panel .sidebar {
     width: auto;
-    max-height: 42vh;
   }
   body.world-detail-open #world-tab-panel .world { width: min(82vw, 100%); }
 }
