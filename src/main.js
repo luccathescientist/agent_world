@@ -188,7 +188,7 @@ import {
   maybeSpeakReply as maybeSpeakReplyHelper,
   normalizeSpeechText,
 } from "./features/voice/voiceController.js";
-import { initDomEvents, startApp } from "./bootstrap/domEvents.js";
+import { initAppStartup } from "./app/startup.js";
 import {
   applyStructuredGameState as applyStructuredGameStateHelper,
   loadApp as loadAppHelper,
@@ -1220,10 +1220,6 @@ async function initRenderer() {
   });
 }
 
-window.addEventListener("resize", () => {
-  resizeRendererViewport();
-});
-
 const {
   closeWorldDetails,
   connectStream,
@@ -1353,7 +1349,7 @@ async function submitCommand(event) {
   });
 }
 
-initDomEvents(appState, {
+initAppStartup(appState, {
   applyEditorState,
   applyImportedAgentWorldStorageState,
   applyStructuredGameState,
@@ -1377,6 +1373,7 @@ initDomEvents(appState, {
   renderWorld,
   resetChatBubbleFrame,
   resetEditorState,
+  resizeRendererViewport,
   resizeTilemapGrid,
   saveGameState,
   saveSettings,
@@ -1401,13 +1398,6 @@ initDomEvents(appState, {
   syncGameStateTextarea,
   TILEMAP_STORAGE_KEYS,
   updateVoiceUi,
+  windowRef: window,
   writeGameStateToLocalStorage,
-});
-
-startApp({
-  documentRef: document,
-  initVoiceControls,
-  load,
-  setActiveTab,
-  setTilemapStatus,
 });
