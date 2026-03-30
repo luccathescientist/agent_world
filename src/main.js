@@ -145,9 +145,7 @@ import {
   tickAgents as tickAgentsHelper,
 } from "./render/worldRenderer.js";
 import { initRenderer as initRendererHelper } from "./render/pixiApp.js";
-import {
-  getCanvasCellFromEvent as getCanvasCellFromEventHelper,
-} from "./features/editor/editorState.js";
+import { getCanvasCellFromEvent as getCanvasCellFromEventHelper } from "./features/editor/editorState.js";
 import {
   maybeSpeakReply as maybeSpeakReplyHelper,
   normalizeSpeechText,
@@ -488,60 +486,6 @@ function findPath(startTile, goalTile) {
   return findPathHelper(startTile, goalTile, {
     inBounds,
     isWalkable,
-  });
-}
-
-function getDraftFloorLines() {
-  return getDraftFloorLinesAction(appState, { parseFloorRow, parseMapText });
-}
-
-function getDraftObjectLines(layerName) {
-  return getDraftObjectLinesAction(appState, layerName, { parseMapText, parseObjectRow });
-}
-
-function updateDraftCell(layerName, row, col, value) {
-  return updateDraftCellAction(appState, layerName, row, col, value, {
-    getDraftFloorLines,
-    getDraftObjectLines,
-    serializeFloorLines,
-    serializeObjectLines,
-  });
-}
-
-function getDraftCellValue(layerName, row, col) {
-  return getDraftCellValueAction(appState, layerName, row, col, {
-    getDraftFloorLines,
-    getDraftObjectLines,
-  });
-}
-
-function getSelectionBounds() {
-  return getSelectionBoundsAction(appState);
-}
-
-function getSelectedCells() {
-  return getSelectedCellsAction(appState, { getSelectionBounds: () => getSelectionBoundsAction(appState) });
-}
-
-function getVisualLayerConfig() {
-  return getVisualLayerConfigAction(appState);
-}
-
-function getAtlasPathForLayer(layerName) {
-  return getAtlasPathForLayerAction(appState, layerName);
-}
-
-function getAssignedAtlasCell(layerName, rawValue) {
-  return getAssignedAtlasCellAction(appState, layerName, rawValue, {
-    parseFloorToken,
-    parseObjectToken,
-  });
-}
-
-function getAssignedPreviewToken(layerName, rawValue) {
-  return getAssignedPreviewTokenAction(layerName, rawValue, {
-    parseFloorToken,
-    parseObjectToken,
   });
 }
 
