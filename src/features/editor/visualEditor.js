@@ -8,6 +8,10 @@ import {
   DEFAULT_CHAT_TEXT_COLORS,
   TILE_SIZE,
 } from "../../core/constants.js";
+import {
+  normalizeEditorSubviewName,
+  renderEditorSubviewShell,
+} from "./shared/editorTabs.js";
 
 export function setActiveEditorSubview(state, viewName, helpers = {}) {
   const {
@@ -17,7 +21,7 @@ export function setActiveEditorSubview(state, viewName, helpers = {}) {
     renderVisualEditor = () => {},
     resizeRendererViewport = () => {},
   } = helpers;
-  if (!["tilemap", "room-mapping", "chat-bubble", "agent"].includes(viewName)) viewName = "tilemap";
+  viewName = normalizeEditorSubviewName(viewName);
   state.editor.activeSubview = viewName;
   renderEditorSubviews();
   if (state.renderer && (viewName === "tilemap" || viewName === "room-mapping")) {
@@ -29,60 +33,7 @@ export function setActiveEditorSubview(state, viewName, helpers = {}) {
 }
 
 export function renderEditorSubviews(state, helpers = {}) {
-  const {
-    documentRef = document,
-    setText = () => {},
-  } = helpers;
-  const currentView = state.editor.activeSubview || "tilemap";
-  const visualToolTitle = documentRef.getElementById("visual-tool-title");
-  const previewTitle = documentRef.getElementById("editor-preview-title");
-  for (const button of documentRef.querySelectorAll(".editor-subtab-btn")) {
-    button.classList.toggle("active", button.dataset.editorView === currentView);
-  }
-  for (const panel of documentRef.querySelectorAll(".editor-subview")) {
-    const views = String(panel.dataset.editorViews || "")
-      .split(/\s+/)
-      .map((value) => value.trim())
-      .filter(Boolean);
-    panel.classList.toggle("active", views.includes(currentView));
-  }
-  for (const panel of documentRef.querySelectorAll(".editor-preview-mode")) {
-    panel.classList.toggle("active", panel.dataset.editorPreview === currentView);
-  }
-  for (const section of documentRef.querySelectorAll("[data-editor-only]")) {
-    section.hidden = section.dataset.editorOnly !== currentView;
-  }
-  if (currentView === "chat-bubble" && !["floor", "wall"].includes(state.editor.selectedLayer)) {
-    state.editor.selectedLayer = "wall";
-  }
-  for (const button of documentRef.querySelectorAll("#visual-layer-toggle [data-layer]")) {
-    const layer = button.dataset.layer || "";
-    const allowed = currentView !== "chat-bubble" || layer === "floor" || layer === "wall";
-    button.hidden = !allowed;
-  }
-  if (visualToolTitle) {
-    visualToolTitle.textContent = currentView === "chat-bubble" ? "Bubble Tile Palette" : "Tile Palette";
-  }
-  if (previewTitle) {
-    previewTitle.textContent =
-      currentView === "chat-bubble"
-        ? "Chat Bubble Preview"
-        : currentView === "agent"
-          ? "Agent Sprite Preview"
-          : currentView === "room-mapping"
-            ? "Room Mapping Preview"
-            : "Tilemap Preview";
-  }
-  setText(
-    "editor-subview-pill",
-    currentView === "chat-bubble"
-      ? "Chat Bubble"
-      : currentView === "agent"
-        ? "Agent"
-        : currentView === "room-mapping"
-          ? "Room Mapping"
-          : "Tilemap",
-  );
+  return renderEditorSubviewShell(state, helpers);
 }
 
 export function syncEditorInputs(state, helpers = {}) {

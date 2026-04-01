@@ -3,6 +3,9 @@
  * This file wires the static page controls to the composed app/runtime APIs but
  * deliberately avoids owning the underlying feature logic itself.
  */
+import { bindEditorSharedPanelToggle } from "../features/editor/shared/editorSharedPanel.js";
+import { bindEditorSubviewTabEvents } from "../features/editor/shared/editorTabs.js";
+
 export function initDomEvents(state, deps = {}) {
   const {
     applyEditorState = () => {},
@@ -99,9 +102,7 @@ export function initDomEvents(state, deps = {}) {
   documentRef.getElementById("tab-world").addEventListener("click", () => setActiveTab("world"));
   documentRef.getElementById("tab-editor").addEventListener("click", () => setActiveTab("editor"));
   documentRef.getElementById("tab-settings").addEventListener("click", () => setActiveTab("settings"));
-  for (const button of documentRef.querySelectorAll(".editor-subtab-btn")) {
-    button.addEventListener("click", () => setActiveEditorSubview(button.dataset.editorView || "tilemap"));
-  }
+  bindEditorSubviewTabEvents({ documentRef, setActiveEditorSubview });
   documentRef.getElementById("settings-form").addEventListener("submit", async (event) => {
     event.preventDefault();
     await saveSettings();
@@ -117,11 +118,7 @@ export function initDomEvents(state, deps = {}) {
     await fetchSettingsData();
     setSettingsResult("Settings JSON reloaded from disk.");
   });
-  documentRef.getElementById("editor-shared-toggle").addEventListener("click", () => {
-    const panel = documentRef.getElementById("editor-shared-panel");
-    if (!panel) return;
-    panel.open = !panel.open;
-  });
+  bindEditorSharedPanelToggle({ documentRef });
   documentRef.getElementById("apply-tilemap").addEventListener("click", () => {
     try {
       applyEditorState();

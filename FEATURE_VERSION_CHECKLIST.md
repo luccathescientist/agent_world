@@ -29,6 +29,14 @@ This file tracks implementation steps for each version listed in `IMPLEMENTATION
 - [ ] Support full freeform layouts with semantic zones.
 - [ ] Reduce office-specific assumptions in the current editor.
 - [ ] Define the first versioned world-bundle contract between editor output and runtime loading.
+- [x] Draft the editor-isolation implementation plan in `EDITOR_ISOLATION_PLAN.md`.
+- [x] Phase 1: Split shared editor shell concerns (subtab routing and shared utilities toggle) into dedicated modules.
+- [ ] Phase 2: Extract tilemap editor view/events/runtime into isolated modules.
+- [ ] Phase 3: Extract room-mapping editor view/events/runtime into isolated modules.
+- [ ] Phase 4: Extract chat-bubble editor view/events/runtime into isolated modules.
+- [ ] Phase 5: Extract agent editor view/events/runtime into isolated modules.
+- [ ] Phase 6: Remove legacy mixed editor orchestration paths and keep compatibility adapters only where necessary.
+- [ ] Add focused tests for each extracted editor module and shared editor shell helpers.
 
 ## Release 0.5.0 - Agent sprite configurator
 
