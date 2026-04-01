@@ -3,6 +3,7 @@
  * This file wires the static page controls to the composed app/runtime APIs but
  * deliberately avoids owning the underlying feature logic itself.
  */
+import { bindAgentEditorEvents } from "../features/editor/agent/editorEvents.js";
 import { bindChatBubbleEditorEvents } from "../features/editor/chatBubble/editorEvents.js";
 import { bindEditorSharedPanelToggle } from "../features/editor/shared/editorSharedPanel.js";
 import { bindEditorSubviewTabEvents } from "../features/editor/shared/editorTabs.js";
@@ -140,6 +141,10 @@ export function initDomEvents(state, deps = {}) {
     setRegionLabelPosition,
     setTilemapStatus,
   });
+  bindAgentEditorEvents(state, {
+    documentRef,
+    renderWorld,
+  });
   bindChatBubbleEditorEvents(state, {
     assignChatBubbleTile,
     documentRef,
@@ -192,10 +197,6 @@ export function initDomEvents(state, deps = {}) {
     } catch (err) {
       setTilemapStatus(err.message, true);
     }
-  });
-  documentRef.getElementById("toggle-editor-agents").addEventListener("change", (event) => {
-    state.editor.showAgents = Boolean(event.target.checked);
-    if (state.world) renderWorld(state.world);
   });
   documentRef.getElementById("editor-zoom-select").addEventListener("change", (event) => {
     state.editor.zoom = Number(event.target.value) || 2;

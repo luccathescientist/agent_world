@@ -4,6 +4,7 @@
  * editor subviews without owning higher-level app/runtime wiring.
  */
 import { DEFAULT_CHAT_TEXT_COLORS, TILE_SIZE } from "../../core/constants.js";
+import { renderAgentEditorView } from "./agent/editorView.js";
 import { createChatBubbleEditorRuntime } from "./chatBubble/editorRuntime.js";
 import { renderChatBubbleEditorPanel } from "./chatBubble/editorView.js";
 import {
@@ -208,7 +209,6 @@ export function renderVisualEditor(state, helpers = {}) {
   if (documentRef.activeElement !== colsInput) colsInput.value = String(getWorldCols());
   if (documentRef.activeElement !== rowsInput) rowsInput.value = String(getWorldRows());
   zoomSelect.value = String(state.editor.zoom);
-  showAgentsToggle.checked = state.editor.showAgents;
   const activeChatTheme = selectedChatBubbleTheme();
   chatBubbleTextColor.value = activeChatTheme?.textColor || DEFAULT_CHAT_TEXT_COLORS[state.editor.selectedChatBubbleRole] || "#fff4d7";
   const chatRoleLabel = state.editor.selectedChatBubbleRole === "assistant"
@@ -237,7 +237,10 @@ export function renderVisualEditor(state, helpers = {}) {
 
   emptyButton.textContent = layer === "floor" ? "Set `.` floor" : "Set `.`";
   syncRendererCanvasSize();
-  renderAgentEditorPanel();
+  renderAgentEditorView(state, {
+    documentRef,
+    renderAgentEditorPanel,
+  });
 
   for (const button of documentRef.querySelectorAll("#visual-layer-toggle [data-layer]")) {
     button.classList.toggle("active", button.dataset.layer === layer);
