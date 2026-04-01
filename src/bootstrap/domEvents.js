@@ -5,6 +5,7 @@
  */
 import { bindEditorSharedPanelToggle } from "../features/editor/shared/editorSharedPanel.js";
 import { bindEditorSubviewTabEvents } from "../features/editor/shared/editorTabs.js";
+import { bindRoomMappingEditorEvents } from "../features/editor/roomMapping/editorEvents.js";
 import { bindTilemapEditorEvents } from "../features/editor/tilemap/editorEvents.js";
 
 export function initDomEvents(state, deps = {}) {
@@ -129,6 +130,15 @@ export function initDomEvents(state, deps = {}) {
     saveGameState,
     setTilemapStatus,
   });
+  bindRoomMappingEditorEvents(state, {
+    assignRegionSelection,
+    assignStashSelection,
+    clearRegionSelection,
+    clearStashSelection,
+    documentRef,
+    setRegionLabelPosition,
+    setTilemapStatus,
+  });
   documentRef.getElementById("apply-game-state-json").addEventListener("click", () => {
     try {
       const textarea = documentRef.getElementById("tilemap-state-json");
@@ -203,50 +213,6 @@ export function initDomEvents(state, deps = {}) {
   documentRef.getElementById("toggle-editor-agents").addEventListener("change", (event) => {
     state.editor.showAgents = Boolean(event.target.checked);
     if (state.world) renderWorld(state.world);
-  });
-  documentRef.getElementById("region-kind-input").addEventListener("change", (event) => {
-    state.editor.regionKind = event.target.value === "door" ? "door" : "room";
-  });
-  documentRef.getElementById("region-id-input").addEventListener("change", (event) => {
-    state.editor.regionId = event.target.value;
-  });
-  documentRef.getElementById("region-label-input").addEventListener("input", (event) => {
-    state.editor.regionLabel = event.target.value;
-  });
-  documentRef.getElementById("assign-region").addEventListener("click", () => {
-    try {
-      assignRegionSelection();
-    } catch (err) {
-      setTilemapStatus(err.message, true);
-    }
-  });
-  documentRef.getElementById("clear-region").addEventListener("click", () => {
-    try {
-      clearRegionSelection();
-    } catch (err) {
-      setTilemapStatus(err.message, true);
-    }
-  });
-  documentRef.getElementById("set-region-label-position").addEventListener("click", () => {
-    try {
-      setRegionLabelPosition();
-    } catch (err) {
-      setTilemapStatus(err.message, true);
-    }
-  });
-  documentRef.getElementById("assign-stash").addEventListener("click", () => {
-    try {
-      assignStashSelection();
-    } catch (err) {
-      setTilemapStatus(err.message, true);
-    }
-  });
-  documentRef.getElementById("clear-stash").addEventListener("click", () => {
-    try {
-      clearStashSelection();
-    } catch (err) {
-      setTilemapStatus(err.message, true);
-    }
   });
   documentRef.getElementById("editor-zoom-select").addEventListener("change", (event) => {
     state.editor.zoom = Number(event.target.value) || 2;

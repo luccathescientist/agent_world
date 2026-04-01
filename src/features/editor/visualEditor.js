@@ -16,6 +16,7 @@ import {
   renderTilemapSummary,
   syncTilemapDraftInputs,
 } from "./tilemap/editorView.js";
+import { renderRoomMappingEditorPanel } from "./roomMapping/editorView.js";
 
 export function setActiveEditorSubview(state, viewName, helpers = {}) {
   const {
@@ -180,17 +181,11 @@ export function renderVisualEditor(state, helpers = {}) {
   const rowsInput = documentRef.getElementById("grid-rows-input");
   const zoomSelect = documentRef.getElementById("editor-zoom-select");
   const showAgentsToggle = documentRef.getElementById("toggle-editor-agents");
-  const regionKindInput = documentRef.getElementById("region-kind-input");
-  const regionIdInput = documentRef.getElementById("region-id-input");
-  const regionLabelInput = documentRef.getElementById("region-label-input");
-  const regionSummary = documentRef.getElementById("room-region-summary");
-  const regionList = documentRef.getElementById("room-region-list");
-  const stashSummary = documentRef.getElementById("stash-cell-summary");
   const chatBubblePreviewList = documentRef.getElementById("editor-chat-bubble-preview-list");
   const chatBubbleTextColor = documentRef.getElementById("chat-bubble-text-color");
   const chatBubbleSlotSummary = documentRef.getElementById("chat-bubble-slot-summary");
 
-  if (!selectedCellEl || !selectedLayerEl || !hoveredAtlasEl || !atlasTitleEl || !atlasModeEl || !atlasImage || !atlasHover || !emptyButton || !colsInput || !rowsInput || !zoomSelect || !showAgentsToggle || !regionKindInput || !regionIdInput || !regionLabelInput || !regionSummary || !regionList || !stashSummary || !chatBubblePreviewList || !chatBubbleTextColor || !chatBubbleSlotSummary) {
+  if (!selectedCellEl || !selectedLayerEl || !hoveredAtlasEl || !atlasTitleEl || !atlasModeEl || !atlasImage || !atlasHover || !emptyButton || !colsInput || !rowsInput || !zoomSelect || !showAgentsToggle || !chatBubblePreviewList || !chatBubbleTextColor || !chatBubbleSlotSummary) {
     return;
   }
 
@@ -215,9 +210,6 @@ export function renderVisualEditor(state, helpers = {}) {
   if (documentRef.activeElement !== rowsInput) rowsInput.value = String(getWorldRows());
   zoomSelect.value = String(state.editor.zoom);
   showAgentsToggle.checked = state.editor.showAgents;
-  regionKindInput.value = state.editor.regionKind;
-  populateRegionIdSelect(regionIdInput);
-  if (documentRef.activeElement !== regionLabelInput) regionLabelInput.value = state.editor.regionLabel;
   const activeChatTheme = selectedChatBubbleTheme();
   chatBubbleTextColor.value = activeChatTheme?.textColor || DEFAULT_CHAT_TEXT_COLORS[state.editor.selectedChatBubbleRole] || "#fff4d7";
   const chatRoleLabel = state.editor.selectedChatBubbleRole === "assistant"
@@ -226,9 +218,6 @@ export function renderVisualEditor(state, helpers = {}) {
       ? "Tool"
       : "User";
   chatBubbleSlotSummary.textContent = `${chatRoleLabel} · ${(state.editor.selectedChatBubbleSlot || "mm").toUpperCase()}`;
-  regionSummary.textContent = `${state.roomRegions.length} regions`;
-  const stash = normalizeStashPoint(state.tilemap?.layout?.stash || state.renderer?.assets?.layout?.stash || { col: 15, row: 14 });
-  stashSummary.textContent = `Stash ${stash.col + 1}:${stash.row + 1}`;
   const atlasPath = getAtlasPathForLayer(layer);
   if (atlasImage.getAttribute("src") !== atlasPath) {
     atlasImage.setAttribute("src", atlasPath);
@@ -254,33 +243,13 @@ export function renderVisualEditor(state, helpers = {}) {
   for (const button of documentRef.querySelectorAll("#visual-layer-toggle [data-layer]")) {
     button.classList.toggle("active", button.dataset.layer === layer);
   }
-  regionList.innerHTML = state.roomRegions.length
-    ? state.roomRegions.map((region) => `
-      <div class="room-region-item${state.editor.hoveredRegionId === region.id ? " active" : ""}" data-region-id="${region.id}">
-        <div class="room-region-copy">
-          <span>${region.label}</span>
-          <span class="room-region-meta">${region.kind} · ${region.id} · ${region.cells.length} cells${region.labelCell ? ` · label ${region.labelCell.col + 1}:${region.labelCell.row + 1}` : ""}</span>
-        </div>
-        <button class="secondary-btn room-region-delete" type="button" data-region-id="${region.id}">Delete</button>
-      </div>
-    `).join("")
-    : `<div class="room-region-item"><span>No mapped rooms yet.</span><span class="room-region-meta">Select cells and assign one.</span></div>`;
-  for (const row of regionList.querySelectorAll(".room-region-item[data-region-id]")) {
-    row.addEventListener("mouseenter", () => {
-      state.editor.hoveredRegionId = row.dataset.regionId || "";
-      drawRoom(state.renderer);
-    });
-    row.addEventListener("mouseleave", () => {
-      state.editor.hoveredRegionId = "";
-      drawRoom(state.renderer);
-    });
-  }
-  for (const button of regionList.querySelectorAll(".room-region-delete")) {
-    button.addEventListener("click", (event) => {
-      event.stopPropagation();
-      deleteRoomRegion(button.dataset.regionId || "");
-    });
-  }
+  renderRoomMappingEditorPanel(state, {
+    deleteRoomRegion,
+    documentRef,
+    drawRoom,
+    normalizeStashPoint,
+    populateRegionIdSelect,
+  });
   chatBubblePreviewList.innerHTML = CHAT_BUBBLE_PREVIEW_SAMPLES.map((sample) => `
     <article class="chat-bubble-preview-card ${sample.role}">
       <div class="chat-bubble-preview-label">${sample.label}</div>
