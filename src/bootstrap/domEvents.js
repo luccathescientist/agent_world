@@ -7,6 +7,8 @@ import { bindAgentEditorEvents } from "../features/editor/agent/editorEvents.js"
 import { bindChatBubbleEditorEvents } from "../features/editor/chatBubble/editorEvents.js";
 import { bindEditorSharedPanelToggle } from "../features/editor/shared/editorSharedPanel.js";
 import { bindEditorSubviewTabEvents } from "../features/editor/shared/editorTabs.js";
+import { bindEditorUtilitiesEvents } from "../features/editor/shared/editorUtilitiesEvents.js";
+import { bindVisualWorkspaceEvents } from "../features/editor/shared/visualWorkspaceEvents.js";
 import { bindRoomMappingEditorEvents } from "../features/editor/roomMapping/editorEvents.js";
 import { bindTilemapEditorEvents } from "../features/editor/tilemap/editorEvents.js";
 
@@ -154,76 +156,26 @@ export function initDomEvents(state, deps = {}) {
     setChatBubbleTextColor,
     setTilemapStatus,
   });
-  documentRef.getElementById("apply-game-state-json").addEventListener("click", () => {
-    try {
-      const textarea = documentRef.getElementById("tilemap-state-json");
-      const payload = parseImportedAgentWorldStorageState(textarea?.value || "");
-      applyImportedAgentWorldStorageState(payload);
-      writeGameStateToLocalStorage(payload);
-      const snapshot = structuredSnapshotFromGameState(payload, state.renderer?.assets?.layout || {});
-      applyStructuredGameState(snapshot, "Applied game state JSON.");
-      if (textarea) textarea.value = JSON.stringify(payload, null, 2);
-      if (!snapshot.floorText && !snapshot.wallText && !snapshot.furnitureText && !snapshot.propText) {
-        setTilemapStatus("Imported JSON did not contain usable game-state map data.", true);
-        return;
-      }
-      setTilemapStatus(`Imported ${Object.keys(payload).length} keys into local storage.`);
-    } catch (err) {
-      setTilemapStatus(err.message, true);
-    }
+  bindEditorUtilitiesEvents(state, {
+    applyImportedAgentWorldStorageState,
+    applyStructuredGameState,
+    documentRef,
+    parseImportedAgentWorldStorageState,
+    resetEditorState,
+    setTilemapStatus,
+    structuredSnapshotFromGameState,
+    syncGameStateTextarea,
+    writeGameStateToLocalStorage,
+    URLRef,
+    BlobCtor,
   });
-  documentRef.getElementById("download-game-state-json").addEventListener("click", () => {
-    try {
-      syncGameStateTextarea();
-      const textarea = documentRef.getElementById("tilemap-state-json");
-      const content = textarea?.value || "{}";
-      const blob = new BlobCtor([content], { type: "application/json" });
-      const url = URLRef.createObjectURL(blob);
-      const anchor = documentRef.createElement("a");
-      anchor.href = url;
-      anchor.download = "agent_world_game_state.json";
-      documentRef.body.appendChild(anchor);
-      anchor.click();
-      anchor.remove();
-      URLRef.revokeObjectURL(url);
-      setTilemapStatus("Downloaded current game state JSON.");
-    } catch (err) {
-      setTilemapStatus(err.message, true);
-    }
-  });
-  documentRef.getElementById("reset-tilemap").addEventListener("click", () => {
-    try {
-      resetEditorState();
-    } catch (err) {
-      setTilemapStatus(err.message, true);
-    }
-  });
-  documentRef.getElementById("editor-zoom-select").addEventListener("change", (event) => {
-    state.editor.zoom = Number(event.target.value) || 2;
-    renderVisualEditor();
-  });
-  for (const button of documentRef.querySelectorAll("#visual-layer-toggle [data-layer]")) {
-    button.addEventListener("click", () => setVisualLayer(button.dataset.layer));
-  }
-  const atlasBoard = documentRef.getElementById("atlas-picker-board");
-  documentRef.getElementById("atlas-picker-image").addEventListener("load", () => renderVisualEditor());
-  atlasBoard.addEventListener("mousemove", (event) => {
-    const cell = getAtlasPointerCell(event);
-    state.editor.hoveredAtlasCell = cell;
-    renderVisualEditor();
-  });
-  atlasBoard.addEventListener("mouseleave", () => {
-    state.editor.hoveredAtlasCell = null;
-    renderVisualEditor();
-  });
-  atlasBoard.addEventListener("click", (event) => {
-    try {
-      const cell = getAtlasPointerCell(event);
-      if (!cell) return;
-      applyVisualAtlasCell(cell);
-    } catch (err) {
-      setTilemapStatus(err.message, true);
-    }
+  bindVisualWorkspaceEvents(state, {
+    applyVisualAtlasCell,
+    documentRef,
+    getAtlasPointerCell,
+    renderVisualEditor,
+    setTilemapStatus,
+    setVisualLayer,
   });
   documentRef.getElementById("move-agent-button").addEventListener("click", async () => {
     try {

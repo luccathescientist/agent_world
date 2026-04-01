@@ -35,8 +35,8 @@ This file tracks implementation steps for each version listed in `IMPLEMENTATION
 - [x] Phase 3: Extract room-mapping editor view/events/runtime into isolated modules.
 - [x] Phase 4: Extract chat-bubble editor view/events/runtime into isolated modules.
 - [x] Phase 5: Extract agent editor view/events/runtime into isolated modules.
-- [ ] Phase 6: Remove legacy mixed editor orchestration paths and keep compatibility adapters only where necessary.
-- [ ] Add focused tests for each extracted editor module and shared editor shell helpers.
+- [x] Phase 6: Remove legacy mixed editor orchestration paths and keep compatibility adapters only where necessary.
+- [x] Add focused tests for each extracted editor module and shared editor shell helpers.
 
 ## Release 0.5.0 - Agent sprite configurator
 
