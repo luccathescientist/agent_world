@@ -31,7 +31,7 @@ This file tracks implementation steps for each version listed in `IMPLEMENTATION
 - [ ] Define the first versioned world-bundle contract between editor output and runtime loading.
 - [x] Draft the editor-isolation implementation plan in `EDITOR_ISOLATION_PLAN.md`.
 - [x] Phase 1: Split shared editor shell concerns (subtab routing and shared utilities toggle) into dedicated modules.
-- [ ] Phase 2: Extract tilemap editor view/events/runtime into isolated modules.
+- [x] Phase 2: Extract tilemap editor view/events/runtime into isolated modules.
 - [ ] Phase 3: Extract room-mapping editor view/events/runtime into isolated modules.
 - [ ] Phase 4: Extract chat-bubble editor view/events/runtime into isolated modules.
 - [ ] Phase 5: Extract agent editor view/events/runtime into isolated modules.

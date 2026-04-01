@@ -5,6 +5,7 @@
  */
 import { bindEditorSharedPanelToggle } from "../features/editor/shared/editorSharedPanel.js";
 import { bindEditorSubviewTabEvents } from "../features/editor/shared/editorTabs.js";
+import { bindTilemapEditorEvents } from "../features/editor/tilemap/editorEvents.js";
 
 export function initDomEvents(state, deps = {}) {
   const {
@@ -119,20 +120,14 @@ export function initDomEvents(state, deps = {}) {
     setSettingsResult("Settings JSON reloaded from disk.");
   });
   bindEditorSharedPanelToggle({ documentRef });
-  documentRef.getElementById("apply-tilemap").addEventListener("click", () => {
-    try {
-      applyEditorState();
-    } catch (err) {
-      setTilemapStatus(err.message, true);
-    }
-  });
-  documentRef.getElementById("save-game-state").addEventListener("click", async () => {
-    try {
-      applyEditorState();
-      await saveGameState();
-    } catch (err) {
-      setTilemapStatus(err.message, true);
-    }
+  bindTilemapEditorEvents(state, {
+    applyEditorState,
+    applyVisualToken,
+    documentRef,
+    renderVisualEditor,
+    resizeTilemapGrid,
+    saveGameState,
+    setTilemapStatus,
   });
   documentRef.getElementById("apply-game-state-json").addEventListener("click", () => {
     try {
@@ -174,29 +169,6 @@ export function initDomEvents(state, deps = {}) {
   documentRef.getElementById("reset-tilemap").addEventListener("click", () => {
     try {
       resetEditorState();
-    } catch (err) {
-      setTilemapStatus(err.message, true);
-    }
-  });
-  documentRef.getElementById("floor-map-input").addEventListener("input", (event) => {
-    state.editor.draftFloorText = event.target.value;
-    renderVisualEditor();
-  });
-  documentRef.getElementById("wall-map-input").addEventListener("input", (event) => {
-    state.editor.draftWallText = event.target.value;
-    renderVisualEditor();
-  });
-  documentRef.getElementById("furniture-map-input").addEventListener("input", (event) => {
-    state.editor.draftFurnitureText = event.target.value;
-    renderVisualEditor();
-  });
-  documentRef.getElementById("prop-map-input").addEventListener("input", (event) => {
-    state.editor.draftPropText = event.target.value;
-    renderVisualEditor();
-  });
-  documentRef.getElementById("visual-token-empty").addEventListener("click", () => {
-    try {
-      applyVisualToken(".");
     } catch (err) {
       setTilemapStatus(err.message, true);
     }
@@ -279,16 +251,6 @@ export function initDomEvents(state, deps = {}) {
   documentRef.getElementById("editor-zoom-select").addEventListener("change", (event) => {
     state.editor.zoom = Number(event.target.value) || 2;
     renderVisualEditor();
-  });
-  documentRef.getElementById("resize-grid").addEventListener("click", () => {
-    try {
-      resizeTilemapGrid(
-        documentRef.getElementById("grid-cols-input").value,
-        documentRef.getElementById("grid-rows-input").value,
-      );
-    } catch (err) {
-      setTilemapStatus(err.message, true);
-    }
   });
   for (const button of documentRef.querySelectorAll("#visual-layer-toggle [data-layer]")) {
     button.addEventListener("click", () => setVisualLayer(button.dataset.layer));

@@ -12,6 +12,10 @@ import {
   normalizeEditorSubviewName,
   renderEditorSubviewShell,
 } from "./shared/editorTabs.js";
+import {
+  renderTilemapSummary,
+  syncTilemapDraftInputs,
+} from "./tilemap/editorView.js";
 
 export function setActiveEditorSubview(state, viewName, helpers = {}) {
   const {
@@ -38,26 +42,14 @@ export function renderEditorSubviews(state, helpers = {}) {
 
 export function syncEditorInputs(state, helpers = {}) {
   const {
-    documentRef = document,
     getWorldCols = () => 0,
     getWorldRows = () => 0,
     renderVisualEditor = () => {},
     setText = () => {},
     syncGameStateTextarea = () => {},
   } = helpers;
-  const floorInput = documentRef.getElementById("floor-map-input");
-  const wallInput = documentRef.getElementById("wall-map-input");
-  const furnitureInput = documentRef.getElementById("furniture-map-input");
-  const propInput = documentRef.getElementById("prop-map-input");
-  if (floorInput && floorInput.value !== state.editor.draftFloorText) floorInput.value = state.editor.draftFloorText;
-  if (wallInput && wallInput.value !== state.editor.draftWallText) wallInput.value = state.editor.draftWallText;
-  if (furnitureInput && furnitureInput.value !== state.editor.draftFurnitureText) furnitureInput.value = state.editor.draftFurnitureText;
-  if (propInput && propInput.value !== state.editor.draftPropText) propInput.value = state.editor.draftPropText;
-  const tileCodes = Object.keys(state.tilemap?.manifest || {}).length;
-  setText("tilemap-summary", `${getWorldCols()}x${getWorldRows()} grid · ${tileCodes} codes`);
-  if (state.tilemap) {
-    setText("tilemap-walkability", `${state.tilemap.walkableTiles} walkable · ${state.tilemap.solidTiles} solid · ${state.tilemap.doorTiles} doors`);
-  }
+  syncTilemapDraftInputs(state, helpers);
+  renderTilemapSummary(state, { getWorldCols, getWorldRows, setText });
   syncGameStateTextarea();
   renderVisualEditor();
 }
