@@ -313,6 +313,7 @@ export function createEditorRuntime(state, deps = {}) {
       normalizeStashPoint,
       populateRegionIdSelect,
       renderAgentEditorPanel,
+      rerenderVisualEditor: renderVisualEditor,
       renderVisualEditorHelper,
       renderVisualSelectionPreview,
       selectedChatBubbleTheme,

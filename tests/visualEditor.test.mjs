@@ -304,3 +304,132 @@ test("renderVisualEditor updates summary fields and atlas state", () => {
   assert.equal(agentPanelCalls, 1);
   assert.equal(previewCalls, 1);
 });
+
+test("renderVisualEditor hotspot click rerenders via callback and updates chat selection", () => {
+  const hotspotListeners = [];
+  const elements = {
+    "selected-map-cell": { textContent: "" },
+    "selected-layer-cell": { textContent: "" },
+    "hovered-atlas-cell": { textContent: "" },
+    "atlas-picker-title": { textContent: "" },
+    "atlas-picker-mode": { textContent: "" },
+    "atlas-picker-image": {
+      _src: "",
+      clientWidth: 160,
+      clientHeight: 128,
+      dataset: {},
+      getAttribute(name) {
+        return name === "src" ? this._src : null;
+      },
+      setAttribute(name, value) {
+        if (name === "src") this._src = value;
+      },
+    },
+    "atlas-picker-hover": { style: {} },
+    "visual-token-empty": { textContent: "" },
+    "grid-cols-input": { value: "" },
+    "grid-rows-input": { value: "" },
+    "editor-zoom-select": { value: "" },
+    "toggle-editor-agents": { checked: true },
+    "region-kind-input": { value: "" },
+    "region-id-input": { value: "" },
+    "region-label-input": { value: "" },
+    "room-region-summary": { textContent: "" },
+    "room-region-list": {
+      innerHTML: "",
+      querySelectorAll() {
+        return [];
+      },
+    },
+    "stash-cell-summary": { textContent: "" },
+    "editor-chat-bubble-preview-list": {
+      innerHTML: "",
+      querySelectorAll(selector) {
+        if (selector === ".chat-item.preview") return [];
+        if (selector === ".chat-bubble-slot-hotspot") {
+          return [{
+            dataset: { role: "tool", slot: "tr" },
+            addEventListener(type, fn) {
+              hotspotListeners.push({ type, fn });
+            },
+          }];
+        }
+        return [];
+      },
+    },
+    "chat-bubble-text-color": { value: "" },
+    "chat-bubble-slot-summary": { textContent: "" },
+  };
+  const layerButton = makeToggleElement({ layer: "floor" });
+  let rerenderCalls = 0;
+  const state = {
+    editor: {
+      activeSubview: "chat-bubble",
+      hoveredAtlasCell: null,
+      hoveredRegionId: "",
+      regionKind: "room",
+      regionLabel: "Library",
+      selectedCell: null,
+      selectedChatBubbleRole: "assistant",
+      selectedChatBubbleSlot: "mm",
+      selectedLayer: "floor",
+      showAgents: true,
+      zoom: 2,
+    },
+    renderer: {
+      assets: {
+        layout: { stash: { col: 1, row: 2 } },
+      },
+    },
+    roomRegions: [],
+    tilemap: {
+      layout: { stash: { col: 1, row: 2 } },
+    },
+  };
+  renderVisualEditor(state, {
+    applyChatRoleTheme: () => {},
+    chatBubbleMarkup: () => "<div></div>",
+    chatBubbleSlotOverlayMarkup: () => "<button class=\"chat-bubble-slot-hotspot\" data-role=\"tool\" data-slot=\"tr\"></button>",
+    deleteRoomRegion: () => {},
+    documentRef: {
+      activeElement: null,
+      getElementById(id) {
+        return elements[id] || null;
+      },
+      querySelectorAll(selector) {
+        if (selector === "#visual-layer-toggle [data-layer]") return [layerButton];
+        if (selector === ".chat-bubble-role-btn") return [];
+        return [];
+      },
+    },
+    drawRoom: () => {},
+    formatRichTextHtml: (value) => value,
+    getAtlasPathForLayer: () => "/atlas/floor.png",
+    getDraftCellValue: () => ".",
+    getSelectedCells: () => [],
+    getVisualLayerConfig: () => ({ cols: 5, rows: 4, label: "Floor", modeLabel: "Atlas", title: "Floor Atlas" }),
+    getWorldCols: () => 20,
+    getWorldRows: () => 10,
+    normalizeStashPoint: (value) => value,
+    populateRegionIdSelect: () => {},
+    renderAgentEditorPanel: () => {},
+    renderVisualSelectionPreview: () => {},
+    rerenderVisualEditor: () => {
+      rerenderCalls += 1;
+    },
+    selectedChatBubbleTheme: () => ({
+      frame: {
+        tr: { layer: "wall", token: "2:3" },
+      },
+      textColor: "#fff4d7",
+    }),
+    syncRendererCanvasSize: () => {},
+  });
+
+  assert.equal(hotspotListeners.length, 1);
+  hotspotListeners[0].fn();
+  assert.equal(state.editor.selectedChatBubbleRole, "tool");
+  assert.equal(state.editor.selectedChatBubbleSlot, "tr");
+  assert.equal(state.editor.selectedLayer, "wall");
+  assert.equal(rerenderCalls, 1);
+});

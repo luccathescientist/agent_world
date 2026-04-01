@@ -165,6 +165,7 @@ export function renderVisualEditor(state, helpers = {}) {
     normalizeStashPoint = (value) => value,
     populateRegionIdSelect = () => {},
     renderAgentEditorPanel = () => {},
+    rerenderVisualEditor = () => {},
     renderVisualSelectionPreview = () => {},
     selectedChatBubbleTheme = () => null,
     syncRendererCanvasSize = () => {},
@@ -271,7 +272,7 @@ export function renderVisualEditor(state, helpers = {}) {
       if (frame?.layer && ["floor", "wall"].includes(frame.layer)) {
         state.editor.selectedLayer = frame.layer;
       }
-      renderVisualEditor();
+      rerenderVisualEditor();
     });
   }
   for (const button of documentRef.querySelectorAll(".chat-bubble-role-btn")) {
