@@ -3,11 +3,9 @@
  * This module renders the atlas-driven editor UI, selection preview, and
  * editor subviews without owning higher-level app/runtime wiring.
  */
-import {
-  CHAT_BUBBLE_PREVIEW_SAMPLES,
-  DEFAULT_CHAT_TEXT_COLORS,
-  TILE_SIZE,
-} from "../../core/constants.js";
+import { DEFAULT_CHAT_TEXT_COLORS, TILE_SIZE } from "../../core/constants.js";
+import { createChatBubbleEditorRuntime } from "./chatBubble/editorRuntime.js";
+import { renderChatBubbleEditorPanel } from "./chatBubble/editorView.js";
 import {
   normalizeEditorSubviewName,
   renderEditorSubviewShell,
@@ -251,32 +249,19 @@ export function renderVisualEditor(state, helpers = {}) {
     normalizeStashPoint,
     populateRegionIdSelect,
   });
-  chatBubblePreviewList.innerHTML = CHAT_BUBBLE_PREVIEW_SAMPLES.map((sample) => `
-    <article class="chat-bubble-preview-card ${sample.role}">
-      <div class="chat-bubble-preview-label">${sample.label}</div>
-      <div class="chat-item ${sample.role} preview">
-        ${chatBubbleMarkup(sample.role, sample.metaLabel, sample.eventType, sample.time, formatRichTextHtml(sample.body))}
-        ${chatBubbleSlotOverlayMarkup(sample.role)}
-      </div>
-    </article>
-  `).join("");
-  for (const item of chatBubblePreviewList.querySelectorAll(".chat-item.preview")) {
-    const role = item.classList.contains("user") ? "user" : item.classList.contains("tool") ? "tool" : "assistant";
-    applyChatRoleTheme(item, role);
-  }
-  for (const button of chatBubblePreviewList.querySelectorAll(".chat-bubble-slot-hotspot")) {
-    button.addEventListener("click", () => {
-      state.editor.selectedChatBubbleRole = ["assistant", "tool", "user"].includes(button.dataset.role) ? button.dataset.role : "assistant";
-      state.editor.selectedChatBubbleSlot = button.dataset.slot || "mm";
-      const frame = selectedChatBubbleTheme()?.frame?.[state.editor.selectedChatBubbleSlot] || null;
-      if (frame?.layer && ["floor", "wall"].includes(frame.layer)) {
-        state.editor.selectedLayer = frame.layer;
-      }
-      rerenderVisualEditor();
-    });
-  }
-  for (const button of documentRef.querySelectorAll(".chat-bubble-role-btn")) {
-    button.classList.toggle("active", button.dataset.role === state.editor.selectedChatBubbleRole);
-  }
+  const chatBubbleRuntime = createChatBubbleEditorRuntime(state, {
+    renderVisualEditor: rerenderVisualEditor,
+    selectedChatBubbleTheme,
+  });
+  renderChatBubbleEditorPanel(state, {
+    applyChatRoleTheme,
+    chatBubbleMarkup,
+    chatBubbleSlotOverlayMarkup,
+    documentRef,
+    formatRichTextHtml,
+    onSelectChatBubbleSlot: (role, slot) => {
+      chatBubbleRuntime.setRoleAndSlot(role, slot);
+    },
+  });
   renderVisualSelectionPreview();
 }

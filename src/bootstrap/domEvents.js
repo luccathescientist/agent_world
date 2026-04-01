@@ -3,6 +3,7 @@
  * This file wires the static page controls to the composed app/runtime APIs but
  * deliberately avoids owning the underlying feature logic itself.
  */
+import { bindChatBubbleEditorEvents } from "../features/editor/chatBubble/editorEvents.js";
 import { bindEditorSharedPanelToggle } from "../features/editor/shared/editorSharedPanel.js";
 import { bindEditorSubviewTabEvents } from "../features/editor/shared/editorTabs.js";
 import { bindRoomMappingEditorEvents } from "../features/editor/roomMapping/editorEvents.js";
@@ -139,6 +140,15 @@ export function initDomEvents(state, deps = {}) {
     setRegionLabelPosition,
     setTilemapStatus,
   });
+  bindChatBubbleEditorEvents(state, {
+    assignChatBubbleTile,
+    documentRef,
+    renderVisualEditor,
+    resetChatBubbleFrame,
+    selectedChatBubbleTheme,
+    setChatBubbleTextColor,
+    setTilemapStatus,
+  });
   documentRef.getElementById("apply-game-state-json").addEventListener("click", () => {
     try {
       const textarea = documentRef.getElementById("tilemap-state-json");
@@ -182,33 +192,6 @@ export function initDomEvents(state, deps = {}) {
     } catch (err) {
       setTilemapStatus(err.message, true);
     }
-  });
-  documentRef.getElementById("assign-chat-bubble-tile").addEventListener("click", () => {
-    try {
-      assignChatBubbleTile();
-    } catch (err) {
-      setTilemapStatus(err.message, true);
-    }
-  });
-  documentRef.getElementById("reset-chat-bubble-frame").addEventListener("click", () => {
-    try {
-      resetChatBubbleFrame();
-    } catch (err) {
-      setTilemapStatus(err.message, true);
-    }
-  });
-  for (const button of documentRef.querySelectorAll(".chat-bubble-role-btn")) {
-    button.addEventListener("click", () => {
-      state.editor.selectedChatBubbleRole = ["assistant", "tool", "user"].includes(button.dataset.role) ? button.dataset.role : "assistant";
-      const frame = selectedChatBubbleTheme()?.frame?.[state.editor.selectedChatBubbleSlot || "mm"] || null;
-      if (frame?.layer && ["floor", "wall"].includes(frame.layer)) {
-        state.editor.selectedLayer = frame.layer;
-      }
-      renderVisualEditor();
-    });
-  }
-  documentRef.getElementById("chat-bubble-text-color").addEventListener("input", (event) => {
-    setChatBubbleTextColor(event.target.value);
   });
   documentRef.getElementById("toggle-editor-agents").addEventListener("change", (event) => {
     state.editor.showAgents = Boolean(event.target.checked);
