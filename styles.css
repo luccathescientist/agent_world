@@ -413,6 +413,16 @@ body.world-detail-open #world-tab-panel.layout {
   gap: 14px;
 }
 
+.editor-gear-btn {
+  min-width: 44px;
+  padding: 10px 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  line-height: 1;
+}
+
 .editor-shared-panel {
   display: grid;
   gap: 10px;
