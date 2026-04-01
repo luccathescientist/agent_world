@@ -37,6 +37,7 @@ This file tracks implementation steps for each version listed in `IMPLEMENTATION
 - [x] Phase 5: Extract agent editor view/events/runtime into isolated modules.
 - [x] Phase 6: Remove legacy mixed editor orchestration paths and keep compatibility adapters only where necessary.
 - [x] Add focused tests for each extracted editor module and shared editor shell helpers.
+- [x] Post-phase cleanup: centralize editor binder orchestration into a single shared entrypoint.
 
 ## Release 0.5.0 - Agent sprite configurator
 

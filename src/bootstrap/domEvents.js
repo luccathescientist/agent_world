@@ -3,14 +3,7 @@
  * This file wires the static page controls to the composed app/runtime APIs but
  * deliberately avoids owning the underlying feature logic itself.
  */
-import { bindAgentEditorEvents } from "../features/editor/agent/editorEvents.js";
-import { bindChatBubbleEditorEvents } from "../features/editor/chatBubble/editorEvents.js";
-import { bindEditorSharedPanelToggle } from "../features/editor/shared/editorSharedPanel.js";
-import { bindEditorSubviewTabEvents } from "../features/editor/shared/editorTabs.js";
-import { bindEditorUtilitiesEvents } from "../features/editor/shared/editorUtilitiesEvents.js";
-import { bindVisualWorkspaceEvents } from "../features/editor/shared/visualWorkspaceEvents.js";
-import { bindRoomMappingEditorEvents } from "../features/editor/roomMapping/editorEvents.js";
-import { bindTilemapEditorEvents } from "../features/editor/tilemap/editorEvents.js";
+import { bindEditorEvents } from "../features/editor/shared/editorEvents.js";
 
 export function initDomEvents(state, deps = {}) {
   const {
@@ -108,7 +101,6 @@ export function initDomEvents(state, deps = {}) {
   documentRef.getElementById("tab-world").addEventListener("click", () => setActiveTab("world"));
   documentRef.getElementById("tab-editor").addEventListener("click", () => setActiveTab("editor"));
   documentRef.getElementById("tab-settings").addEventListener("click", () => setActiveTab("settings"));
-  bindEditorSubviewTabEvents({ documentRef, setActiveEditorSubview });
   documentRef.getElementById("settings-form").addEventListener("submit", async (event) => {
     event.preventDefault();
     await saveSettings();
@@ -124,58 +116,37 @@ export function initDomEvents(state, deps = {}) {
     await fetchSettingsData();
     setSettingsResult("Settings JSON reloaded from disk.");
   });
-  bindEditorSharedPanelToggle({ documentRef });
-  bindTilemapEditorEvents(state, {
+  bindEditorEvents(state, {
     applyEditorState,
+    applyImportedAgentWorldStorageState,
+    applyStructuredGameState,
+    applyVisualAtlasCell,
     applyVisualToken,
-    documentRef,
-    renderVisualEditor,
-    resizeTilemapGrid,
-    saveGameState,
-    setTilemapStatus,
-  });
-  bindRoomMappingEditorEvents(state, {
+    assignChatBubbleTile,
     assignRegionSelection,
     assignStashSelection,
     clearRegionSelection,
     clearStashSelection,
     documentRef,
+    getAtlasPointerCell,
+    parseImportedAgentWorldStorageState,
+    renderVisualEditor,
+    renderWorld,
+    resetChatBubbleFrame,
+    resetEditorState,
+    resizeTilemapGrid,
+    saveGameState,
+    selectedChatBubbleTheme,
+    setActiveEditorSubview,
+    setChatBubbleTextColor,
     setRegionLabelPosition,
     setTilemapStatus,
-  });
-  bindAgentEditorEvents(state, {
-    documentRef,
-    renderWorld,
-  });
-  bindChatBubbleEditorEvents(state, {
-    assignChatBubbleTile,
-    documentRef,
-    renderVisualEditor,
-    resetChatBubbleFrame,
-    selectedChatBubbleTheme,
-    setChatBubbleTextColor,
-    setTilemapStatus,
-  });
-  bindEditorUtilitiesEvents(state, {
-    applyImportedAgentWorldStorageState,
-    applyStructuredGameState,
-    documentRef,
-    parseImportedAgentWorldStorageState,
-    resetEditorState,
-    setTilemapStatus,
+    setVisualLayer,
     structuredSnapshotFromGameState,
     syncGameStateTextarea,
     writeGameStateToLocalStorage,
     URLRef,
     BlobCtor,
-  });
-  bindVisualWorkspaceEvents(state, {
-    applyVisualAtlasCell,
-    documentRef,
-    getAtlasPointerCell,
-    renderVisualEditor,
-    setTilemapStatus,
-    setVisualLayer,
   });
   documentRef.getElementById("move-agent-button").addEventListener("click", async () => {
     try {
