@@ -602,6 +602,10 @@ body.world-detail-open #world-tab-panel.layout {
   gap: 12px;
 }
 
+.chat-bubble-toolbox[hidden] {
+  display: none;
+}
+
 .main-column {
   display: grid;
   gap: 8px;
@@ -835,7 +839,7 @@ body.world-detail-open #world-tab-panel .sidebar textarea {
 }
 
 .editor-layout .world {
-  overflow: hidden;
+  overflow: auto;
   background: #000;
 }
 
@@ -845,9 +849,9 @@ body.world-detail-open #world-tab-panel .sidebar textarea {
 }
 
 .editor-layout .world-canvas canvas {
-  width: 100%;
+  width: auto;
   height: auto;
-  max-width: 100%;
+  max-width: none;
 }
 
 .tilemap-panel {

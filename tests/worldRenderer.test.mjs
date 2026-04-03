@@ -46,7 +46,7 @@ test("syncSceneOffset and syncRendererCanvasSize update layers and scaled editor
   const view = { style: {} };
   const state = {
     activeTab: "editor",
-    editor: { activeSubview: "agent", zoom: 2.5 },
+    editor: { activeSubview: "tilemap", zoom: 2.5 },
     renderer: {
       pixiApp: { view },
       floorLayer: {},
@@ -71,6 +71,23 @@ test("syncSceneOffset and syncRendererCanvasSize update layers and scaled editor
   });
   assert.equal(view.style.width, "500px");
   assert.equal(view.style.height, "300px");
+});
+
+test("syncRendererCanvasSize keeps world-tab canvas responsive", () => {
+  const view = { style: {} };
+  const state = {
+    activeTab: "world",
+    editor: { activeSubview: "tilemap", zoom: 3 },
+    renderer: {
+      pixiApp: { view },
+    },
+  };
+  syncRendererCanvasSize(state, {
+    getRenderHeight: () => 120,
+    getWorldWidth: () => 200,
+  });
+  assert.equal(view.style.width, "100%");
+  assert.equal(view.style.height, "auto");
 });
 
 test("resizeRendererViewport resizes renderer and refreshes offsets/canvas size", () => {

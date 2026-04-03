@@ -50,7 +50,7 @@ export function syncRendererCanvasSize(state, helpers = {}) {
   } = helpers;
   const view = state.renderer?.pixiApp?.view;
   if (!view) return;
-  if (state.activeTab === "editor" && !["tilemap", "room-mapping"].includes(state.editor.activeSubview || "tilemap")) {
+  if (state.activeTab === "editor") {
     view.style.width = `${Math.round(getWorldWidth() * state.editor.zoom)}px`;
     view.style.height = `${Math.round(getRenderHeight() * state.editor.zoom)}px`;
     return;
