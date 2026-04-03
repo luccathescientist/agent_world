@@ -1442,6 +1442,16 @@ body.world-detail-open #world-tab-panel .sidebar textarea {
   justify-self: end;
 }
 
+.chat-bubble-preview-shell {
+  position: relative;
+  width: min(100%, 92%);
+}
+
+.chat-bubble-preview-shell .chat-bubble-frame,
+.chat-item.user .chat-bubble-preview-shell .chat-bubble-frame {
+  width: 100%;
+}
+
 .chat-item.user .chat-bubble-frame {
   transform: scaleX(-1);
   transform-origin: center;
@@ -1454,58 +1464,33 @@ body.world-detail-open #world-tab-panel .sidebar textarea {
 .chat-bubble-slot-overlay {
   position: absolute;
   inset: 0;
+  display: grid;
+  grid-template-columns: var(--chat-wall-tile) minmax(0, 1fr) var(--chat-wall-tile);
+  grid-template-rows: var(--chat-wall-tile) minmax(0, 1fr) var(--chat-wall-tile);
   pointer-events: none;
 }
 
+.chat-item.user .chat-bubble-slot-overlay {
+  transform: scaleX(-1);
+  transform-origin: center;
+}
+
 .chat-bubble-slot-hotspot {
-  position: absolute;
   pointer-events: auto;
   border: 1px solid transparent;
   background: transparent;
   cursor: pointer;
 }
 
-.chat-bubble-slot-hotspot.tl,
-.chat-bubble-slot-hotspot.ml,
-.chat-bubble-slot-hotspot.bl {
-  left: 0;
-  width: 32px;
-}
-
-.chat-bubble-slot-hotspot.tr,
-.chat-bubble-slot-hotspot.mr,
-.chat-bubble-slot-hotspot.br {
-  right: 0;
-  width: 32px;
-}
-
-.chat-bubble-slot-hotspot.tm,
-.chat-bubble-slot-hotspot.mm,
-.chat-bubble-slot-hotspot.bm {
-  left: 48px;
-  right: 48px;
-}
-
-.chat-bubble-slot-hotspot.tl,
-.chat-bubble-slot-hotspot.tm,
-.chat-bubble-slot-hotspot.tr {
-  top: 0;
-  height: 32px;
-}
-
-.chat-bubble-slot-hotspot.ml,
-.chat-bubble-slot-hotspot.mm,
-.chat-bubble-slot-hotspot.mr {
-  top: 32px;
-  bottom: 32px;
-}
-
-.chat-bubble-slot-hotspot.bl,
-.chat-bubble-slot-hotspot.bm,
-.chat-bubble-slot-hotspot.br {
-  bottom: 0;
-  height: 32px;
-}
+.chat-bubble-slot-hotspot.tl { grid-column: 1; grid-row: 1; }
+.chat-bubble-slot-hotspot.tm { grid-column: 2; grid-row: 1; }
+.chat-bubble-slot-hotspot.tr { grid-column: 3; grid-row: 1; }
+.chat-bubble-slot-hotspot.ml { grid-column: 1; grid-row: 2; }
+.chat-bubble-slot-hotspot.mm { grid-column: 2; grid-row: 2; }
+.chat-bubble-slot-hotspot.mr { grid-column: 3; grid-row: 2; }
+.chat-bubble-slot-hotspot.bl { grid-column: 1; grid-row: 3; }
+.chat-bubble-slot-hotspot.bm { grid-column: 2; grid-row: 3; }
+.chat-bubble-slot-hotspot.br { grid-column: 3; grid-row: 3; }
 
 .chat-bubble-slot-hotspot:hover,
 .chat-bubble-slot-hotspot.active {

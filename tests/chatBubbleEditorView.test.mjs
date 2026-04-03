@@ -71,6 +71,7 @@ test("renderChatBubbleEditorPanel renders preview items and wires hotspot clicks
   });
 
   assert.match(previewList.innerHTML, /chat-bubble-preview-card/);
+  assert.match(previewList.innerHTML, /chat-bubble-preview-shell/);
   assert.equal(roleButton.classList.contains("active"), true);
   assert.equal(hotspotListeners.length, 1);
   hotspotListeners[0].fn();

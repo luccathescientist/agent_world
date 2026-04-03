@@ -22,8 +22,10 @@ export function renderChatBubbleEditorPanel(state, helpers = {}) {
     <article class="chat-bubble-preview-card ${sample.role}">
       <div class="chat-bubble-preview-label">${sample.label}</div>
       <div class="chat-item ${sample.role} preview">
-        ${chatBubbleMarkup(sample.role, sample.metaLabel, sample.eventType, sample.time, formatRichTextHtml(sample.body))}
-        ${chatBubbleSlotOverlayMarkup(sample.role)}
+        <div class="chat-bubble-preview-shell">
+          ${chatBubbleMarkup(sample.role, sample.metaLabel, sample.eventType, sample.time, formatRichTextHtml(sample.body))}
+          ${chatBubbleSlotOverlayMarkup(sample.role)}
+        </div>
       </div>
     </article>
   `).join("");
