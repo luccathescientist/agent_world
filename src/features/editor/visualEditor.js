@@ -209,6 +209,7 @@ export function renderVisualEditor(state, helpers = {}) {
   if (documentRef.activeElement !== colsInput) colsInput.value = String(getWorldCols());
   if (documentRef.activeElement !== rowsInput) rowsInput.value = String(getWorldRows());
   zoomSelect.value = String(state.editor.zoom);
+  chatBubblePreviewList.style.zoom = currentView === "chat-bubble" ? String(state.editor.zoom) : "";
   const activeChatTheme = selectedChatBubbleTheme();
   chatBubbleTextColor.value = activeChatTheme?.textColor || DEFAULT_CHAT_TEXT_COLORS[state.editor.selectedChatBubbleRole] || "#fff4d7";
   const chatRoleLabel = state.editor.selectedChatBubbleRole === "assistant"

@@ -219,6 +219,7 @@ test("renderVisualEditor updates summary fields and atlas state", () => {
     "stash-cell-summary": { textContent: "" },
     "editor-chat-bubble-preview-list": {
       innerHTML: "",
+      style: {},
       querySelectorAll() {
         return [];
       },
@@ -296,6 +297,7 @@ test("renderVisualEditor updates summary fields and atlas state", () => {
   assert.equal(elements["hovered-atlas-cell"].textContent, "Atlas 2:3");
   assert.equal(elements["atlas-picker-title"].textContent, "Floor Atlas");
   assert.equal(elements["atlas-picker-image"]._src, "/atlas/floor.png");
+  assert.equal(elements["editor-chat-bubble-preview-list"].style.zoom, "");
   assert.equal(elements["chat-bubble-text-color"].value, "#abcdef");
   assert.equal(elements["stash-cell-summary"].textContent, "Stash 4:5");
   assert.equal(layerButton.classList.contains("active"), true);
@@ -344,6 +346,7 @@ test("renderVisualEditor hotspot click rerenders via callback and updates chat s
     "stash-cell-summary": { textContent: "" },
     "editor-chat-bubble-preview-list": {
       innerHTML: "",
+      style: {},
       querySelectorAll(selector) {
         if (selector === ".chat-item.preview") return [];
         if (selector === ".chat-bubble-slot-hotspot") {
@@ -427,6 +430,7 @@ test("renderVisualEditor hotspot click rerenders via callback and updates chat s
   });
 
   assert.equal(hotspotListeners.length, 1);
+  assert.equal(elements["editor-chat-bubble-preview-list"].style.zoom, "2");
   hotspotListeners[0].fn();
   assert.equal(state.editor.selectedChatBubbleRole, "tool");
   assert.equal(state.editor.selectedChatBubbleSlot, "tr");
