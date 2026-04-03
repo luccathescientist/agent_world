@@ -17,6 +17,15 @@ import {
 } from "./tilemap/editorView.js";
 import { renderRoomMappingEditorPanel } from "./roomMapping/editorView.js";
 
+function getSelectionPreviewElements(documentRef, currentView) {
+  const prefix = currentView === "chat-bubble" ? "chat-bubble-selection" : "tilemap-selection";
+  return {
+    canvas: documentRef.getElementById(`${prefix}-preview`),
+    titleEl: documentRef.getElementById(`${prefix}-title`),
+    detailEl: documentRef.getElementById(`${prefix}-detail`),
+  };
+}
+
 export function setActiveEditorSubview(state, viewName, helpers = {}) {
   const {
     drawRoom = () => {},
@@ -63,15 +72,14 @@ export function renderVisualSelectionPreview(state, helpers = {}) {
     getVisualLayerConfig = () => ({ label: "" }),
     selectedChatBubbleTheme = () => null,
   } = helpers;
-  const canvas = documentRef.getElementById("visual-selection-preview");
-  if (!canvas) return;
+  const currentView = state.editor.activeSubview === "chat-bubble" ? "chat-bubble" : "tilemap";
+  const { canvas, titleEl, detailEl } = getSelectionPreviewElements(documentRef, currentView);
+  if (!canvas || !titleEl || !detailEl) return;
   const ctx = canvas.getContext("2d");
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   ctx.imageSmoothingEnabled = false;
 
-  const titleEl = documentRef.getElementById("visual-selection-title");
-  const detailEl = documentRef.getElementById("visual-selection-detail");
-  const isChatBubbleView = state.editor.activeSubview === "chat-bubble";
+  const isChatBubbleView = currentView === "chat-bubble";
   let layer = state.editor.selectedLayer;
   const hover = state.editor.hoveredAtlasCell;
   const selected = state.editor.selectedAtlasCell;
@@ -184,13 +192,15 @@ export function renderVisualEditor(state, helpers = {}) {
   const chatBubblePreviewList = documentRef.getElementById("editor-chat-bubble-preview-list");
   const chatBubbleTextColor = documentRef.getElementById("chat-bubble-text-color");
   const chatBubbleSlotSummary = documentRef.getElementById("chat-bubble-slot-summary");
+  const currentView = state.editor.activeSubview || "tilemap";
 
-  if (!selectedCellEl || !selectedLayerEl || !hoveredAtlasEl || !atlasTitleEl || !atlasModeEl || !atlasImage || !atlasHover || !emptyButton || !colsInput || !rowsInput || !zoomSelect || !showAgentsToggle || !chatBubblePreviewList || !chatBubbleTextColor || !chatBubbleSlotSummary) {
+  if (!selectedCellEl || !selectedLayerEl || !hoveredAtlasEl || !atlasTitleEl || !atlasModeEl || !atlasImage || !atlasHover || !colsInput || !rowsInput || !zoomSelect || !showAgentsToggle || !chatBubblePreviewList) {
     return;
   }
+  if (currentView === "tilemap" && !emptyButton) return;
+  if (currentView === "chat-bubble" && (!chatBubbleTextColor || !chatBubbleSlotSummary)) return;
 
   const layer = state.editor.selectedLayer;
-  const currentView = state.editor.activeSubview || "tilemap";
   const config = getVisualLayerConfig();
   const selectedCell = state.editor.selectedCell;
   const selectedCells = getSelectedCells();
@@ -236,7 +246,9 @@ export function renderVisualEditor(state, helpers = {}) {
     atlasHover.style.display = "none";
   }
 
-  emptyButton.textContent = layer === "floor" ? "Set `.` floor" : "Set `.`";
+  if (emptyButton) {
+    emptyButton.textContent = layer === "floor" ? "Set `.` floor" : "Set `.`";
+  }
   syncRendererCanvasSize();
   renderAgentEditorView(state, {
     documentRef,

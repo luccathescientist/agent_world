@@ -600,6 +600,7 @@ body.world-detail-open #world-tab-panel.layout {
 .chat-bubble-toolbox {
   display: grid;
   gap: 12px;
+  align-content: start;
 }
 
 .chat-bubble-toolbox[hidden] {
@@ -1008,6 +1009,10 @@ body.world-detail-open #world-tab-panel .sidebar textarea {
   min-width: 0;
 }
 
+.visual-picker-grid.compact {
+  grid-template-columns: minmax(260px, 300px) minmax(0, 1fr);
+}
+
 .picker-card {
   display: grid;
   gap: 12px;
@@ -1017,6 +1022,10 @@ body.world-detail-open #world-tab-panel .sidebar textarea {
   border: 2px solid rgba(228, 201, 122, 0.28);
   background: linear-gradient(180deg, rgba(12, 16, 30, 0.78), rgba(9, 11, 22, 0.9));
   overflow: hidden;
+}
+
+.picker-card[hidden] {
+  display: none;
 }
 
 .picker-header {
@@ -1066,7 +1075,8 @@ body.world-detail-open #world-tab-panel .sidebar textarea {
   color: #fff0bf;
 }
 
-#visual-selection-preview {
+#tilemap-selection-preview,
+#chat-bubble-selection-preview {
   width: 128px;
   height: 128px;
   border: 2px solid var(--panel-gold-deep);

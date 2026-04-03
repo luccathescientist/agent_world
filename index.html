@@ -399,41 +399,48 @@
                   <button class="secondary-btn" type="button" data-layer="prop">Prop</button>
                 </div>
               </div>
-              <section class="picker-card chat-bubble-toolbox" data-editor-only="chat-bubble" hidden>
-                <div class="picker-header">
-                  <h3>Bubble Assignment</h3>
-                  <span class="pill" id="chat-bubble-slot-summary">Agent · mm</span>
-                </div>
-                <div class="chat-bubble-role-tabs" role="tablist" aria-label="Chat bubble roles">
-                  <button id="chat-bubble-role-assistant" class="chat-bubble-role-btn active" type="button" data-role="assistant">Agent</button>
-                  <button id="chat-bubble-role-tool" class="chat-bubble-role-btn" type="button" data-role="tool">Tool</button>
-                  <button id="chat-bubble-role-user" class="chat-bubble-role-btn" type="button" data-role="user">User</button>
-                </div>
-                <div class="editor-utility-row">
-                  <label class="editor-field">
-                    <span>Text Color</span>
-                    <input id="chat-bubble-text-color" type="color" value="#fff4d7" />
-                  </label>
-                </div>
-                <div class="special-token-row">
-                  <button id="assign-chat-bubble-tile" class="secondary-btn" type="button">Assign Selected Tile</button>
-                  <button id="reset-chat-bubble-frame" class="secondary-btn" type="button">Reset Selected Role</button>
-                </div>
-              </section>
               <div class="visual-picker-grid compact">
-                <section class="picker-card" data-editor-only="tilemap">
+                <section class="picker-card tile-selection-card" data-editor-only="tilemap" hidden>
                   <div class="picker-header">
-                    <h3>Special Token</h3>
+                    <h3>Tile Selection</h3>
                   </div>
                   <div class="special-token-row">
                     <button id="visual-token-empty" class="secondary-btn" type="button">Set `.`</button>
                   </div>
                   <div class="selection-preview">
                     <div class="selection-copy">
-                      <strong id="visual-selection-title">No atlas tile selected</strong>
-                      <span id="visual-selection-detail">Click a map cell, then hover or click a tile in the atlas.</span>
+                      <strong id="tilemap-selection-title">No atlas tile selected</strong>
+                      <span id="tilemap-selection-detail">Click a map cell, then hover or click a tile in the atlas.</span>
                     </div>
-                    <canvas id="visual-selection-preview" width="128" height="128" aria-label="Selected tile preview"></canvas>
+                    <canvas id="tilemap-selection-preview" width="128" height="128" aria-label="Selected tile preview"></canvas>
+                  </div>
+                </section>
+                <section class="picker-card chat-bubble-toolbox" data-editor-only="chat-bubble" hidden>
+                  <div class="picker-header">
+                    <h3>Bubble Assignment</h3>
+                    <span class="pill" id="chat-bubble-slot-summary">Agent · mm</span>
+                  </div>
+                  <div class="chat-bubble-role-tabs" role="tablist" aria-label="Chat bubble roles">
+                    <button id="chat-bubble-role-assistant" class="chat-bubble-role-btn active" type="button" data-role="assistant">Agent</button>
+                    <button id="chat-bubble-role-tool" class="chat-bubble-role-btn" type="button" data-role="tool">Tool</button>
+                    <button id="chat-bubble-role-user" class="chat-bubble-role-btn" type="button" data-role="user">User</button>
+                  </div>
+                  <div class="editor-utility-row">
+                    <label class="editor-field">
+                      <span>Text Color</span>
+                      <input id="chat-bubble-text-color" type="color" value="#fff4d7" />
+                    </label>
+                  </div>
+                  <div class="selection-preview">
+                    <div class="selection-copy">
+                      <strong id="chat-bubble-selection-title">No bubble tile selected</strong>
+                      <span id="chat-bubble-selection-detail">Pick Agent, Tool, or User, click a bubble segment in the preview, then choose a floor or wall atlas tile.</span>
+                    </div>
+                    <canvas id="chat-bubble-selection-preview" width="128" height="128" aria-label="Selected bubble tile preview"></canvas>
+                  </div>
+                  <div class="special-token-row">
+                    <button id="assign-chat-bubble-tile" class="secondary-btn" type="button">Assign Selected Tile</button>
+                    <button id="reset-chat-bubble-frame" class="secondary-btn" type="button">Reset Selected Role</button>
                   </div>
                 </section>
                 <section class="picker-card atlas-card">

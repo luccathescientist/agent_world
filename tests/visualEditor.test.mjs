@@ -156,7 +156,7 @@ test("renderVisualSelectionPreview shows empty-state guidance when nothing is se
   }, {
     documentRef: {
       getElementById(id) {
-        if (id === "visual-selection-preview") {
+        if (id === "tilemap-selection-preview") {
           return {
             width: 32,
             height: 32,
@@ -165,8 +165,8 @@ test("renderVisualSelectionPreview shows empty-state guidance when nothing is se
             },
           };
         }
-        if (id === "visual-selection-title") return titleEl;
-        if (id === "visual-selection-detail") return detailEl;
+        if (id === "tilemap-selection-title") return titleEl;
+        if (id === "tilemap-selection-detail") return detailEl;
         return null;
       },
     },
@@ -178,6 +178,50 @@ test("renderVisualSelectionPreview shows empty-state guidance when nothing is se
   });
   assert.equal(titleEl.textContent, "No atlas tile selected");
   assert.match(detailEl.textContent, /Click a map cell/);
+  assert.equal(ctx.imageSmoothingEnabled, false);
+});
+
+test("renderVisualSelectionPreview uses chat bubble preview elements for bubble guidance", () => {
+  const titleEl = { textContent: "" };
+  const detailEl = { textContent: "" };
+  const ctx = {
+    clearRect() {},
+    imageSmoothingEnabled: true,
+  };
+  renderVisualSelectionPreview({
+    editor: {
+      activeSubview: "chat-bubble",
+      hoveredAtlasCell: null,
+      selectedAtlasCell: null,
+      selectedCell: null,
+      selectedLayer: "wall",
+      selectedChatBubbleSlot: "mm",
+    },
+  }, {
+    documentRef: {
+      getElementById(id) {
+        if (id === "chat-bubble-selection-preview") {
+          return {
+            width: 32,
+            height: 32,
+            getContext() {
+              return ctx;
+            },
+          };
+        }
+        if (id === "chat-bubble-selection-title") return titleEl;
+        if (id === "chat-bubble-selection-detail") return detailEl;
+        return null;
+      },
+    },
+    getAssignedAtlasCell: () => null,
+    getAssignedPreviewToken: () => null,
+    getDraftCellValue: () => null,
+    getVisualLayerConfig: () => ({ label: "Wall" }),
+    selectedChatBubbleTheme: () => null,
+  });
+  assert.equal(titleEl.textContent, "No bubble tile selected");
+  assert.match(detailEl.textContent, /Pick Agent, Tool, or User/);
   assert.equal(ctx.imageSmoothingEnabled, false);
 });
 
